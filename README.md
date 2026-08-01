@@ -96,6 +96,25 @@ Framework tests run without torch (CPU-only, fast). Training and ONNX
 export tests are gated behind `@pytest.mark.gpu` and require the
 `[train]` and `[export]` extras.
 
+## Distribution
+
+Models reach end users through three channels (full plan in
+[`TODO.distribution/`](./TODO.distribution/)):
+
+| Channel | Audience | Why |
+|---|---|---|
+| **GitHub Releases** (primary) | All consumers | Versioned, immutable, checksums, tied to source tags |
+| **HuggingFace Hub** (canonical) | Researchers | Model cards, datasets, auto-conversion, inference API |
+| **jsdelivr CDN** (edge) | Browser | Edge-cached, CORS-friendly, no rate limits |
+
+Per-task versioning: `rababa_arabic-v1.0.0`, `secryst_thai_ipa-v1.2.0`,
+etc. Each release ships fp32 + int8 + int4 variants with SHA256
+sidecars, SLSA provenance, and Sigstore signatures.
+
+Distribution phases (P2–P8) are tracked in `TODO.distribution/`. The
+first production release lands when phase P6 (first trained model)
+completes.
+
 ## License
 
 MIT. Model weights are released under their own licenses (see
