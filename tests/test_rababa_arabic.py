@@ -36,8 +36,8 @@ def test_arabic_data_prep_is_idempotent(tmp_path) -> None:
 
 
 def test_arabic_encode_source_round_trip() -> None:
-    from tasks.rababa_arabic.data import RababaArabicData, clean_arabic, strip_diacritics
     from framework.config import DataConfig
+    from tasks.rababa_arabic.data import RababaArabicData, clean_arabic, strip_diacritics
 
     cfg = DataConfig(module="rababa_arabic_data", source="x")
     data = RababaArabicData(cfg, __import__("pathlib").Path("/tmp"))

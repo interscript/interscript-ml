@@ -13,7 +13,6 @@ from framework.config import (
     DataConfig,
     EvalConfig,
     ModelConfig,
-    TaskConfig,
     TrainConfig,
     load_task_config,
 )
@@ -43,7 +42,7 @@ def test_load_task_config_secryst() -> None:
 
 def test_task_config_is_frozen() -> None:
     cfg = load_task_config("rababa_arabic")
-    with pytest.raises(Exception):
+    with pytest.raises(AttributeError):
         cfg.name = "renamed"  # type: ignore[misc]
 
 

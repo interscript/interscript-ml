@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -110,7 +110,7 @@ def accuracy(pred: Sequence[str], gold: Sequence[str]) -> float:
     """Exact-match accuracy across the corpus."""
     if not pred:
         return 0.0
-    correct = sum(1 for p, g in zip(pred, gold) if p == g)
+    correct = sum(1 for p, g in zip(pred, gold, strict=False) if p == g)
     return correct / len(pred)
 
 
@@ -121,8 +121,8 @@ def most_common_error_pairs(
 ) -> dict[str, float]:
     """Frequency of (gold, pred) character-level substitutions."""
     counts: Counter[tuple[str, str]] = Counter()
-    for p, g in zip(pred, gold):
-        for pc, gc in zip(p, g):
+    for p, g in zip(pred, gold, strict=False):
+        for pc, gc in zip(p, g, strict=False):
             if pc != gc:
                 counts[(gc, pc)] += 1
     total = sum(counts.values())

@@ -7,7 +7,7 @@ math as DER, different domain name. Reuses the framework's
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from framework.evaluator import (
     BaseEvaluator,
@@ -26,7 +26,7 @@ class PEREvaluator(BaseEvaluator):
 
     def compute_metric(self, predictions: Sequence[str], gold: Sequence[str]) -> float:
         total = 0.0
-        for pred, ref in zip(predictions, gold):
+        for pred, ref in zip(predictions, gold, strict=False):
             total += token_error_rate(list(pred), list(ref))
         return total / len(predictions)
 

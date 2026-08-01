@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
-
-import pytest
+from typing import Any
 
 from framework.config import (
     DataConfig,
@@ -78,7 +77,7 @@ class _DummyEval(BaseEvaluator):
     name = "dummy"
 
     def compute_metric(self, predictions, gold) -> float:
-        diffs = sum(1 for p, g in zip(predictions, gold) if p != g)
+        diffs = sum(1 for p, g in zip(predictions, gold, strict=False) if p != g)
         return diffs / len(predictions)
 
 

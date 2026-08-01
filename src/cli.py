@@ -132,14 +132,6 @@ def cmd_export(args: argparse.Namespace) -> int:
 
 
 def cmd_publish(args: argparse.Namespace) -> int:
-    from framework.pipeline import TrainingPipeline
-
-    pipeline = TrainingPipeline.from_config(
-        task_name=args.task,
-        data_root=args.data_root,
-        out_root=args.out_root,
-        tasks_root=args.tasks_root,
-    )
     repo_id = args.repo or f"interscript/{args.task}"
     print(f"Would upload {args.out_root} to huggingface.co/{repo_id}")
     return 0

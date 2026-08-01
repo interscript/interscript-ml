@@ -11,7 +11,7 @@ in what it counts (diacritized chars, not raw chars).
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from framework.evaluator import (
     BaseEvaluator,
@@ -30,7 +30,7 @@ class DEREvaluator(BaseEvaluator):
 
     def compute_metric(self, predictions: Sequence[str], gold: Sequence[str]) -> float:
         total = 0.0
-        for pred, ref in zip(predictions, gold):
+        for pred, ref in zip(predictions, gold, strict=False):
             total += char_error_rate(pred, ref)
         return total / len(predictions)
 

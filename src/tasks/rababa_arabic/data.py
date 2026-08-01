@@ -12,11 +12,9 @@ trained here can run inference identically in the browser.
 from __future__ import annotations
 
 import random
-from collections import Counter
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
-from framework.config import DataConfig
 from framework.data import DataModule, DataSplit, Example, PreparedData
 from framework.registry import register_data_module
 

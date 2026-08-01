@@ -9,22 +9,21 @@ framework code.
 from __future__ import annotations
 
 import importlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
 
 from framework.config import TaskConfig
 from framework.data import DataModule
 from framework.evaluator import BaseEvaluator, MetricSet
 from framework.exporter import ExportResult, OnnxExporter
 from framework.model import ModelModule
-from framework.trainer import BaseTrainer, TrainConfig
 from framework.registry import (
     resolve_data_module,
     resolve_evaluator,
     resolve_model_module,
 )
-
+from framework.trainer import BaseTrainer
 
 TrainerFactory = Callable[..., BaseTrainer]
 
@@ -73,7 +72,7 @@ class TrainingPipeline:
         model_class: type[ModelModule] | None = None,
         evaluator_class: type[BaseEvaluator] | None = None,
         exporter: OnnxExporter | None = None,
-        trainer_factory: "TrainerFactory | None" = None,
+        trainer_factory: TrainerFactory | None = None,
     ) -> None:
         self.config = config
         self.data_root = data_root
@@ -92,7 +91,7 @@ class TrainingPipeline:
         data_root: Path,
         out_root: Path,
         tasks_root: Path | None = None,
-    ) -> "TrainingPipeline":
+    ) -> TrainingPipeline:
         """Build a pipeline from ``src/tasks/<task_name>/config.yaml``."""
         from framework.config import load_task_config
 
@@ -139,7 +138,6 @@ class TrainingPipeline:
 
         model = self.build_model()
 
-        from framework.trainer import BaseTrainer
 
         trainer = self._construct_trainer(model, data)
         state = trainer.fit(max_steps=max_steps)

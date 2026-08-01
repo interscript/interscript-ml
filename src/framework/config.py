@@ -26,7 +26,7 @@ class DataConfig:
     cleaner: str = "basic"
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "DataConfig":
+    def from_dict(cls, raw: dict[str, Any]) -> DataConfig:
         return cls(
             module=raw["module"],
             source=raw["source"],
@@ -50,7 +50,7 @@ class ModelConfig:
     lora_alpha: int = 32
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "ModelConfig":
+    def from_dict(cls, raw: dict[str, Any]) -> ModelConfig:
         return cls(
             module=raw["module"],
             teacher_name=raw["teacher_name"],
@@ -80,7 +80,7 @@ class TrainConfig:
     out_dir: str = "models"
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "TrainConfig":
+    def from_dict(cls, raw: dict[str, Any]) -> TrainConfig:
         return cls(
             epochs=raw.get("epochs", 3),
             batch_size=raw.get("batch_size", 16),
@@ -106,7 +106,7 @@ class EvalConfig:
     batch_size: int = 32
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "EvalConfig":
+    def from_dict(cls, raw: dict[str, Any]) -> EvalConfig:
         return cls(
             module=raw["module"],
             metric=raw["metric"],
@@ -126,7 +126,7 @@ class ExportConfig:
     quantize: bool = False
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "ExportConfig":
+    def from_dict(cls, raw: dict[str, Any]) -> ExportConfig:
         return cls(
             opset=raw.get("opset", 17),
             dynamic_axes=raw.get("dynamic_axes", {"input_ids": {0: "batch", 1: "seq"}}),
@@ -152,7 +152,7 @@ class TaskConfig:
     export: ExportConfig
 
     @classmethod
-    def from_dict(cls, name: str, raw: dict[str, Any]) -> "TaskConfig":
+    def from_dict(cls, name: str, raw: dict[str, Any]) -> TaskConfig:
         return cls(
             name=name,
             description=raw.get("description", ""),

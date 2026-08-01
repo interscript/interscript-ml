@@ -11,8 +11,9 @@ Production builds use torch + transformers. The class is registered as
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from framework.config import ModelConfig
 from framework.model import ForwardOutput, GenerateOutput, ModelKind, ModelModule

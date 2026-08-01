@@ -8,13 +8,14 @@ zero framework edits.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from framework.config import ModelConfig
 from framework.model import ForwardOutput, GenerateOutput, ModelKind, ModelModule
 from framework.registry import register_model_module
-from tasks.rababa_arabic.student import _CharTransformer, _TORCH_AVAILABLE
+from tasks.rababa_arabic.student import _TORCH_AVAILABLE, _CharTransformer
 
 
 @register_model_module("secryst_student")

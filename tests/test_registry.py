@@ -15,7 +15,6 @@ from framework.evaluator import (
 from framework.registry import (
     register_data_module,
     register_evaluator,
-    register_model_module,
     resolve_data_module,
     resolve_evaluator,
     resolve_model_module,

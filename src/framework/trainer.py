@@ -18,7 +18,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from framework.config import TrainConfig
 from framework.data import DataModule
@@ -148,11 +148,15 @@ class BaseTrainer(ABC):
 class FineTuneTrainer(BaseTrainer):
     """Teacher trainer: supervised CE loss on gold labels."""
 
-    def compute_loss(self, batch: Any) -> tuple[Any, dict[str, float]]:  # pragma: no cover - torch-bound
-        raise NotImplementedError("FineTuneTrainer requires torch; implement in tasks that use it")
+    def compute_loss(self, batch):  # pragma: no cover - torch-bound
+        raise NotImplementedError(
+            "FineTuneTrainer requires torch; implement in tasks that use it"
+        )
 
     def make_optimizer(self) -> Any:  # pragma: no cover - torch-bound
-        raise NotImplementedError("FineTuneTrainer requires torch; implement in tasks that use it")
+        raise NotImplementedError(
+            "FineTuneTrainer requires torch; implement in tasks that use it"
+        )
 
 
 class DistillTrainer(BaseTrainer):
@@ -174,8 +178,10 @@ class DistillTrainer(BaseTrainer):
         super().__init__(config, model, data, out_dir)
         self.teacher = teacher
 
-    def compute_loss(self, batch: Any) -> tuple[Any, dict[str, float]]:  # pragma: no cover - torch-bound
-        raise NotImplementedError("DistillTrainer requires torch; implement in tasks that use it")
+    def compute_loss(self, batch):  # pragma: no cover - torch-bound
+        raise NotImplementedError(
+            "DistillTrainer requires torch; implement in tasks that use it"
+        )
 
     def make_optimizer(self) -> Any:  # pragma: no cover - torch-bound
         raise NotImplementedError("DistillTrainer requires torch; implement in tasks that use it")

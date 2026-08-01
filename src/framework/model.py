@@ -12,9 +12,10 @@ registering via ``@register_model_module("name")``.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 
 class ModelKind(str, Enum):
