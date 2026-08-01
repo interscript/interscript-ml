@@ -53,6 +53,9 @@ class SecrystThaiIpaStudent(ModelModule):
             return GenerateOutput(ids=[[0]], texts=[""])
         import torch  # type: ignore
 
+        if not torch.is_tensor(input_ids):
+            input_ids = torch.tensor(input_ids, dtype=torch.long)
+
         with torch.no_grad():
             logits = self._model(input_ids, attention_mask=attention_mask)
             ids = logits.argmax(dim=-1).tolist()

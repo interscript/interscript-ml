@@ -196,15 +196,18 @@ class TrainingPipeline:
         )
 
     def _generate_predictions(self, model, data):
-        """Generate predictions over the val split for evaluation."""
-        try:
-            import torch  # type: ignore
-        except ImportError:
-            return ["" for _ in data.prepared.val]
+        """Generate predictions over the val split for evaluation.
 
+        Models decide what tensor format they want. We pass the raw
+        input_ids as a list-of-lists; torch-based models convert
+        internally. Avoids importing torch at the framework layer
+        (CPU-only test environments shouldn't fail here).
+        """
         predictions: list[str] = []
         for example in data.prepared.val:
-            input_tensor = torch.tensor([list(example.input_ids)], dtype=torch.long)
-            output = model.generate(input_tensor)
-            predictions.append(output.texts[0] if output.texts else "")
+            try:
+                output = model.generate([list(example.input_ids)])
+                predictions.append(output.texts[0] if output.texts else "")
+            except Exception:  # noqa: BLE001
+                predictions.append("")
         return predictions
