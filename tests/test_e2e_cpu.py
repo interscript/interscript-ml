@@ -94,7 +94,7 @@ def test_end_to_end_train_export_inference(tmp_path: Path) -> None:
         description="",
         kind="rababa",
         data=DataConfig(module="x", source="x"),
-        model=ModelConfig(module="x", teacher_name="t", student_arch="x", device="cpu"),
+        model=ModelConfig(module="x", student_arch="x", device="cpu"),
         train=TrainConfig(epochs=1, batch_size=2, max_steps_per_epoch=2),
         eval=EvalConfig(module="x", metric="tiny"),
         export=ExportConfig(),

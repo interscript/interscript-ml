@@ -1,9 +1,21 @@
 """Trainer abstractions.
 
 ``BaseTrainer`` implements the shared epoch loop, checkpointing, and
-logging. Two concrete subclasses: ``FineTuneTrainer`` (for the teacher)
-and ``DistillTrainer`` (for the student). All three are DRY: the loop
-is written once, strategy-specific loss computation is delegated.
+logging. Three concrete subclasses:
+
+- ``StudentTrainer`` (DEFAULT) — direct supervised training of the
+  student on gold labels. No teacher required. This is the path for
+  rababa_arabic / rababa_hebrew / secryst_thai_ipa, where the gold
+  corpus is authoritative. See ``docs/architecture.md``.
+- ``DistillTrainer`` — student trained against a teacher's softened
+  logits + gold CE. Reserved for narrow future tasks where the teacher
+  is genuinely better than available labels (noisy labels, generative,
+  zero-shot).
+- ``FineTuneTrainer`` — supervised fine-tune of a large model. Used
+  only when an LLM teacher is actually justified.
+
+All three are DRY: the epoch loop is written once, strategy-specific
+loss computation is delegated to ``compute_loss``.
 
 The trainer holds no knowledge of:
 - Data source details (uses ``DataModule`` interface)

@@ -8,16 +8,20 @@ production training needs CUDA. Here are the realistic options.
 
 | Task | Wall time on 1× A100 80GB | Est. cost (Modal A100) |
 |---|---|---|
-| rababa_arabic teacher fine-tune (Qwen3.5-4B LoRA) | 12-18h | ~$15-25 |
-| rababa_arabic student distillation | 3-4h | ~$5-7 |
+| rababa_arabic supervised fine-tune (no teacher) | 3-5h | ~$10-15 |
 | rababa_arabic ONNX export + benchmarks (CPU) | 5min | $0 |
-| **rababa_arabic total** | **~16-22h** | **~$20-30** |
-| rababa_hebrew (same shape) | ~16-22h | ~$20-30 |
-| secryst_thai_ipa (same shape) | ~16-22h | ~$20-30 |
-| **All three tasks** | **~50-66h** | **~$60-90** |
+| **rababa_arabic total** | **~3-5h** | **~$10-15** |
+| rababa_hebrew (same shape) | ~3-5h | ~$10-15 |
+| secryst_thai_ipa (same shape) | ~3-5h | ~$10-15 |
+| **All three tasks** | **~10-15h** | **~$30-45** |
 
-For comparison: $100 of Modal credits is enough to retrain every task
-3-4 times. **Cost is not the blocker.**
+For comparison: $50 of Modal credits is enough to retrain every task
+3-5 times. **Cost is not the blocker.**
+
+> Earlier versions of this doc quoted ~$20/task because they assumed an
+> LLM teacher fine-tune + distillation pipeline. That architecture was
+> rejected (see `docs/architecture.md`): diacritization uses direct
+> supervised training on gold corpora, no teacher needed.
 
 ## Recommendation
 

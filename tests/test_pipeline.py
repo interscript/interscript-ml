@@ -115,7 +115,6 @@ def _build_task_config() -> TaskConfig:
         data=DataConfig(module="_DummyData", source="x"),
         model=ModelConfig(
             module="_DummyModel",
-            teacher_name="t",
             student_arch="char_transformer",
         ),
         train=TrainConfig(epochs=1, batch_size=2),

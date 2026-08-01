@@ -38,14 +38,20 @@ class DataConfig:
 
 @dataclass(frozen=True)
 class ModelConfig:
-    """Model architecture knobs. MECE: model layer owns these."""
+    """Model architecture knobs. MECE: model layer owns these.
+
+    The ``teacher_name`` field is OPTIONAL — direct supervised training
+    on the gold corpus is the default and preferred path. The LLM
+    teacher is reserved for narrow future tasks (noisy labels,
+    generative, zero-shot). See ``docs/architecture.md``.
+    """
 
     module: str
-    teacher_name: str
     student_arch: str
-    student_layers: int = 4
-    student_dim: int = 256
-    student_heads: int = 4
+    teacher_name: str | None = None
+    student_layers: int = 6
+    student_dim: int = 384
+    student_heads: int = 6
     lora_r: int = 16
     lora_alpha: int = 32
     device: str = "auto"  # "auto" | "cpu" | "cuda" | "mps"
@@ -54,11 +60,11 @@ class ModelConfig:
     def from_dict(cls, raw: dict[str, Any]) -> ModelConfig:
         return cls(
             module=raw["module"],
-            teacher_name=raw["teacher_name"],
             student_arch=raw["student_arch"],
-            student_layers=raw.get("student_layers", 4),
-            student_dim=raw.get("student_dim", 256),
-            student_heads=raw.get("student_heads", 4),
+            teacher_name=raw.get("teacher_name"),
+            student_layers=raw.get("student_layers", 6),
+            student_dim=raw.get("student_dim", 384),
+            student_heads=raw.get("student_heads", 6),
             lora_r=raw.get("lora_r", 16),
             lora_alpha=raw.get("lora_alpha", 32),
             device=raw.get("device", "auto"),

@@ -65,11 +65,13 @@ def test_train_config_defaults() -> None:
 
 
 def test_model_config_lora() -> None:
+    # teacher_name is optional — direct supervised is the default path
     c = ModelConfig.from_dict(
-        {"module": "m", "teacher_name": "T", "student_arch": "char_transformer"}
+        {"module": "m", "student_arch": "char_transformer"}
     )
+    assert c.teacher_name is None
     assert c.lora_r == 16
-    assert c.student_dim == 256
+    assert c.student_dim == 384
 
 
 def test_eval_config() -> None:
