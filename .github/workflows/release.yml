@@ -1,0 +1,154 @@
+name: release
+
+# Triggered by per-task tags: rababa_arabic-v1.0.0, secryst_thai_ipa-v0.1.0, etc.
+# Spec: TODO.distribution/01-github-releases.md
+on:
+  push:
+    tags: ["*-v*.*.*"]
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  parse-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      task: ${{ steps.parse.outputs.task }}
+      version: ${{ steps.parse.outputs.version }}
+      is_prerelease: ${{ steps.parse.outputs.is_prerelease }}
+    steps:
+      - id: parse
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          task="${tag%-v*}"
+          version="${tag#*-v}"
+          prerelease=false
+          if [[ "$version" == *"-alpha."* || "$version" == *"-beta."* || "$version" == *"-rc."* ]]; then
+            prerelease=true
+          fi
+          echo "task=$task" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$prerelease" >> $GITHUB_OUTPUT
+
+  build:
+    needs: parse-tag
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: fp32
+            runner: ubuntu-latest
+            extras: "train,export"
+          - variant: q8
+            runner: ubuntu-latest
+            extras: "export"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[${{ matrix.extras }}]"
+      - name: Build ONNX (${{ matrix.variant }})
+        env:
+          TASK: ${{ needs.parse-tag.outputs.task }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          mkdir -p models/$TASK
+          if [ "$VARIANT" = "fp32" ]; then
+            python -m src.cli export --task $TASK --data-root data --out-root models/$TASK
+          else
+            python -m src.cli export --task $TASK --variant $VARIANT --data-root data --out-root models/$TASK
+          fi
+      - name: Compute SHA256
+        env:
+          TASK: ${{ needs.parse-tag.outputs.task }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          cd models/$TASK
+          for f in *.onnx; do
+            sha256sum "$f" > "$f.sha256"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onnx-${{ matrix.variant }}
+          path: models/${{ needs.parse-tag.outputs.task }}/
+
+  benchmark:
+    needs: [parse-tag, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[dev,export]"
+      - uses: actions/download-artifact@v4
+        with:
+          name: onnx-fp32
+          path: models/${{ needs.parse-tag.outputs.task }}
+      - name: Evaluate
+        env:
+          TASK: ${{ needs.parse-tag.outputs.task }}
+        run: |
+          python -m src.cli evaluate --task $TASK --data-root data --out-root models \
+            > $TASK-benchmarks.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: ${{ needs.parse-tag.outputs.task }}-benchmarks.json
+
+  release:
+    needs: [parse-tag, build, benchmark]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - name: Stage release assets
+        env:
+          TASK: ${{ needs.parse-tag.outputs.task }}
+        run: |
+          mkdir -p release/$TASK
+          cp artifacts/onnx-fp32/* release/$TASK/ 2>/dev/null || true
+          cp artifacts/onnx-q8/* release/$TASK/ 2>/dev/null || true
+          cp artifacts/benchmarks/* release/$TASK/ 2>/dev/null || true
+          ls -lhR release/
+      - name: Generate release notes
+        env:
+          TASK: ${{ needs.parse-tag.outputs.task }}
+          VERSION: ${{ needs.parse-tag.outputs.version }}
+        run: python scripts/generate_release_notes.py --task $TASK --version $VERSION
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ needs.parse-tag.outputs.is_prerelease }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            release/**/*
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        continue-on-error: true
+        with:
+          subject-name: github.com/interscript/ml-models
+          subject-digest: sha256:${{ github.sha }}
+
+  publish-hf:
+    needs: release
+    runs-on: ubuntu-latest
+    if: false  # enable once HF_TOKEN secret is set
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[publish]"
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          TASK: ${{ needs.parse-tag.outputs.task }}
+        run: |
+          python -m src.cli publish --task $TASK --repo interscript/$TASK

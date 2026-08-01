@@ -125,7 +125,15 @@ class TrainingPipeline:
         return cls()
 
     def build_exporter(self) -> OnnxExporter | None:
-        return self._exporter
+        if self._exporter is not None:
+            return self._exporter
+        # Default: try the torch exporter (works for any task whose model
+        # implements export_to_onnx). Falls back to None if torch missing.
+        try:
+            from framework.torch_exporter import TorchOnnxExporter
+            return TorchOnnxExporter(self.config.export)
+        except ImportError:
+            return None
 
     def run(
         self,
@@ -163,7 +171,13 @@ class TrainingPipeline:
         )
 
     def _construct_trainer(self, model, data):
-        """Build a trainer via the injected factory or default to FineTune."""
+        """Build a trainer via the injected factory or default to StudentTrainer.
+
+        StudentTrainer trains the student directly on gold labels (no
+        teacher required) — works on CPU. The DistillTrainer path is
+        used only when a teacher checkpoint exists; switch via
+        ``trainer_factory`` injection in the constructor.
+        """
         if self._trainer_factory is not None:
             return self._trainer_factory(
                 config=self.config.train,
@@ -171,16 +185,26 @@ class TrainingPipeline:
                 data=data,
                 out_dir=self.out_root / "checkpoints",
             )
-        from framework.trainer import FineTuneTrainer
+        from framework.trainer import StudentTrainer
 
-        return FineTuneTrainer(
-            self.config.train, model, data, self.out_root / "checkpoints"
+        return StudentTrainer(
+            self.config.train,
+            model,
+            data,
+            self.out_root / "checkpoints",
+            device=self.config.model.device,
         )
 
     def _generate_predictions(self, model, data):
         """Generate predictions over the val split for evaluation."""
+        try:
+            import torch  # type: ignore
+        except ImportError:
+            return ["" for _ in data.prepared.val]
+
         predictions: list[str] = []
         for example in data.prepared.val:
-            output = model.generate([list(example.input_ids)])
+            input_tensor = torch.tensor([list(example.input_ids)], dtype=torch.long)
+            output = model.generate(input_tensor)
             predictions.append(output.texts[0] if output.texts else "")
         return predictions

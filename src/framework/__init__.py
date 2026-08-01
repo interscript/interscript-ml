@@ -8,6 +8,7 @@ a new task is one directory under ``src/tasks/`` — zero edits here.
 
 from framework.config import TaskConfig, load_task_config
 from framework.data import DataModule, DataSplit, Example
+from framework.device import detect_best_device, device_label, resolve_device
 from framework.evaluator import BaseEvaluator, MetricSet
 from framework.exporter import ExportResult, OnnxExporter
 from framework.model import ModelKind, ModelModule
@@ -20,7 +21,13 @@ from framework.registry import (
     resolve_evaluator,
     resolve_model_module,
 )
-from framework.trainer import BaseTrainer, TrainingState
+from framework.trainer import (
+    BaseTrainer,
+    DistillTrainer,
+    FineTuneTrainer,
+    StudentTrainer,
+    TrainingState,
+)
 
 __all__ = [
     "TaskConfig",
@@ -28,9 +35,15 @@ __all__ = [
     "DataModule",
     "DataSplit",
     "Example",
+    "detect_best_device",
+    "device_label",
+    "resolve_device",
     "ModelModule",
     "ModelKind",
     "BaseTrainer",
+    "FineTuneTrainer",
+    "DistillTrainer",
+    "StudentTrainer",
     "TrainingState",
     "BaseEvaluator",
     "MetricSet",

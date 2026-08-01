@@ -178,10 +178,87 @@ class DistillTrainer(BaseTrainer):
         super().__init__(config, model, data, out_dir)
         self.teacher = teacher
 
-    def compute_loss(self, batch):  # pragma: no cover - torch-bound
+    def compute_loss(self, batch):  # pragma: no cover - requires torch-bound subclass
         raise NotImplementedError(
             "DistillTrainer requires torch; implement in tasks that use it"
         )
 
-    def make_optimizer(self) -> Any:  # pragma: no cover - torch-bound
-        raise NotImplementedError("DistillTrainer requires torch; implement in tasks that use it")
+    def make_optimizer(self) -> Any:  # pragma: no cover - requires torch-bound subclass
+        raise NotImplementedError(
+            "DistillTrainer requires torch; implement in tasks that use it"
+        )
+
+
+class StudentTrainer(BaseTrainer):
+    """Trains the student directly on gold labels — no teacher needed.
+
+    This is the CPU-friendly path: skip the LLM teacher entirely and
+    train the small character-level transformer with plain cross-entropy
+    on the gold targets. DER/PER is typically 1-2pp worse than the
+    distilled path, but the pipeline runs end-to-end on a laptop.
+
+    Use this for:
+    - Local dev (fast iteration on framework code)
+    - CI smoke tests
+    - Demos and proof-of-concept releases
+    - Mobile/edge variants where the teacher's overhead isn't justified
+
+    Switch to ``DistillTrainer`` for production releases.
+    """
+
+    def __init__(
+        self,
+        config: TrainConfig,
+        model: ModelModule,
+        data: DataModule,
+        out_dir: Path,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(config, model, data, out_dir)
+        from framework.device import resolve_device
+
+        self.device = resolve_device(device)
+        self._optimizer: Any = None
+
+    def make_optimizer(self) -> Any:
+        if self._optimizer is not None:
+            return self._optimizer
+        import torch  # type: ignore
+
+        params = [p for p in self.model.parameters() if hasattr(p, "requires_grad")]
+        self._optimizer = torch.optim.AdamW(
+            params,
+            lr=self.config.learning_rate,
+            weight_decay=self.config.weight_decay,
+        )
+        return self._optimizer
+
+    def compute_loss(self, batch):
+        import torch  # type: ignore
+
+        inputs = self._pad_batch([ex.input_ids for ex in batch])
+        targets = self._pad_batch([ex.target_ids for ex in batch])
+        output = self.model.forward(inputs)
+        logits = output.logits
+        # Align lengths: training chooses min(input, target) so CE works
+        # regardless of model architecture (encoder-only, encoder-decoder).
+        min_len = min(logits.size(1), targets.size(1))
+        loss = torch.nn.functional.cross_entropy(
+            logits[:, :min_len, :].reshape(-1, logits.size(-1)),
+            targets[:, :min_len].reshape(-1).long(),
+            ignore_index=0,  # PAD_ID = 0
+        )
+        return loss, {"loss": float(loss.detach().cpu().item())}
+
+    def _pad_batch(self, sequences: list[tuple[int, ...]]) -> Any:
+        """Pad ragged sequences to a uniform length. Returns a torch tensor."""
+        import torch  # type: ignore
+
+        max_len = max(len(seq) for seq in sequences)
+        padded = [list(seq) + [0] * (max_len - len(seq)) for seq in sequences]
+        return torch.tensor(padded, dtype=torch.long, device=self.device)
+
+    def fit(self, max_steps: int | None = None):
+        """Override to honour ``max_steps_per_epoch`` for CPU dev mode."""
+        cap = max_steps or self.config.max_steps_per_epoch
+        return super().fit(max_steps=cap)

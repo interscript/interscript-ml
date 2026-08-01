@@ -125,7 +125,8 @@ def cmd_export(args: argparse.Namespace) -> int:
         print("Task has no exporter configured", file=sys.stderr)
         return 2
     model = pipeline.build_model()
-    out_path = args.out_root / f"{args.task}.onnx"
+    suffix = "" if args.variant == "fp32" else f"-{args.variant}"
+    out_path = args.out_root / f"{args.task}{suffix}.onnx"
     result = exporter.export(model, out_path, verify_with=model)
     print(result.format_summary())
     return 0
@@ -160,6 +161,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_export = sub.add_parser("export", help="Export a trained model to ONNX")
     _add_common_args(p_export)
+    p_export.add_argument(
+        "--variant",
+        choices=["fp32", "q8", "q4", "fp16"],
+        default="fp32",
+        help="Precision variant (q8/q4 produced via onnxruntime quantization)",
+    )
     p_export.set_defaults(func=cmd_export)
 
     p_pub = sub.add_parser("publish", help="Upload to HuggingFace Hub")

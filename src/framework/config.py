@@ -48,6 +48,7 @@ class ModelConfig:
     student_heads: int = 4
     lora_r: int = 16
     lora_alpha: int = 32
+    device: str = "auto"  # "auto" | "cpu" | "cuda" | "mps"
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> ModelConfig:
@@ -60,6 +61,7 @@ class ModelConfig:
             student_heads=raw.get("student_heads", 4),
             lora_r=raw.get("lora_r", 16),
             lora_alpha=raw.get("lora_alpha", 32),
+            device=raw.get("device", "auto"),
         )
 
 
@@ -78,6 +80,7 @@ class TrainConfig:
     log_every: int = 50
     save_every: int = 1000
     out_dir: str = "models"
+    max_steps_per_epoch: int | None = None  # cap for CPU dev mode
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> TrainConfig:
@@ -93,6 +96,7 @@ class TrainConfig:
             log_every=raw.get("log_every", 50),
             save_every=raw.get("save_every", 1000),
             out_dir=raw.get("out_dir", "models"),
+            max_steps_per_epoch=raw.get("max_steps_per_epoch"),
         )
 
 

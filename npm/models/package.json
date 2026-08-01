@@ -1,0 +1,25 @@
+{
+  "name": "@interscript/models",
+  "version": "0.0.1",
+  "description": "Manifest of available Interscript ML models + their current versions, URLs, and checksums.",
+  "license": "MIT",
+  "main": "manifest.json",
+  "files": [
+    "manifest.json"
+  ],
+  "keywords": [
+    "interscript",
+    "ml",
+    "models",
+    "manifest",
+    "transliteration",
+    "rababa",
+    "secryst"
+  ],
+  "homepage": "https://github.com/interscript/ml-models#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/interscript/ml-models.git"
+  },
+  "author": "Interscript Project"
+}

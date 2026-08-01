@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "schema_description": "Interscript ML model manifest. interscript-ts + interscript-ruby read this to resolve 'default' model versions. See TODO.distribution/04-npm-packages.md.",
+  "updated_at": "2026-08-01T00:00:00Z",
+  "models": {
+    "rababa_arabic": {
+      "status": "preview",
+      "version": "0.0.0",
+      "note": "No trained release yet. Framework only.",
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v{version}/",
+      "github_base": "https://github.com/interscript/ml-models/releases/download/rababa_arabic-v{version}/"
+    },
+    "rababa_hebrew": {
+      "status": "preview",
+      "version": "0.0.0",
+      "note": "No trained release yet. Framework only.",
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_hebrew-v{version}/",
+      "github_base": "https://github.com/interscript/ml-models/releases/download/rababa_hebrew-v{version}/"
+    },
+    "secryst_thai_ipa": {
+      "status": "preview",
+      "version": "0.0.0",
+      "note": "No trained release yet. Framework only.",
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@secryst_thai_ipa-v{version}/",
+      "github_base": "https://github.com/interscript/ml-models/releases/download/secryst_thai_ipa-v{version}/"
+    }
+  },
+  "conventions": {
+    "tag_format": "<task>-v<MAJOR>.<MINOR>.<PATCH>",
+    "asset_naming": "<task>-<variant>.onnx where variant is one of: (none=fp32) | q8 | q4 | fp16",
+    "checksum_sidecar": "<asset>.sha256 (lowercase hex, single space, filename)",
+    "fallback_chain": ["cdn_base", "github_base", "huggingface.co/interscript/<task>/resolve/main/"]
+  }
+}
