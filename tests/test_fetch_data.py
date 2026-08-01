@@ -1,7 +1,7 @@
 """Tests for ``scripts/fetch_data.py``.
 
-Network access is NOT required — these tests cover import, CLI
-argument handling, and the gated-repo error path. Real download is
+Network access is NOT required — these tests cover import, dataset
+registry shape, and the unknown-task error path. Real download is
 covered by the smoke test in the README.
 """
 
@@ -30,18 +30,23 @@ def test_fetcher_imports(fetch_module) -> None:
     assert "rababa_arabic" in fetch_module.DATASETS
 
 
-def test_fetcher_primary_has_parquet_files(fetch_module) -> None:
+def test_fetcher_primary_is_open_access(fetch_module) -> None:
+    """Primary must be reachable without HF_TOKEN or gating."""
     primary = fetch_module.DATASETS["rababa_arabic"]["primary"]
-    assert primary["repo_id"] == "Misraj/Sadeed_Tashkeela"
+    assert primary["repo_id"] == "arbml/tashkeelav2"
     assert primary["repo_type"] == "dataset"
-    assert len(primary["files"]) == 3
-    assert all(f.endswith(".parquet") for f in primary["files"])
+    assert len(primary["train_files"]) >= 1
+    assert all(f.endswith(".parquet") for f in primary["train_files"])
+    assert primary["bare_column"] == "text"
+    assert primary["diacritized_column"] == "diacratized"
+    assert primary["out_name"].endswith(".tsv")
 
 
-def test_fetcher_fallback_uses_open_dataset(fetch_module) -> None:
+def test_fetcher_fallback_uses_raw_corpus(fetch_module) -> None:
     fallback = fetch_module.DATASETS["rababa_arabic"]["fallback"]
     assert fallback["repo_id"] == "community-datasets/tashkeela"
-    assert fallback["split_lines"] is True
+    assert fallback["bare_column"] is None
+    assert fallback["out_name"].endswith(".txt")
 
 
 def test_fetcher_unknown_task_errors(fetch_module, tmp_path: Path) -> None:
