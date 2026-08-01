@@ -1,0 +1,42 @@
+name: rababa_hebrew
+description: Hebrew diacritization (nikud) — adds vowels to undiacritized Hebrew text.
+kind: rababa
+
+data:
+  module: rababa_hebrew_data
+  source: sna_nikud
+  max_val_samples: 1000
+  cleaner: hebrew
+
+model:
+  module: rababa_hebrew_student
+  teacher_name: Qwen/Qwen3.5-4B-Instruct
+  student_arch: char_transformer
+  student_layers: 4
+  student_dim: 256
+  student_heads: 4
+  lora_r: 16
+  lora_alpha: 32
+
+train:
+  epochs: 3
+  batch_size: 16
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_steps: 200
+  distill_temperature: 4.0
+  distill_alpha: 0.5
+  grad_clip: 1.0
+  log_every: 50
+  save_every: 1000
+  out_dir: models/rababa_hebrew
+
+eval:
+  module: der_hebrew
+  metric: der_hebrew
+  target_value: 0.05
+  batch_size: 32
+
+export:
+  opset: 17
+  quantize: false

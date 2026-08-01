@@ -1,0 +1,27 @@
+# Default training hyperparameters. Override per-task in config.yaml.
+
+default:
+  optimizer: adamw
+  scheduler: cosine
+  warmup_ratio: 0.03
+  fp16: true
+  seed: 42
+  log_every: 50
+  save_every: 1000
+  grad_clip: 1.0
+
+distillation:
+  # Mix of cross-entropy (gold labels) and KL divergence (teacher logits)
+  alpha: 0.5          # weight on CE; (1-alpha) on KL
+  temperature: 4.0    # softmax temperature for KL
+
+finetune:
+  # LoRA config for teacher fine-tune
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - q_proj
+    - v_proj
+    - k_proj
+    - o_proj
