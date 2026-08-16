@@ -8,9 +8,12 @@ sets.
 ```python
 from interscript_ml import Model
 
-model = Model.load("khm-latn-1.0.zip")   # sha256-verified on load
-model.translate("ភាសា")                  # -> "pheasaea"
-model.id                                  # "khm-latn-1.0"
+model = Model.load("khm-latn-1.0")        # id: index resolve -> download
+                                          # -> sha256-verify -> cache -> load
+model.translate("ភាសា")                   # -> "pheasaea"
+model.id                                   # "khm-latn-1.0"
+
+model = Model.load("khm-latn-1.0.zip")    # or: a local zip path directly
 ```
 
 - Byte-level only: the canonical ByT5 table (byte `b` → id `b+3`,
@@ -19,6 +22,11 @@ model.id                                  # "khm-latn-1.0"
   (default), plain full-recompute fallback otherwise.
 - Every `.onnx` member is sha256-verified against `metadata.yaml`
   before the session is created; corrupt downloads fail loudly.
+- Dynamic fetch per the `models.yaml` contract (shared with the Ruby and
+  TypeScript runtimes): resolve id -> channel URL, download to temp,
+  verify whole-file sha256 against the index, atomically install into
+  `~/.cache/interscript/models/<id>/`. Overrides:
+  `INTERSCRIPT_ML_INDEX` (URL or path), `INTERSCRIPT_ML_CACHE`.
 
 Install: `pip install ./runtime` (from the ml-models checkout) or
 `pip install -e "./runtime[dev]"` for development.

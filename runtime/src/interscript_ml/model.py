@@ -45,8 +45,15 @@ class Model:
         self._output_names = [o.name for o in self._decoder.get_outputs()]
 
     @classmethod
-    def load(cls, path: Path | str) -> "Model":
-        return cls(path)
+    def load(cls, path_or_id: Path | str, index_url: str | None = None) -> "Model":
+        """Accepts a zip path OR a model id from models.yaml (dynamic
+        fetch: download -> verify -> cache)."""
+        candidate = str(path_or_id)
+        if candidate.endswith(".zip") or Path(candidate).exists():
+            return cls(candidate)
+        from interscript_ml.registry import resolve
+
+        return cls(resolve(candidate, index_url))
 
     @property
     def id(self) -> str:

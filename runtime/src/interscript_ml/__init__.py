@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from interscript_ml.loader import Manifest, ModelFormatError
 from interscript_ml.model import Model
+from interscript_ml.registry import RegistryError, resolve
 from interscript_ml.tokens import BYTE_OFFSET, EOS_ID, PAD_ID, UNK_ID, decode, encode
 
 __all__ = [
@@ -24,7 +25,9 @@ __all__ = [
     "Model",
     "ModelFormatError",
     "PAD_ID",
+    "RegistryError",
     "UNK_ID",
     "decode",
     "encode",
+    "resolve",
 ]
