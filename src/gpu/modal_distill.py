@@ -31,12 +31,7 @@ IMAGE = (
         "pyyaml>=6.0",
         "numpy>=1.26",
     )
-    .add_local_dir(
-        str(REPO_ROOT),
-        "/root/ml-models",
-        copy=True,
-        ignore_patterns=[".git/*", "__pycache__/*", "models/*", ".pytest_cache/*"],
-    )
+    .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
     .workdir("/root/ml-models")
 )
 
