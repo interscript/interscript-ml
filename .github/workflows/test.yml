@@ -43,3 +43,15 @@ jobs:
         run: |
           PYTHONPATH=src python -m src.cli list
           test "$(PYTHONPATH=src python -m src.cli list | jq 'length')" -ge 3
+
+  export-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,train,export]"
+      - name: IMF export fixture tests (torch + ORT parity)
+        run: PYTHONPATH=src python -m pytest tests/test_imf_export.py -v

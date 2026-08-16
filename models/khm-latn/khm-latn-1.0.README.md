@@ -5,7 +5,7 @@ the tokenizer is raw UTF-8 bytes (pad=0, EOS=1) — no vocab files.
 IMF v1 artifact; format spec: interscript/ml-models docs/imf-v1.md.
 
 - precision: fp16 (mixed: LayerNorm parameters in fp32)
-- decoder: plain greedy (KV-cache variant ships with the WO02 export)
+- decoder: kv greedy (plain fallback included in the zip)
 - metrics: CER 27.42 / EM 59.66 on 895 held-out pairs —
   secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14
 - trained from: secryst train_khmer_byt5.py run-001
