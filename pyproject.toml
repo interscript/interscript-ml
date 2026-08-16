@@ -7,7 +7,7 @@ name = "interscript-ml-models"
 version = "0.1.0"
 description = "Unified training framework for Interscript ML models (rababa + secryst)"
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "BSD-3-Clause" }
 requires-python = ">=3.10"
 authors = [{ name = "Interscript Project" }]
 keywords = ["nlp", "transliteration", "diacritization", "onnx", "distillation"]
@@ -48,7 +48,7 @@ interscript-ml = "src.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["framework*", "tasks*"]
+include = ["framework*", "tasks*", "imf*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
