@@ -5,7 +5,7 @@
 - **Name:** `interscript/rababa_arabic`
 - **Type:** Character-level transformer (4 layers, 256 dim, 4 heads)
 - **Trained from:** distilled from Qwen3.5-4B-Instruct teacher
-- **License:** MIT (code), CC-BY-4.0 (model weights)
+- **License:** BSD-3-Clause (code and weights)
 
 ## Training data
 

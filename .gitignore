@@ -17,6 +17,7 @@ data/augmented/
 
 # Model artifacts (Git-LFS tracked if committed at all)
 models/*.onnx
+models/**/*.zip
 models/*.safetensors
 models/*.ckpt
 *.tmp

@@ -98,6 +98,11 @@ export tests are gated behind `@pytest.mark.gpu` and require the
 
 ## Distribution
 
+Models ship as **IMF v1** zips (Interscript Model Format — spec in
+[`docs/imf-v1.md`](./docs/imf-v1.md)): byte-level tokenizer only, ONNX
+opset 14, sha256-verified graphs, metrics traceable to `RESULTS.md`
+anchors. Build/validate with `PYTHONPATH=src python -m imf pack|validate`.
+
 Models reach end users through three channels (full plan in
 [`TODO.distribution/`](./TODO.distribution/)):
 
@@ -117,5 +122,4 @@ completes.
 
 ## License
 
-MIT. Model weights are released under their own licenses (see
-`docs/model_card.md` per task).
+BSD-3-Clause, for code and model weights alike (see `LICENSE`).
