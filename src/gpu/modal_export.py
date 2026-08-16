@@ -81,7 +81,7 @@ MODELS: dict[str, dict[str, str]] = {
         "metadata": "models/heb-diac/heb-diac-1.0.metadata.yaml",
         "readme": "models/heb-diac/heb-diac-1.0.README.md",
         "test_volume": "/datasets/rababa",
-        "test_data": "nakdimon/test.txt",
+        "test_data": "nakdimon/test-imf.jsonl",
         "probe": "שלום",
     },
     "urd-diac": {
