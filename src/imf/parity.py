@@ -156,7 +156,9 @@ def write_parity(zip_path: Path | str, report: ParityReport) -> Path:
 
     from imf.pack import _to_dict
 
-    with tempfile.TemporaryDirectory() as tmp:
+    # Same filesystem as the target: os.replace is atomic within one
+    # filesystem and fails with EXDEV across a volume mount.
+    with tempfile.TemporaryDirectory(dir=zip_path.parent) as tmp:
         rewritten = Path(tmp) / "rewritten.zip"
         with zipfile.ZipFile(zip_path) as src, zipfile.ZipFile(
             rewritten, "w", zipfile.ZIP_DEFLATED
