@@ -1,0 +1,32 @@
+# interscript-ml model index — the stable URL every runtime resolves
+# model ids against (Ruby / TypeScript / Python implement the same
+# algorithm; this file is the contract).
+#
+# Resolution algorithm (identical in all runtimes):
+#   1. resolve `id` in models.models
+#   2. prefer an installed cache copy at <cache_dir>/<id>/<filename>
+#      whose whole-file sha256 matches `sha256`
+#   3. else download `url` to a temp file in the same directory,
+#      verify sha256, atomically rename into place
+#   4. load the zip (IMF v1: member sha256 verification on load)
+#
+# Overrides: INTERSCRIPT_ML_INDEX (URL or path to an index like this one),
+# INTERSCRIPT_ML_CACHE (cache directory; default ~/.cache/interscript).
+#
+# Adding a model: it must have passed the WO03 gate (strict validation,
+# parity written into the zip) before an entry ships here.
+version: 1
+models:
+  khm-latn-1.0:
+    task: translit
+    scripts: [Khmr, Latn]
+    precision: fp32
+    filename: khm-latn-1.0-fp32.zip
+    url: https://github.com/interscript/ml-models/releases/download/khm-latn-1.0/khm-latn-1.0-fp32.zip
+    sha256: 55993d473a2ed9489058779cad7e115db05e4020085b71616468cfae4f2f65cb
+    size: 1418009977
+    metrics:
+      - {name: cer, value: 27.42, source: secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14}
+      - {name: em, value: 59.66, source: secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14}
+    parity: {samples: 895, cer_delta: 0.0}
+    license: BSD-3-Clause
