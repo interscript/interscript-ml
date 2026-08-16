@@ -133,7 +133,12 @@ def _cmd_golden(args: argparse.Namespace) -> int:
         if not line.strip():
             continue
         row = json.loads(line)
-        inputs.append(row["input"] if isinstance(row, dict) else row[0])
+        if isinstance(row, dict):
+            inputs.append(row.get("input", row.get("src", row.get("text", ""))))
+        elif isinstance(row, str):
+            inputs.append(row)
+        else:
+            inputs.append(row[0])
     out = write_golden(args.zip, inputs, args.out, max_len=args.max_len)
     print(f"wrote {len(inputs)} golden cases to {out}")
     return 0

@@ -28,6 +28,20 @@ from imf.schema import ModelMetadata
 OPSET = 14
 GRAPH_NAMES = ("encoder.onnx", "decoder.onnx", "decoder-kv.onnx")
 
+# Canonical ByT5 byte table (google/byt5): pad=0, eos=1, unk=2, and
+# every UTF-8 byte b is token id b + 3, up to 258. The vocab is 384-wide;
+# ids > 258 are unused in practice. "tokenizer: bytes" in IMF metadata
+# means THIS fixed table — no vocab files, but ids are NOT raw byte values
+# (feeding text.bytes directly silently produces garbage).
+BYTE_OFFSET = 3
+PAD_ID = 0
+EOS_ID = 1
+
+
+def encode_bytes(text: str) -> list[int]:
+    """Canonical byte-level tokenization: byte ids + trailing EOS."""
+    return [b + BYTE_OFFSET for b in text.encode("utf-8")] + [EOS_ID]
+
 
 def load_byte_seq2seq(checkpoint_dir: Path | str):
     """Load a T5-family checkpoint in eager attention (export-safe)."""
@@ -89,7 +103,7 @@ def _decoder_kv(model):
     import torch.nn as nn
     from transformers.cache_utils import DynamicCache, EncoderDecoderCache
 
-    num_layers = model.config.num_layers
+    num_layers = model.config.num_decoder_layers or model.config.num_layers
 
     class DecoderKV(nn.Module):
         def __init__(self, model):
@@ -199,7 +213,7 @@ def export_graphs(model, out_dir: Path | str) -> dict[str, Path]:
     )
     paths["decoder.onnx"] = out_dir / "decoder.onnx"
 
-    num_layers = model.config.num_layers
+    num_layers = model.config.num_decoder_layers or model.config.num_layers
     pasts = _sample_pasts(model, hidden)
     kv_inputs = ["input_ids", "encoder_hidden_states"] + _kv_io_names(num_layers)[0]
     kv_outputs = _kv_io_names(num_layers)[1]
@@ -277,18 +291,18 @@ def onnx_greedy_plain(encoder_sess, decoder_sess, text: str, max_len: int = 256)
     byte-level model reliably stays < 256)."""
     import numpy as np
 
-    ids = np.array([list(text.encode("utf-8"))], dtype=np.int64)
-    if ids.shape[1] == 0:
+    ids = np.array([encode_bytes(text)], dtype=np.int64)
+    if ids.shape[1] == 1:
         return []
     hidden = encoder_sess.run(None, {"input_ids": ids})[0]
-    dec_ids = np.array([[0]], dtype=np.int64)
+    dec_ids = np.array([[PAD_ID]], dtype=np.int64)
     generated: list[int] = []
     for _ in range(max_len):
         logits = decoder_sess.run(
             None, {"input_ids": dec_ids, "encoder_hidden_states": hidden}
         )[0]
         nxt = int(np.argmax(logits[0, -1]))
-        if nxt == 1:
+        if nxt == EOS_ID:
             break
         generated.append(nxt)
         dec_ids = np.concatenate([dec_ids, np.array([[nxt]], dtype=np.int64)], axis=1)
@@ -314,8 +328,8 @@ def onnx_greedy_kv(encoder_sess, kv_sess, text: str, max_len: int = 256) -> list
     """Greedy decode over ONNX sessions (KV decoder). Self-check helper."""
     import numpy as np
 
-    ids = np.array([list(text.encode("utf-8"))], dtype=np.int64)
-    if ids.shape[1] == 0:
+    ids = np.array([encode_bytes(text)], dtype=np.int64)
+    if ids.shape[1] == 1:
         return []
     hidden = encoder_sess.run(None, {"input_ids": ids})[0]
     out_names = [o.name for o in kv_sess.get_outputs()]
@@ -326,7 +340,7 @@ def onnx_greedy_kv(encoder_sess, kv_sess, text: str, max_len: int = 256) -> list
         out = kv_sess.run(None, {"input_ids": cur, "encoder_hidden_states": hidden, **pasts})
         results = dict(zip(out_names, out, strict=True))
         nxt = int(np.argmax(results["logits"][0, -1]))
-        if nxt == 1:
+        if nxt == EOS_ID:
             break
         generated.append(nxt)
         pasts = {
