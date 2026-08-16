@@ -81,6 +81,64 @@ def _default_readme(metadata: ModelMetadata) -> str:
     )
 
 
+def _load_pairs(path: Path) -> list[tuple[str, str]]:
+    import json
+
+    pairs: list[tuple[str, str]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if isinstance(row, dict):
+            pairs.append(
+                (
+                    row.get("input", row.get("src", "")),
+                    row.get("target", row.get("tgt", row.get("gold", ""))),
+                )
+            )
+        else:
+            pairs.append((row[0], row[1] if len(row) > 1 else ""))
+    return pairs
+
+
+def _cmd_parity(args: argparse.Namespace) -> int:
+    from imf.export import load_byte_seq2seq
+    from imf.parity import run_parity, write_parity
+
+    model = load_byte_seq2seq(args.checkpoint)
+    pairs = _load_pairs(args.test_data)
+    if args.limit:
+        pairs = pairs[: args.limit]
+    report = run_parity(model, args.zip, pairs, max_len=args.max_len)
+    print(
+        f"samples={report.samples} cer_ref={report.cer_reference}pp "
+        f"cer_onnx={report.cer_onnx}pp delta={report.cer_delta}pp "
+        f"token_mismatches={report.token_mismatches}"
+    )
+    if not report.passed:
+        print("error: parity gate FAILED", file=sys.stderr)
+        return 1
+    write_parity(args.zip, report)
+    print(f"parity written into {args.zip} (strict validation passed)")
+    return 0
+
+
+def _cmd_golden(args: argparse.Namespace) -> int:
+    import json
+
+    from imf.parity import write_golden
+
+    inputs: list[str] = []
+    for line in args.inputs.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        inputs.append(row["input"] if isinstance(row, dict) else row[0])
+    out = write_golden(args.zip, inputs, args.out, max_len=args.max_len)
+    print(f"wrote {len(inputs)} golden cases to {out}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="imf", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -108,6 +166,32 @@ def build_parser() -> argparse.ArgumentParser:
     p_pack.add_argument("--readme", type=Path, help="README.md content for the zip")
     p_pack.add_argument("--out", required=True, type=Path)
     p_pack.set_defaults(func=_cmd_pack)
+
+    p_parity = sub.add_parser(
+        "parity", help="WO03 gate: ONNX vs torch reference, write parity into the zip"
+    )
+    p_parity.add_argument("zip", type=Path)
+    p_parity.add_argument(
+        "--checkpoint", required=True, type=Path, help="HF checkpoint dir (reference)"
+    )
+    p_parity.add_argument(
+        "--test-data", required=True, type=Path,
+        help="JSONL: {input, target} pairs (or [src, gold] arrays)",
+    )
+    p_parity.add_argument("--limit", type=int, help="cap sample count")
+    p_parity.add_argument("--max-len", type=int, default=256)
+    p_parity.set_defaults(func=_cmd_parity)
+
+    p_golden = sub.add_parser(
+        "golden", help="emit the cross-runtime golden JSONL from ONNX decode"
+    )
+    p_golden.add_argument("zip", type=Path)
+    p_golden.add_argument(
+        "--inputs", required=True, type=Path, help="JSONL of input strings"
+    )
+    p_golden.add_argument("--out", required=True, type=Path)
+    p_golden.add_argument("--max-len", type=int, default=256)
+    p_golden.set_defaults(func=_cmd_golden)
 
     return parser
 

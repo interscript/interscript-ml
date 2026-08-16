@@ -111,7 +111,25 @@ PYTHONPATH=src python -m imf validate <zip> --strict     # release gate
 PYTHONPATH=src python -m imf info <zip>                  # print manifest
 PYTHONPATH=src python -m imf pack --source <dir-or-legacy-zip> \
     --metadata <yaml> [--readme <file>] --out <zip>       # sha256 computed
+PYTHONPATH=src python -m imf parity <zip> --checkpoint <hf-dir> \
+    --test-data <jsonl>            # WO03 gate; writes parity into the zip
+PYTHONPATH=src python -m imf golden <zip> --inputs <jsonl> --out <jsonl> \
+    # cross-runtime golden set: 100 fixed strings, Python = reference
 ```
+
+The parity gate compares ONNX KV greedy decode against the transformers
+decoder loop (the exact math the export wraps — not `generate`, whose
+config-dependent behavior no runtime implements) over >= 500 test pairs;
+it writes `{samples, cer_delta}` into metadata and refuses to leave the
+zip non-strict. On Modal the same gate runs headless:
+
+```
+modal run --detach src/gpu/modal_export.py::main --model urd-g2p
+modal run --detach src/gpu/modal_export.py::parity --model urd-g2p
+```
+
+CI runs the full gate on the fixture model (export -> parity ->
+strict-validate) in the `export-fixture` job.
 
 Legacy notes:
 
