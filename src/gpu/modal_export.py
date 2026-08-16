@@ -34,7 +34,12 @@ IMAGE = (
         "onnxruntime==1.23.2",
         "pyyaml>=6.0",
     )
-    .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
+    .add_local_dir(
+        str(REPO_ROOT),
+        "/root/ml-models",
+        copy=True,
+        ignore_patterns=[".git/*", "__pycache__/*", "models/*", ".pytest_cache/*"],
+    )
     .workdir("/root/ml-models")
 )
 
