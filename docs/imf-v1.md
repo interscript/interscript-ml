@@ -47,7 +47,7 @@ model.zip
 | `tokenizer` | enum | `bytes` (the only v1 value) |
 | `opset` | int | 7..14; must equal the graphs' opset |
 | `decoder` | enum | `plain` \| `kv` (`kv` requires decoder-kv.onnx) |
-| `precision` | enum | `fp32` \| `fp16` \| `int8` |
+| `precision` | enum | `fp32` \| `fp16` \| `int8` (fp16 = torch-native half export: float16 graph IO, int64 ids unchanged; runtimes read dtypes from the session — the ORT float16 converter produces all-zero hiddens on real ByT5 and must not be used) |
 | `license` | str | non-empty (strict gate) |
 | `trained_from` | str | repo + run/checkpoint id |
 | `metrics` | list | `{name, value, protocol, source}`; `source` must be a `RESULTS.md#anchor` (strict gate) |

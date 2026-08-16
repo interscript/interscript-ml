@@ -242,27 +242,18 @@ def export_graphs(model, out_dir: Path | str) -> dict[str, Path]:
     return paths
 
 
-def convert_fp16(src: Path | str, dst: Path | str) -> Path:
-    """fp32 -> mixed fp16, IO types preserved (encoder/decoder compose cleanly).
+def convert_fp16(model):
+    """A fp16 copy of the model for torch-native half export.
 
-    LayerNorm/softmax math stays fp32: ORT's session-time
-    SimplifiedLayerNormFusion crashes on half-converted LN subgraphs
-    (InsertPrecisionFreeCast name mismatch), so the whole decomposition
-    must stay one dtype. Weights (MatMuls) carry the size win.
+    The onnxruntime float16 CONVERTER is not usable here: on real ByT5
+    checkpoints it produces all-zero encoder hiddens (found 2026-08-16,
+    khm-latn — 1939pp CER); exporting the torch model under .half() is
+    exact on gold pairs. Graph IO becomes float16 (input_ids stay int64);
+    runtimes read dtypes from the session, and _zero_pasts follows them.
     """
-    import onnx
-    from onnxruntime.transformers import float16
+    import copy
 
-    block_list = list(float16.DEFAULT_OP_BLOCK_LIST) + [
-        "ReduceMean", "Pow", "Sqrt", "Div", "Sub", "Add", "Mul",
-        "Softmax", "Range", "Exp", "Where", "Less", "Cast",
-    ]
-    model = onnx.load(str(src))
-    converted = float16.convert_float_to_float16(
-        model, keep_io_types=True, op_block_list=block_list
-    )
-    onnx.save(converted, str(dst))
-    return Path(dst)
+    return copy.deepcopy(model).half()
 
 
 def quantize_int8(src: Path | str, dst: Path | str) -> Path:
@@ -320,7 +311,8 @@ def _zero_pasts(kv_sess) -> dict[str, object]:
         shape = meta.shape  # [batch, heads, past_seq, d_kv] with str dynamic dims
         heads = shape[1] if isinstance(shape[1], int) else 4
         d_kv = shape[3] if isinstance(shape[3], int) else 8
-        pasts[meta.name] = np.zeros((1, heads, 0, d_kv), dtype=np.float32)
+        dtype = np.float16 if meta.type == "tensor(float16)" else np.float32
+        pasts[meta.name] = np.zeros((1, heads, 0, d_kv), dtype=dtype)
     return pasts
 
 
@@ -372,18 +364,22 @@ def export_zips(
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         graphs = export_graphs(model, tmp / "graphs")
+        graphs_16 = (
+            export_graphs(convert_fp16(model), tmp / "graphs-fp16")
+            if "fp16" in precisions
+            else {}
+        )
 
         for precision in precisions:
             variant_dir = tmp / precision
             variant_dir.mkdir()
-            for name, src in graphs.items():
+            sources = graphs if precision != "fp16" else graphs_16
+            for name, src in sources.items():
                 dst = variant_dir / name
-                if precision == "fp32":
+                if precision == "fp32" or precision == "fp16":
                     dst.write_bytes(src.read_bytes())
-                elif precision == "fp16":
-                    convert_fp16(src, dst)
                 elif precision == "int8":
-                    quantize_int8(src, dst)
+                    quantize_int8(graphs[name], dst)
                 else:
                     raise ValueError(f"unknown precision {precision!r}")
             meta = replace(metadata, precision=precision)
