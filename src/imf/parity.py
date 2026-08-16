@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from framework.evaluator import char_error_rate
-from imf.export import onnx_greedy_kv
+from imf.export import BYTE_OFFSET, EOS_ID, PAD_ID, encode_bytes, onnx_greedy_kv
 from imf.schema import ModelMetadata, Parity
 
 
@@ -42,11 +42,11 @@ class ParityReport:
 def _torch_greedy_tokens(model, text: str, max_len: int) -> list[int]:
     import torch
 
-    ids = torch.tensor([list(text.encode("utf-8"))], dtype=torch.long)
-    if ids.shape[1] == 0:
+    ids = torch.tensor([encode_bytes(text)], dtype=torch.long)
+    if ids.shape[1] == 1:
         return []
     enc = model.get_encoder()(input_ids=ids)[0]
-    dec_ids = torch.tensor([[0]], dtype=torch.long)
+    dec_ids = torch.tensor([[PAD_ID]], dtype=torch.long)
     outs: list[int] = []
     for _ in range(max_len):
         hidden = model.get_decoder()(
@@ -54,7 +54,7 @@ def _torch_greedy_tokens(model, text: str, max_len: int) -> list[int]:
         )[0]
         logits = model.lm_head(hidden * (model.config.d_model ** -0.5))
         nxt = int(logits[0, -1].argmax())
-        if nxt == 1:
+        if nxt == EOS_ID:
             break
         outs.append(nxt)
         dec_ids = torch.cat([dec_ids, torch.tensor([[nxt]], dtype=torch.long)], 1)
@@ -62,7 +62,9 @@ def _torch_greedy_tokens(model, text: str, max_len: int) -> list[int]:
 
 
 def _decode_tokens(tokens: list[int]) -> str:
-    return bytes(t % 256 for t in tokens).decode("utf-8", errors="replace")
+    return bytes((t - BYTE_OFFSET) % 256 for t in tokens).decode(
+        "utf-8", errors="replace"
+    )
 
 
 def _sessions_from_zip(zip_path: Path):

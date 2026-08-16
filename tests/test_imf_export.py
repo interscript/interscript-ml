@@ -26,6 +26,7 @@ from imf.export import (  # noqa: E402
     onnx_greedy_kv,
     onnx_greedy_plain,
 )
+from imf.parity import _torch_greedy_tokens as torch_greedy  # noqa: E402
 from imf.validator import validate_zip  # noqa: E402
 
 TEXTS = ["he", "hello", "abc"]
@@ -53,24 +54,6 @@ METADATA = {
         }
     ],
 }
-
-
-def _torch_greedy(model, text: str) -> list[int]:
-    ids = torch.tensor([list(text.encode("utf-8"))])
-    enc = model.get_encoder()(input_ids=ids)[0]
-    dec_ids = torch.tensor([[0]])
-    outs: list[int] = []
-    for _ in range(MAX_LEN):
-        logits = model.lm_head(
-            model.get_decoder()(input_ids=dec_ids, encoder_hidden_states=enc)[0]
-            * (model.config.d_model ** -0.5)
-        )
-        nxt = int(logits[0, -1].argmax())
-        if nxt == 1:
-            break
-        outs.append(nxt)
-        dec_ids = torch.cat([dec_ids, torch.tensor([[nxt]])], 1)
-    return outs
 
 
 @pytest.fixture(scope="module")
@@ -115,7 +98,7 @@ def test_fixture_exports_match_torch(reference_model) -> None:
         dec = ort.InferenceSession(str(graphs["decoder.onnx"]), providers=PROVIDERS)
         kv = ort.InferenceSession(str(graphs["decoder-kv.onnx"]), providers=PROVIDERS)
         for text in TEXTS:
-            expected = _torch_greedy(reference_model, text)
+            expected = torch_greedy(reference_model, text, MAX_LEN)
             assert onnx_greedy_plain(enc, dec, text, MAX_LEN) == expected
             assert onnx_greedy_kv(enc, kv, text, MAX_LEN) == expected
 
