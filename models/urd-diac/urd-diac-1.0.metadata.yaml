@@ -1,0 +1,20 @@
+format: imf-v1
+id: urd-diac-1.0
+task: diacritization
+source_script: Arab
+target: Arab
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  rababa-urdu modal_app_diacrit.py run-001; checkpoint
+  urdu-diacrit-checkpoints:/urdu_diacrit/run-001/best
+metrics:
+  - name: cer
+    value: 3.74
+    protocol: >-
+      greedy decode; 11,940 held-out; labels derived IPA->haraqat
+      (deterministic conversion, 597K pairs); ByT5-small, 2 epochs
+    source: rababa-urdu/docs/RESULTS.md#diacritization-urdu-text--text--haraqat

@@ -1,0 +1,26 @@
+format: imf-v1
+id: urd-g2p-1.0
+task: g2p
+source_script: Arab
+target: IPA
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  rababa-urdu modal_app.py run-001; checkpoint
+  urdu-g2p-checkpoints:/urdu_g2p/run-001/best
+metrics:
+  - name: cer
+    value: 14.77
+    protocol: >-
+      greedy decode; 12,699 held-out words from the 635K humair025
+      urdu-g2p dictionary; ByT5-small
+    source: rababa-urdu/docs/RESULTS.md#g2p-urdu-text--ipa
+  - name: em
+    value: 33.6
+    protocol: >-
+      greedy decode; 12,699 held-out words from the 635K humair025
+      urdu-g2p dictionary; ByT5-small
+    source: rababa-urdu/docs/RESULTS.md#g2p-urdu-text--ipa

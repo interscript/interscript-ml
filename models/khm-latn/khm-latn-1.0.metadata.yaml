@@ -1,0 +1,26 @@
+format: imf-v1
+id: khm-latn-1.0
+task: translit
+source_script: Khmr
+target: Latn
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  secryst train_khmer_byt5.py run-001; checkpoint
+  secryst-checkpoints:/khmer_byt5/run-001/best
+metrics:
+  - name: cer
+    value: 27.42
+    protocol: >-
+      greedy decode; 895 held-out pairs; split 16,120/895/895 seed 42;
+      ByT5-small early stop @ep15
+    source: secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14
+  - name: em
+    value: 59.66
+    protocol: >-
+      greedy decode; 895 held-out pairs; split 16,120/895/895 seed 42;
+      ByT5-small early stop @ep15
+    source: secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14
