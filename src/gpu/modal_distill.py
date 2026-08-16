@@ -216,7 +216,93 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
     return {"spec": spec_id, "steps": step, "val_loss": vl}
 
 
+NIKUD = None
+
+
+def _nikud_only(text: str) -> list[str]:
+    import re
+
+    return re.findall(r"[\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7]", text)
+
+
+def _edit_distance(a, b) -> int:
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ai in enumerate(a, 1):
+        curr = [i]
+        for j, bj in enumerate(b, 1):
+            curr.append(min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + (ai != bj)))
+        prev = curr
+    return prev[-1]
+
+
+@app.function(
+    gpu="A10G",
+    cpu=8,
+    memory=32 * 1024,
+    timeout=2 * 3600,
+    volumes={"/datasets": DATASETS, "/checkpoints": CHECKPOINTS},
+)
+def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
+    """Greedy DER/CER of teacher and student on the same test pairs, one
+    harness — the before/after for RESULTS.md."""
+    import json
+    from pathlib import Path
+
+    import torch
+
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    spec = SPECS[spec_id]
+    tokenizer = AutoTokenizer.from_pretrained("google/byt5-small")
+    device = "cuda"
+    teacher = AutoModelForSeq2SeqLM.from_pretrained(
+        Path("/checkpoints") / spec["teacher"], attn_implementation="eager"
+    ).to(device, dtype=torch.float16).eval()
+    student = AutoModelForSeq2SeqLM.from_pretrained(
+        Path("/checkpoints") / spec["out"] / "best"
+    ).to(device, dtype=torch.float16).eval()
+
+    pairs = []
+    for line in (Path("/datasets") / "nakdimon" / "test-imf.jsonl").read_text(
+        encoding="utf-8"
+    ).splitlines():
+        if line.strip():
+            row = json.loads(line)
+            pairs.append((row["src"], row["tgt"]))
+    if limit:
+        pairs = pairs[:limit]
+
+    def greedy(model, text: str, max_len: int = 256) -> str:
+        ids = tokenizer(text, return_tensors="pt").to(device)
+        with torch.no_grad():
+            out = model.generate(**ids, max_new_tokens=max_len, num_beams=1)
+        return tokenizer.batch_decode(out, skip_special_tokens=True)[0].strip()
+
+    def metrics(model) -> dict:
+        der_sum = cer_sum = n = 0.0
+        for src, tgt in pairs:
+            pred = greedy(model, src)
+            gold_n, pred_n = _nikud_only(tgt), _nikud_only(pred)
+            der_sum += _edit_distance(pred_n, gold_n) / max(1, len(gold_n))
+            cer_sum += _edit_distance(list(pred), list(tgt)) / max(1, len(tgt))
+            n += 1
+        return {"der": round(100 * der_sum / n, 2), "cer": round(100 * cer_sum / n, 2), "n": int(n)}
+
+    return {"teacher": metrics(teacher), "student": metrics(student)}
+
+
 @app.local_entrypoint()
 def main(spec: str = "heb-diac-small", epochs: int = 3) -> None:
     result = distill.remote(spec, epochs=epochs)
     print(result)
+
+
+@app.local_entrypoint()
+def eval_main(spec: str = "heb-diac-small", limit: int = 0) -> None:
+    print(evaluate.remote(spec, limit))
