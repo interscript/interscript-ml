@@ -86,9 +86,21 @@ def _sessions_from_zip(zip_path: Path):
         return enc, dec
 
 
-def run_parity(model, zip_path: Path | str, pairs, max_len: int = 256) -> ParityReport:
+def reference_decode(model, sources, max_len: int = 256) -> list[list[int]]:
+    """Torch-reference greedy decode of many inputs, computed once and
+    shared across precision variants by run_parity."""
+    return [_torch_greedy_tokens(model, source, max_len) for source in sources]
+
+
+def run_parity(
+    model, zip_path: Path | str, pairs, max_len: int = 256, reference=None
+) -> ParityReport:
     """pairs: iterable of (source_text, gold_target). Measures both sides
-    against gold; the gate is the CER distance between the two."""
+    against gold; the gate is the CER distance between the two.
+
+    ``reference`` (from ``reference_decode``) skips the torch side — the
+    reference is precision-independent, so multi-zip gates decode it once.
+    """
     zip_path = Path(zip_path)
     enc, kv = _sessions_from_zip(zip_path)
 
@@ -96,9 +108,11 @@ def run_parity(model, zip_path: Path | str, pairs, max_len: int = 256) -> Parity
     mismatches = 0
     cer_ref_sum = 0.0
     cer_onnx_sum = 0.0
-    for source, gold in pairs:
+    for i, (source, gold) in enumerate(pairs):
         n += 1
-        ref = _torch_greedy_tokens(model, source, max_len)
+        ref = reference[i] if reference is not None else _torch_greedy_tokens(
+            model, source, max_len
+        )
         got = onnx_greedy_kv(enc, kv, source, max_len)
         if ref != got:
             mismatches += 1

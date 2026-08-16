@@ -189,18 +189,20 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     test_path = Path(spec["test_volume"]) / spec["test_data"]
 
     from imf.export import load_byte_seq2seq
-    from imf.parity import run_parity, write_parity
+    from imf.parity import reference_decode, run_parity, write_parity
 
     model = load_byte_seq2seq(checkpoint)
     pairs = _load_pairs(test_path)
     if limit:
         pairs = pairs[:limit]
 
+    reference = reference_decode(model, [src for src, _ in pairs], max_len=128)
+
     out_dir = Path("/outputs/imf") / model_id
     reports: dict[str, str] = {}
     for precision in precisions:
         zip_path = out_dir / f"{model_id}-1.0-{precision}.zip"
-        report = run_parity(model, zip_path, pairs, max_len=128)
+        report = run_parity(model, zip_path, pairs, max_len=128, reference=reference)
         reports[precision] = (
             f"samples={report.samples} cer_ref={report.cer_reference}pp "
             f"cer_onnx={report.cer_onnx}pp delta={report.cer_delta}pp "
