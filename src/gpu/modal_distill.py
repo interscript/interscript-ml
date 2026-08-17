@@ -61,7 +61,6 @@ app = modal.App("interscript-ml-distill", image=IMAGE)
 def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: float = 2.0) -> dict:
     import json
     import math
-    import os
 
     import torch
     import torch.nn.functional as F
@@ -250,7 +249,6 @@ def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
     from pathlib import Path
 
     import torch
-
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
     spec = SPECS[spec_id]
