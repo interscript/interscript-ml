@@ -145,7 +145,7 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
         student.eval()
         total, n = 0.0, 0
         with torch.no_grad():
-            for i, (ids, am, labels) in enumerate(
+            for _, (ids, am, labels) in enumerate(
                 DataLoader(
                     Pairs(Path("/datasets") / spec["val"]),
                     batch_size=8,
