@@ -43,3 +43,15 @@ models:
       - {name: em, value: 33.6, source: rababa-urdu/docs/RESULTS.md#g2p-urdu-text--ipa}
     parity: {samples: 12699, cer_delta: 0.0}
     license: BSD-3-Clause
+  urd-diac-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp32
+    filename: urd-diac-1.0-fp32.zip
+    url: https://github.com/interscript/ml-models/releases/download/urd-diac-1.0/urd-diac-1.0-fp32.zip
+    sha256: c299ea44a4da4851a52283f8e42d2fb6f8c7a9c443ba7eb0270f97372e10b8ea
+    size: 1417851421
+    metrics:
+      - {name: cer, value: 3.74, source: rababa-urdu/docs/RESULTS.md#diacritization-urdu-text--text--haraqat}
+    parity: {samples: 11940, cer_delta: 0.0}
+    license: BSD-3-Clause
