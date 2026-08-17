@@ -68,3 +68,15 @@ jobs:
           pip install -e "./runtime[dev]"
       - name: interscript-ml runtime tests (tiny-graph zips, golden e2e)
         run: python -m pytest runtime/tests -v
+
+  metrics-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: WO10 — metadata metrics must match RESULTS.md sources
+        run: PYTHONPATH=src python -m imf metrics

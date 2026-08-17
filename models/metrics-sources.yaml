@@ -1,0 +1,42 @@
+# WO10: where each model's metadata metrics come from. Every metrics
+# block is GENERATED from these RESULTS.md tables and CI fails on drift.
+# Refs are pinned; bump them deliberately when RESULTS.md is re-published.
+khm-latn-1.0:
+  repo: secryst/secryst
+  ref: 23261bbf0d03e562d4d0fad107250349c4777368
+  path: docs/RESULTS.md
+  anchor: khmer-transliteration-2026-08-14
+  protocol: "greedy decode; 895 held-out pairs; split 16,120/895/895 seed 42; ByT5-small early stop @ep15"
+  tables:
+    - {row: "ByT5-small, early stop @ep15", column: CER, as: cer}
+    - {row: "ByT5-small, early stop @ep15", column: EM, as: em}
+urd-g2p-1.0:
+  repo: interscript/rababa-urdu
+  ref: 5225b17df356afb4ad23b4721a3b5af03e9f71ab
+  path: docs/RESULTS.md
+  anchor: g2p-urdu-text-ipa
+  display_anchor: g2p-urdu-text--ipa
+  protocol: "greedy decode; 12,699 held-out words from the 635K humair025 urdu-g2p dictionary; ByT5-small"
+  tables:
+    - {row: "CER (char-level)", as: cer}
+    - {row: "Exact match", as: em}
+urd-diac-1.0:
+  repo: interscript/rababa-urdu
+  ref: 5225b17df356afb4ad23b4721a3b5af03e9f71ab
+  path: docs/RESULTS.md
+  anchor: diacritization-urdu-text-text-haraqat
+  display_anchor: diacritization-urdu-text--text--haraqat
+  protocol: "greedy decode; 11,940 held-out; labels derived IPA->haraqat (deterministic conversion, 597K pairs); ByT5-small, 2 epochs"
+  tables:
+    - {row: "CER", as: cer}
+heb-diac-1.0:
+  repo: interscript/rababa
+  ref: 82d508bd496572ddbc94a8fd7bd1aacdf7875a03
+  path: docs/RESULTS.md
+  anchor: hebrew-diacritization
+  protocol: "beam=1 greedy decode (the v1 runtime path); Nakdimon test split, 5,095 examples; ByT5-base s43"
+  tables:
+    - {row: "beam=1 (s43/v4)", as: der_greedy}
+    - row: "s43 (production)"
+      as: der_beam4
+      protocol: "beam=4 standard decode (reference quality; beam search is not in v1 runtimes); Nakdimon test split, 5,095 examples; ByT5-base s43"
