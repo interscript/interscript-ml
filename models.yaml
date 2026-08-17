@@ -30,3 +30,16 @@ models:
       - {name: em, value: 59.66, source: secryst/docs/RESULTS.md#khmer-transliteration-2026-08-14}
     parity: {samples: 895, cer_delta: 0.0}
     license: BSD-3-Clause
+  urd-g2p-1.0:
+    task: g2p
+    scripts: [Arab, IPA]
+    precision: fp32
+    filename: urd-g2p-1.0-fp32.zip
+    url: https://github.com/interscript/ml-models/releases/download/urd-g2p-1.0/urd-g2p-1.0-fp32.zip
+    sha256: 9f0a248c7116aa7f6b9ac125fb9684a3556f3b8ce8b64567c05a5e7e7a018ebf
+    size: 1418039605
+    metrics:
+      - {name: cer, value: 14.77, source: rababa-urdu/docs/RESULTS.md#g2p-urdu-text--ipa}
+      - {name: em, value: 33.6, source: rababa-urdu/docs/RESULTS.md#g2p-urdu-text--ipa}
+    parity: {samples: 12699, cer_delta: 0.0}
+    license: BSD-3-Clause
