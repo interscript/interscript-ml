@@ -69,6 +69,32 @@ def _cmd_pack(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_metrics(args: argparse.Namespace) -> int:
+    import sys
+
+    import yaml
+
+    from imf.metrics import check_against_metadata
+
+    mapping = Path(args.mapping)
+    entries = yaml.safe_load(mapping.read_text(encoding="utf-8"))
+    entries = entries.get("models", entries)
+    problems: list[str] = []
+    for model_id, spec in entries.items():
+        metadata = Path(spec.get("metadata")) if spec.get("metadata") else (
+            Path("models") / model_id.rsplit("-", 1)[0] / f"{model_id}.metadata.yaml"
+        )
+        if not metadata.is_file():
+            problems.append(f"{model_id}: metadata source not found at {metadata}")
+            continue
+        problems += check_against_metadata(model_id, metadata, mapping)
+    for problem in problems:
+        print(f"error: {problem}", file=sys.stderr)
+    label = "all models trace to RESULTS.md" if not problems else "MISMATCH"
+    print(f"metrics provenance: {label} ({len(entries)} models)")
+    return 0 if not problems else 1
+
+
 def _default_readme(metadata: ModelMetadata) -> str:
     return (
         f"# {metadata.id}\n\n"
@@ -197,6 +223,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_golden.add_argument("--out", required=True, type=Path)
     p_golden.add_argument("--max-len", type=int, default=256)
     p_golden.set_defaults(func=_cmd_golden)
+
+    p_metrics = sub.add_parser(
+        "metrics", help="WO10: check every metadata metrics block against its RESULTS.md source"
+    )
+    p_metrics.add_argument("--mapping", type=Path, default=Path("models/metrics-sources.yaml"))
+    p_metrics.set_defaults(func=_cmd_metrics)
 
     return parser
 
