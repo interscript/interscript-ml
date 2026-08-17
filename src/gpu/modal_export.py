@@ -174,7 +174,9 @@ def export_model(model_id: str, precisions: list[str]) -> dict[str, str]:
 @app.function(
     cpu=8,
     memory=32 * 1024,
-    timeout=2 * 3600,
+    # heb-diac (ByT5-base, 1,864 long sentences) needs >2h; the batched
+    # reference cut the Urdu gates to ~1h but not this one.
+    timeout=5 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
 def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[str, str]:
