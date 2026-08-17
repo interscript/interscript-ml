@@ -86,10 +86,62 @@ def _sessions_from_zip(zip_path: Path):
         return enc, dec
 
 
-def reference_decode(model, sources, max_len: int = 256) -> list[list[int]]:
+def reference_decode(
+    model, sources, max_len: int = 256, batch_size: int = 32
+) -> list[list[int]]:
     """Torch-reference greedy decode of many inputs, computed once and
-    shared across precision variants by run_parity."""
-    return [_torch_greedy_tokens(model, source, max_len) for source in sources]
+    shared across precision variants by run_parity.
+
+    Batched: single-sequence semantics are preserved exactly — rows are
+    padded on the encoder side with attention masks (T5 position bias is
+    relative, so padded batch == unpadded singles), every row is fed one
+    token per decoder step (no decoder padding), and each row is sliced
+    at its first EOS. Verified token-identical against the sequential
+    path on real checkpoints.
+    """
+    import torch
+
+    results: list[list[int]] = []
+    for start in range(0, len(sources), batch_size):
+        batch = [encode_bytes(text) for text in sources[start : start + batch_size]]
+        width = max(len(ids) for ids in batch)
+        input_ids = torch.full((len(batch), width), PAD_ID, dtype=torch.long)
+        attention = torch.zeros(len(batch), width, dtype=torch.long)
+        for row, ids in enumerate(batch):
+            input_ids[row, : len(ids)] = torch.tensor(ids, dtype=torch.long)
+            attention[row, : len(ids)] = 1
+        with torch.no_grad():
+            enc = model.get_encoder()(
+                input_ids=input_ids, attention_mask=attention
+            )[0]
+            dec_ids = torch.full((len(batch), 1), PAD_ID, dtype=torch.long)
+            step_tokens: list[list[int]] = [[] for _ in batch]
+            finished_at: list[int | None] = [None] * len(batch)
+            for step in range(max_len):
+                hidden = model.get_decoder()(
+                    input_ids=dec_ids,
+                    encoder_hidden_states=enc,
+                    encoder_attention_mask=attention,
+                )[0]
+                logits = model.lm_head(hidden * (model.config.d_model ** -0.5))
+                tokens = logits[:, -1, :].argmax(dim=-1)
+                all_done = True
+                for row in range(len(batch)):
+                    token = int(tokens[row])
+                    if finished_at[row] is None:
+                        if token == EOS_ID:
+                            finished_at[row] = step
+                        else:
+                            step_tokens[row].append(token)
+                        if finished_at[row] is None:
+                            all_done = False
+                    if finished_at[row] is None:
+                        all_done = False
+                if all_done:
+                    break
+                dec_ids = torch.cat([dec_ids, tokens.unsqueeze(1)], dim=1)
+        results.extend(step_tokens)
+    return results
 
 
 def run_parity(

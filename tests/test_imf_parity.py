@@ -22,7 +22,14 @@ from imf.export import (  # noqa: E402
     load_byte_seq2seq,
     make_fixture_checkpoint,
 )
-from imf.parity import ParityReport, run_parity, write_golden, write_parity  # noqa: E402
+from imf.parity import (  # noqa: E402
+    ParityReport,
+    reference_decode,
+    run_parity,
+    write_golden,
+    write_parity,
+)
+from imf.parity import _torch_greedy_tokens  # noqa: E402
 from imf.validator import validate_zip  # noqa: E402
 
 METADATA = {
@@ -103,3 +110,16 @@ def test_golden_jsonl_roundtrip(gated_zip: Path, tmp_path: Path) -> None:
     for row in rows:
         assert set(row) == {"input", "tokens", "output"}
         assert all(isinstance(t, int) for t in row["tokens"])
+
+
+def test_batched_reference_matches_sequential(tmp_path: Path) -> None:
+    """The batched gate reference must be token-identical to the
+    sequential single-sequence decode (padding + masks preserve
+    semantics); a divergence here would make every gate vacuous."""
+    from imf.export import load_byte_seq2seq, make_fixture_checkpoint
+
+    model = load_byte_seq2seq(make_fixture_checkpoint(tmp_path / "fixture"))
+    texts = ["he", "hello", "abc", "world", "abcdefgh", "x"]
+    batched = reference_decode(model, texts, max_len=12, batch_size=3)
+    for text, tokens in zip(texts, batched, strict=True):
+        assert tokens == _torch_greedy_tokens(model, text, 12), text
