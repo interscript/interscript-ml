@@ -93,16 +93,15 @@ def entry_block(model_id: str, meta: dict, filename: str, sha256: str, size: int
     return "\n".join(lines) + "\n"
 
 
-def upsert_models_yaml(model_id: str, block: str) -> None:
-    path = REPO_ROOT / "models.yaml"
-    text = path.read_text(encoding="utf-8")
+def upsert_models_yaml(models_yaml: Path, model_id: str, block: str) -> None:
+    text = models_yaml.read_text(encoding="utf-8")
     pattern = re.compile(
         rf"^  {re.escape(model_id)}:\n(?:(?!^  \S).*\n)*", re.MULTILINE
     )
     if pattern.search(text):
-        path.write_text(pattern.sub(block, text), encoding="utf-8")
+        models_yaml.write_text(pattern.sub(block, text), encoding="utf-8")
     else:
-        with path.open("a", encoding="utf-8") as fh:
+        with models_yaml.open("a", encoding="utf-8") as fh:
             fh.write(block)
 
 
@@ -180,56 +179,74 @@ def main() -> None:
         capture_output=True, text=True,
     )
     if existing.returncode == 0:
-        print(f"release {tag} exists; re-uploading assets (clobber)")
-        run(["gh", "release", "upload", tag, *[str(a) for a in assets], "--clobber"])
+        listed = run(["gh", "release", "view", tag, "--json", "assets",
+                      "--jq", "[.assets[] | {name, size}]"],
+                     capture_output=True, text=True).stdout
+        have = {
+            asset["name"]: int(asset["size"])
+            for asset in yaml.safe_load(listed)
+        }
+        want = {a.name: a.stat().st_size for a in assets}
+        if have == want:
+            print(f"release {tag} already carries all assets; skipping upload")
+        else:
+            print(f"release {tag} exists; re-uploading assets (clobber)")
+            run(["gh", "release", "upload", tag, *[str(a) for a in assets], "--clobber"])
         run(["gh", "release", "edit", tag, "--notes-file", notes_path])
     else:
         run(["gh", "release", "create", tag, *[str(a) for a in assets],
              "--title", tag, "--notes-file", notes_path])
 
-    upsert_models_yaml(args.model_id,
-                       entry_block(args.model_id, meta, args.zip.name, whole_sha, size,
-                                   assets, args.repo, tag))
-
-    model_dir = REPO_ROOT / "models" / args.model_id
-    model_dir.mkdir(parents=True, exist_ok=True)
-    (model_dir / f"{args.model_id}.metadata.yaml").write_text(
-        yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
-
+    # Branch work happens in a dedicated worktree so the caller's tree is
+    # never checked out (dirty files must not block publication, and
+    # publication must not clobber in-progress edits).
     branch = f"release/{args.model_id}"
-    current = run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                  capture_output=True, text=True).stdout.strip()
-    if current != branch:
-        branches = run(["git", "branch", "--list", branch],
-                       capture_output=True, text=True).stdout
-        run(["git", "checkout", "-B", branch, "origin/main"] if not branches else
-            ["git", "checkout", branch])
-    run(["git", "add", "models.yaml",
-         str(model_dir / f"{args.model_id}.metadata.yaml")])
-    staged = run(["git", "diff", "--cached", "--name-only"],
-                 capture_output=True, text=True).stdout.split()
-    if not staged:
-        print("nothing new to commit (idempotent re-run)")
-        return
-    run(["git", "commit", "-m", f"release: {args.model_id} "
-         f"({meta['precision']}, parity cer_delta {meta['parity']['cer_delta']}pp "
-         f"on {meta['parity']['samples']} samples)"])
-    run(["git", "push", "-u", "origin", branch])
-    prs = run(["gh", "pr", "list", "--head", branch, "--json", "number"],
-              capture_output=True, text=True).stdout
-    if "number" not in prs or yaml.safe_load(prs) == []:
-        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
-            fh.write(f"## Summary\n- publish {args.model_id} ({meta['precision']}): "
-                     f"GH Release `{tag}` + models.yaml entry"
-                     f"{' (split parts, GitHub 2GiB cap)' if len(assets) > 1 else ''}\n"
-                     f"- parity cer_delta {meta['parity']['cer_delta']}pp on "
-                     f"{meta['parity']['samples']} samples; strict validator gate passed\n\n"
-                     f"## Test plan\n- [ ] CI green\n- [ ] runtime fetch "
-                     f"`Model.load(\"{args.model_id}\")` resolves and verifies\n")
-            body_path = fh.name
-        run(["gh", "pr", "create", "--title", f"release: {args.model_id}",
-             "--body-file", body_path])
-    print(f"published {args.model_id}: release {tag}, PR on {branch}")
+    worktree = REPO_ROOT.parent / f".wt-publish-{args.model_id}"
+    branches = run(["git", "branch", "--list", branch],
+                   capture_output=True, text=True).stdout
+    base = branch if branches else "origin/main"
+    run(["git", "worktree", "add", str(worktree), "-B", branch, base])
+
+    try:
+        wt_models = worktree / "models.yaml"
+        wt_repo = str(worktree)
+        upsert_models_yaml(wt_models, args.model_id,
+                           entry_block(args.model_id, meta, args.zip.name, whole_sha,
+                                       size, assets, args.repo, tag))
+        model_dir = worktree / "models" / args.model_id
+        model_dir.mkdir(parents=True, exist_ok=True)
+        (model_dir / f"{args.model_id}.metadata.yaml").write_text(
+            yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+        def git_wt(*cmd: str):
+            return run(["git", "-C", wt_repo, *cmd], capture_output=True, text=True)
+
+        git_wt("add", "models.yaml", f"models/{args.model_id}/{args.model_id}.metadata.yaml")
+        staged = git_wt("diff", "--cached", "--name-only").stdout.split()
+        if staged:
+            git_wt("commit", "-m", f"release: {args.model_id} "
+                   f"({meta['precision']}, parity cer_delta {meta['parity']['cer_delta']}pp "
+                   f"on {meta['parity']['samples']} samples)")
+            git_wt("push", "-u", "origin", branch)
+        else:
+            print("nothing new to commit (idempotent re-run)")
+        prs = run(["gh", "pr", "list", "--head", branch, "--json", "number"],
+                  capture_output=True, text=True).stdout
+        if not yaml.safe_load(prs):
+            with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
+                fh.write(f"## Summary\n- publish {args.model_id} ({meta['precision']}): "
+                         f"GH Release `{tag}` + models.yaml entry"
+                         f"{' (split parts, GitHub 2GiB cap)' if len(assets) > 1 else ''}\n"
+                         f"- parity cer_delta {meta['parity']['cer_delta']}pp on "
+                         f"{meta['parity']['samples']} samples; strict validator gate passed\n\n"
+                         f"## Test plan\n- [ ] CI green\n- [ ] runtime fetch "
+                         f"`Model.load(\"{args.model_id}\")` resolves and verifies\n")
+                body_path = fh.name
+            run(["gh", "pr", "create", "--title", f"release: {args.model_id}",
+                 "--body-file", body_path])
+    finally:
+        run(["git", "worktree", "remove", "--force", str(worktree)])
+    print(f"published {args.model_id}: release {tag}, branch {branch}")
 
 
 if __name__ == "__main__":

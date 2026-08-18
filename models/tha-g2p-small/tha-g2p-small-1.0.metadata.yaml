@@ -1,0 +1,30 @@
+format: imf-v1
+id: tha-g2p-small-1.0
+task: g2p
+source_script: Thai
+target: IPA
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  distilled from the recovered Thai umt5 teacher (transformers 5.14.1
+  re-finetune of B-K/umt5-thai-g2p-v2-0.5k on the 60K Kaikki+epitran
+  corpus; the secryst-saved umt5 artifacts are unusable — 5.15 dropped
+  the untied lm_head) via sequence-level KD; ByT5-small init
+  google/byt5-small; checkpoint
+  secryst-checkpoints:/secryst_thai_g2p_distill_small/run-002/best
+metrics:
+  - name: per_teacher
+    value: 2.32
+    protocol: >-
+      greedy decode; 1,219 Kaikki Thai test sentences; umt5 teacher,
+      sentencepiece tokenizer; secryst RESULTS.md protocol
+    source: secryst/docs/RESULTS.md#thai-g2p
+  - name: per_student
+    value: PLACEHOLDER_STUDENT_PER
+    protocol: >-
+      greedy decode; same 1,219 test sentences, same harness as the
+      teacher (interscript/ml-models src/gpu/modal_distill.py::evaluate_per)
+    source: interscript/ml-models release tha-g2p-small-1.0
