@@ -60,7 +60,13 @@ models:
     scripts: [Hebr, Hebr]
     precision: fp32
     filename: heb-diac-1.0-fp32.zip
-    url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip
+    parts:
+      - url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-00
+        sha256: 5497f70cc3c96829e65f1eb0cc401c2d1ffeb4fa909acd4def824c2e019cbc37
+        size: 1500000000
+      - url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-01
+        sha256: a7d2011ab4f9326a86e234cc49cb50daf82949e51efbf03a21d5796c46465e9d
+        size: 1281139753
     sha256: b32fa239e0c56708b6004942de4b9e6e9f265e7cc3828f41d560e96386e20dd8
     size: 2781139753
     metrics:

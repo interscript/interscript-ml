@@ -1,0 +1,29 @@
+format: imf-v1
+id: heb-diac-1.0
+task: diacritization
+source_script: Hebr
+target: Hebr
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: rababa train_hebrew_seeds.py s43 run-001; checkpoint rababa-checkpoints:/rababa_hebrew_byt5_s43/run-001/best
+metrics:
+- name: der_greedy
+  value: 29.0
+  protocol: beam=1 greedy decode (the v1 runtime path); Nakdimon test split, 5,095
+    examples; ByT5-base s43
+  source: rababa/docs/RESULTS.md#hebrew-diacritization
+- name: der_beam4
+  value: 17.46
+  protocol: beam=4 standard decode (reference quality; beam search is not in v1 runtimes);
+    Nakdimon test split, 5,095 examples; ByT5-base s43
+  source: rababa/docs/RESULTS.md#hebrew-diacritization
+parity:
+  samples: 600
+  cer_delta: 0.0
+sha256:
+  decoder-kv.onnx: 2ff73f0f2ef81fb82231d8c6cb28b1383d9e8813360ffd6048eef47d051d624a
+  decoder.onnx: fdee8fd7e44d683ca885c9c3b1088e44f2c7d594e19212e438f9bf2b240ee168
+  encoder.onnx: e41d2f50219de835a6c18883a685532736ab710e36bbe1e0eab2d1a80da4ced6
