@@ -210,10 +210,12 @@ def main() -> None:
     try:
         wt_models = worktree / "models.yaml"
         wt_repo = str(worktree)
+        # models/<family>/<id>.metadata.yaml, e.g. models/heb-diac/heb-diac-1.0...
+        family = args.model_id.rsplit("-", 1)[0]
         upsert_models_yaml(wt_models, args.model_id,
                            entry_block(args.model_id, meta, args.zip.name, whole_sha,
                                        size, assets, args.repo, tag))
-        model_dir = worktree / "models" / args.model_id
+        model_dir = worktree / "models" / family
         model_dir.mkdir(parents=True, exist_ok=True)
         (model_dir / f"{args.model_id}.metadata.yaml").write_text(
             yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
@@ -221,7 +223,7 @@ def main() -> None:
         def git_wt(*cmd: str):
             return run(["git", "-C", wt_repo, *cmd], capture_output=True, text=True)
 
-        git_wt("add", "models.yaml", f"models/{args.model_id}/{args.model_id}.metadata.yaml")
+        git_wt("add", "models.yaml", f"models/{family}/{args.model_id}.metadata.yaml")
         staged = git_wt("diff", "--cached", "--name-only").stdout.split()
         if staged:
             git_wt("commit", "-m", f"release: {args.model_id} "
