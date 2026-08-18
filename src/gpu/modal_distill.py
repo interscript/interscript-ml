@@ -43,13 +43,17 @@ PERSIAN_CHECKPOINTS = modal.Volume.from_name("persian-g2p-checkpoints")
 
 SPECS: dict[str, dict[str, str]] = {
     "tha-g2p-small": {
-        "teacher": "secryst_thai_ipa_thai_combined_mixed/run-001/best",
+        # secryst's saved umt5 artifacts are unusable (5.15 dropped the
+        # untied lm_head) — teacher is the 5.14.1 recovery finetune
+        # (src/gpu/modal_teacher_thai.py, same recipe + data)
+        "teacher": "secryst_thai_ipa_teacher_recovery/run-001/best",
         "teacher_volume": "secryst",
         "student_init": "google/byt5-small",
         "train": "thai-ipa-expanded/train.jsonl",
         "val": "thai-ipa-expanded/val.jsonl",
         "test": "thai-ipa-expanded/test.jsonl",
-        "out": "secryst_thai_g2p_distill_small/run-001",
+        "eval_test": "thai-ipa/test.jsonl",
+        "out": "secryst_thai_g2p_distill_small/run-002",
         "mode": "sequence",  # cross-tokenizer: teacher generates, student trains CE
         "note": "umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate",
     },
@@ -73,6 +77,14 @@ SPECS: dict[str, dict[str, str]] = {
 }
 
 app = modal.App("interscript-ml-distill", image=IMAGE)
+
+
+def decode_joined(tok, ids) -> str:
+    """Correct decode for umt5 teachers: 5.x batch_decode inserts spurious
+    spaces between sentencepiece pieces; pieces must join directly (the
+    targets are unspaced IPA strings)."""
+    skip = {tok.pad_token, tok.eos_token, tok.bos_token}
+    return "".join(p for p in tok.convert_ids_to_tokens(ids) if p not in skip)
 
 
 @app.function(
@@ -320,6 +332,98 @@ def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
     gpu="A10G",
     cpu=8,
     memory=32 * 1024,
+    timeout=2 * 3600,
+    volumes={
+        "/datasets": DATASETS,
+        "/checkpoints": CHECKPOINTS,
+        "/secryst-checkpoints": SECRYST_CHECKPOINTS,
+        "/secryst-datasets": SECRYST_DATASETS,
+        "/persian-checkpoints": PERSIAN_CHECKPOINTS,
+    },
+)
+def evaluate_per(spec_id: str, limit: int = 0) -> dict:
+    """PER of teacher and student on the same g2p test split, replicating
+    the source-model harness exactly (train_thai_combined.py::evaluate):
+    held-out test file, beam-4 decode, corpus-level PER =
+    total_ed / total_gold over whitespace tokens. The student gate is
+    teacher_per + 5pp (docs/DISTILL-SOURCE-PROMPT.md)."""
+    import json
+    from pathlib import Path
+
+    import torch
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    spec = SPECS[spec_id]
+    teacher_vol = spec.get("teacher_volume", "rababa")
+    vol_map = {
+        "rababa": "/checkpoints",
+        "secryst": "/secryst-checkpoints",
+        "persian": "/persian-checkpoints",
+    }
+    data_vol = "/secryst-datasets" if teacher_vol == "secryst" else "/datasets"
+    teacher_path = Path(vol_map[teacher_vol]) / spec["teacher"]
+    student_path = Path(vol_map[teacher_vol]) / spec["out"] / "best"
+    test_path = Path(data_vol) / spec.get("eval_test", spec["test"])
+
+    teacher_tok = AutoTokenizer.from_pretrained(str(teacher_path))
+    teacher = AutoModelForSeq2SeqLM.from_pretrained(str(teacher_path)).to("cuda").eval()
+    student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
+    student = (
+        AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+    )
+
+    pairs = []
+    for line in test_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            row = json.loads(line)
+            pairs.append((row["src"], row["tgt"]))
+    if limit:
+        pairs = pairs[:limit]
+    print(f"[{spec_id}] eval pairs: {len(pairs)} from {test_path}", flush=True)
+
+    def beam(tok, model, batch: list[str], max_len: int = 256) -> list[str]:
+        enc = tok(batch, return_tensors="pt", padding=True, truncation=True,
+                  max_length=max_len).to("cuda")
+        with torch.no_grad():
+            out = model.generate(**enc, max_new_tokens=max_len, num_beams=4)
+        return tok.batch_decode(out, skip_special_tokens=True)
+
+    def per(model, tok, debug_name: str) -> dict:
+        total_ed = total_gold = exact = n = 0
+        for start in range(0, len(pairs), 32):
+            batch = pairs[start : start + 32]
+            preds = beam(tok, model, [src for src, _ in batch])
+            for (_, gold), pred in zip(batch, preds, strict=True):
+                e = _edit_distance(pred.strip().split(), gold.strip().split())
+                total_ed += e
+                total_gold += max(1, len(gold.split()))
+                exact += e == 0
+                n += 1
+            if start == 0:
+                for (src, gold), pred in zip(batch[:3], preds[:3], strict=True):
+                    print(
+                        f"[{debug_name}] src={src!r}\n  gold={gold!r}\n  pred={pred!r}",
+                        flush=True,
+                    )
+        return {
+            "per": round(100 * total_ed / max(1, total_gold), 2),
+            "exact_match": round(100 * exact / max(1, n), 2),
+            "n": n,
+        }
+
+    result = {
+        "teacher": per(teacher, teacher_tok, "teacher"),
+        "student": per(student, student_tok, "student"),
+    }
+    result["gate_delta"] = round(result["student"]["per"] - result["teacher"]["per"], 2)
+    result["gate_pass"] = result["gate_delta"] <= 5.0
+    return result
+
+
+@app.function(
+    gpu="A10G",
+    cpu=8,
+    memory=32 * 1024,
     timeout=5 * 3600,
     volumes={
         "/datasets": DATASETS,
@@ -358,7 +462,6 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
     data_vol = "/secryst-datasets" if teacher_vol == "secryst" else "/datasets"
     train_path = Path(data_vol) / spec["train"]
-    val_path = Path(data_vol) / spec["val"]
 
     # Teacher: use its OWN tokenizer (sentencepiece for umt5)
     teacher_tok = AutoTokenizer.from_pretrained(str(teacher_path))
@@ -425,7 +528,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 ).to("cuda")
                 with torch.no_grad():
                     out = teacher.generate(**enc, max_new_tokens=384, num_beams=1)
-                preds = teacher_tok.batch_decode(out, skip_special_tokens=True)
+                preds = [decode_joined(teacher_tok, o) for o in out]
                 for (src, _), pred in zip(batch, preds, strict=True):
                     fh.write(
                         json.dumps(
@@ -471,7 +574,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     save_every = 500
     step = 0
 
-    for epoch in range(epochs):
+    for _ in range(epochs):
         for ids, am, labels in train_loader:
             ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
             loss = student(input_ids=ids, attention_mask=am, labels=labels).loss
@@ -515,3 +618,8 @@ def main(spec: str = "heb-diac-small", epochs: int = 3) -> None:
 @app.local_entrypoint()
 def eval_main(spec: str = "heb-diac-small", limit: int = 0) -> None:
     print(evaluate.remote(spec, limit))
+
+
+@app.local_entrypoint()
+def eval_per(spec: str = "tha-g2p-small", limit: int = 0) -> None:
+    print(evaluate_per.remote(spec, limit))
