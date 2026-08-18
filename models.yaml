@@ -55,3 +55,16 @@ models:
       - {name: cer, value: 3.74, source: rababa-urdu/docs/RESULTS.md#diacritization-urdu-text--text--haraqat}
     parity: {samples: 11940, cer_delta: 0.0}
     license: BSD-3-Clause
+  heb-diac-1.0:
+    task: diacritization
+    scripts: [Hebr, Hebr]
+    precision: fp32
+    filename: heb-diac-1.0-fp32.zip
+    url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip
+    sha256: b32fa239e0c56708b6004942de4b9e6e9f265e7cc3828f41d560e96386e20dd8
+    size: 2781139753
+    metrics:
+      - {name: der_greedy, value: 29.0, source: rababa/docs/RESULTS.md#hebrew-diacritization}
+      - {name: der_beam4, value: 17.46, source: rababa/docs/RESULTS.md#hebrew-diacritization}
+    parity: {samples: 600, cer_delta: 0.0}
+    license: BSD-3-Clause
