@@ -30,8 +30,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from split_release import split as split_zip  # noqa: E402
 from imf.validator import validate_zip  # noqa: E402
+from split_release import split as split_zip  # noqa: E402
 
 # GitHub hard-caps release assets at 2,147,483,648 bytes; split well below.
 SPLIT_THRESHOLD = 2_000_000_000

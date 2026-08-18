@@ -16,7 +16,6 @@ import json
 import sys
 from pathlib import Path
 
-
 TEMPLATE = """\
 ## {task} v{version}
 
