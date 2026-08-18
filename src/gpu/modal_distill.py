@@ -37,8 +37,32 @@ IMAGE = (
 
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")
 DATASETS = modal.Volume.from_name("rababa-datasets")
+SECRYST_CHECKPOINTS = modal.Volume.from_name("secryst-checkpoints")
+SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
+PERSIAN_CHECKPOINTS = modal.Volume.from_name("persian-g2p-checkpoints")
 
 SPECS: dict[str, dict[str, str]] = {
+    "tha-g2p-small": {
+        "teacher": "secryst_thai_ipa_thai_combined_mixed/run-001/best",
+        "teacher_volume": "secryst",
+        "student_init": "google/byt5-small",
+        "train": "thai-ipa-expanded/train.jsonl",
+        "val": "thai-ipa-expanded/val.jsonl",
+        "test": "thai-ipa-expanded/test.jsonl",
+        "out": "secryst_thai_g2p_distill_small/run-001",
+        "mode": "sequence",  # cross-tokenizer: teacher generates, student trains CE
+        "note": "umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate",
+    },
+    "fas-g2p-small": {
+        "teacher": "persian_g2p/run-001/best",
+        "teacher_volume": "persian",
+        "student_init": "google/byt5-small",
+        "train": "persian_g2p/train.jsonl",
+        "val": "persian_g2p/val.jsonl",
+        "test": "persian_g2p/test.jsonl",
+        "out": "interscript_fas_g2p_distill_small/run-001",
+        "note": "ByT5-small teacher (already byte-level) -> ByT5-small student; CER gate",
+    },
     "heb-diac-small": {
         "teacher": "rababa_hebrew_byt5_s43/run-001/best",
         "student_init": "google/byt5-small",
@@ -292,7 +316,9 @@ def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
 
 @app.local_entrypoint()
 def main(spec: str = "heb-diac-small", epochs: int = 3) -> None:
-    result = distill.remote(spec, epochs=epochs)
+    mode = SPECS[spec].get("mode", "logit")
+    fn = distill_sequence if mode == "sequence" else distill
+    result = fn.remote(spec, epochs=epochs)
     print(result)
 
 
