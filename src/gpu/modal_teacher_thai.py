@@ -205,7 +205,8 @@ def evaluate(limit: int = 0) -> dict:
                 total_gold += max(1, len(gold))
                 exact += e == 0
     per = round(100 * total_ed / max(1, total_gold), 2)
-    print(f"teacher PER={per} exact={round(100 * exact / max(1, len(pairs)), 2)} n={len(pairs)}", flush=True)
+    exact_pct = round(100 * exact / max(1, len(pairs)), 2)
+    print(f"teacher PER={per} exact={exact_pct} n={len(pairs)}", flush=True)
     return {"per": per, "n": len(pairs)}
 
 
