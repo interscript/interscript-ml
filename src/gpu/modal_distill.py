@@ -314,6 +314,196 @@ def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
     return {"teacher": metrics(teacher), "student": metrics(student)}
 
 
+
+
+@app.function(
+    gpu="A10G",
+    cpu=8,
+    memory=32 * 1024,
+    timeout=5 * 3600,
+    volumes={
+        "/datasets": DATASETS,
+        "/checkpoints": CHECKPOINTS,
+        "/secryst-checkpoints": SECRYST_CHECKPOINTS,
+        "/secryst-datasets": SECRYST_DATASETS,
+        "/persian-checkpoints": PERSIAN_CHECKPOINTS,
+    },
+)
+def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
+    """Cross-tokenizer sequence-level distillation: teacher generates
+    labels with ITS tokenizer, student trains CE on those labels with
+    the byte tokenizer. The only sound approach when teacher and student
+    occupy different vocab spaces (umt5 sentencepiece vs ByT5 bytes)."""
+    import json
+    from pathlib import Path
+
+    import torch
+    from torch.utils.data import DataLoader, Dataset
+    from transformers import (
+        AutoModelForSeq2SeqLM,
+        AutoTokenizer,
+        get_cosine_schedule_with_warmup,
+    )
+
+    spec = SPECS[spec_id]
+    teacher_vol = spec.get("teacher_volume", "rababa")
+
+    vol_map = {
+        "rababa": "/checkpoints",
+        "secryst": "/secryst-checkpoints",
+        "persian": "/persian-checkpoints",
+    }
+    teacher_root = vol_map[teacher_vol]
+    teacher_path = Path(teacher_root) / spec["teacher"]
+
+    data_vol = "/secryst-datasets" if teacher_vol == "secryst" else "/datasets"
+    train_path = Path(data_vol) / spec["train"]
+    val_path = Path(data_vol) / spec["val"]
+
+    # Teacher: use its OWN tokenizer (sentencepiece for umt5)
+    teacher_tok = AutoTokenizer.from_pretrained(str(teacher_path))
+    teacher = (
+        AutoModelForSeq2SeqLM.from_pretrained(str(teacher_path))
+        .to("cuda", dtype=torch.float16)
+        .eval()
+    )
+    for p in teacher.parameters():
+        p.requires_grad_(False)
+
+    # Student: byte-level ByT5
+    student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
+    student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"]).to("cuda")
+    student.train()
+
+    class Pairs(Dataset):
+        def __init__(self, path: Path, max_len: int = 384):
+            self.rows = []
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                s, t = (row.get("src") or "").strip(), (row.get("tgt") or "").strip()
+                if s and t and len(s.encode()) <= max_len and len(t.encode()) <= max_len:
+                    self.rows.append((s, t))
+
+        def __len__(self):
+            return len(self.rows)
+
+        def __getitem__(self, i):
+            return self.rows[i]
+
+    def collate(batch):
+        src = student_tok([s for s, _ in batch], padding=True, return_tensors="pt")
+        labels = student_tok(
+            [t for _, t in batch], padding=True, return_tensors="pt"
+        ).input_ids
+        labels[labels == student_tok.pad_token_id] = -100
+        return src.input_ids, src.attention_mask, labels
+
+    train_ds = Pairs(train_path)
+    print(f"[{spec_id}] train pairs: {len(train_ds)}", flush=True)
+
+    # Step 1: teacher generates labels (greedy) for the full corpus
+    out_root = Path(teacher_root) / spec["out"]
+    out_root.mkdir(parents=True, exist_ok=True)
+    teacher_labels_path = out_root / "teacher_labels.jsonl"
+
+    if not teacher_labels_path.exists():
+        print(f"[{spec_id}] generating teacher labels...", flush=True)
+        with teacher_labels_path.open("w", encoding="utf-8") as fh:
+            for start in range(0, len(train_ds), 32):
+                batch = train_ds.rows[start : start + 32]
+                enc = teacher_tok(
+                    [s for s, _ in batch],
+                    padding=True,
+                    truncation=True,
+                    max_length=384,
+                    return_tensors="pt",
+                ).to("cuda")
+                with torch.no_grad():
+                    out = teacher.generate(**enc, max_new_tokens=384, num_beams=1)
+                preds = teacher_tok.batch_decode(out, skip_special_tokens=True)
+                for (src, _), pred in zip(batch, preds, strict=True):
+                    fh.write(
+                        json.dumps(
+                            {"src": src, "teacher": pred.strip()}, ensure_ascii=False
+                        )
+                        + "\n"
+                    )
+                if start % 320 == 0:
+                    print(
+                        f"  labeled {start + len(batch)}/{len(train_ds)}", flush=True
+                    )
+    else:
+        print(f"[{spec_id}] teacher labels already exist", flush=True)
+
+    # Step 2: student trains on teacher labels
+    teacher_labels = []
+    for line in teacher_labels_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            row = json.loads(line)
+            teacher_labels.append((row["src"], row["teacher"]))
+
+    class TeacherPairs(Dataset):
+        def __len__(self):
+            return len(teacher_labels)
+
+        def __getitem__(self, i):
+            return teacher_labels[i]
+
+    train_loader = DataLoader(
+        TeacherPairs(),
+        batch_size=8,
+        shuffle=True,
+        collate_fn=collate,
+        num_workers=2,
+        drop_last=True,
+    )
+    total_steps = len(train_loader) * epochs
+    optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer, total_steps // 20, total_steps
+    )
+
+    save_every = 500
+    step = 0
+
+    for epoch in range(epochs):
+        for ids, am, labels in train_loader:
+            ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
+            loss = student(input_ids=ids, attention_mask=am, labels=labels).loss
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
+            step += 1
+            if step % 50 == 0:
+                print(
+                    f"[{spec_id} step {step}/{total_steps}] ce={float(loss):.4f}",
+                    flush=True,
+                )
+            if step % save_every == 0:
+                ck = out_root / f"step-{step}"
+                ck.mkdir(exist_ok=True)
+                torch.save(student.state_dict(), ck / "student.pt")
+                CHECKPOINTS.commit()
+                SECRYST_CHECKPOINTS.commit()
+                PERSIAN_CHECKPOINTS.commit()
+
+    best = out_root / "best"
+    best.mkdir(exist_ok=True)
+    student.save_pretrained(str(best))
+    student_tok.save_pretrained(str(best))
+    CHECKPOINTS.commit()
+    SECRYST_CHECKPOINTS.commit()
+    PERSIAN_CHECKPOINTS.commit()
+    return {"spec": spec_id, "steps": step}
+
+
 @app.local_entrypoint()
 def main(spec: str = "heb-diac-small", epochs: int = 3) -> None:
     mode = SPECS[spec].get("mode", "logit")
