@@ -30,6 +30,13 @@ class RegistryError(ValueError):
 
 
 @dataclass(frozen=True)
+class Part:
+    url: str
+    sha256: str
+    size: int
+
+
+@dataclass(frozen=True)
 class IndexEntry:
     id: str
     filename: str
@@ -38,6 +45,7 @@ class IndexEntry:
     size: int
     precision: str
     task: str
+    parts: tuple[Part, ...] = ()
 
 
 def cache_dir() -> Path:
@@ -58,14 +66,19 @@ def load_index(index_url: str | None = None) -> dict[str, IndexEntry]:
         raise RegistryError("index must be a mapping with version: 1")
     entries: dict[str, IndexEntry] = {}
     for model_id, spec in raw.get("models", {}).items():
+        parts = tuple(
+            Part(url=part["url"], sha256=part["sha256"], size=int(part.get("size", 0)))
+            for part in spec.get("parts", [])
+        )
         entries[model_id] = IndexEntry(
             id=model_id,
             filename=spec["filename"],
-            url=spec["url"],
+            url=spec.get("url", ""),
             sha256=spec["sha256"],
             size=int(spec.get("size", 0)),
             precision=spec.get("precision", "fp32"),
             task=spec.get("task", ""),
+            parts=parts,
         )
     return entries
 
@@ -76,6 +89,32 @@ def _sha256_file(path: Path) -> str:
         while chunk := fh.read(1024 * 1024):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _open_channel(url: str):
+    if url.startswith("file://"):
+        return open(urlparse(url).path, "rb")
+    return urllib.request.urlopen(url)
+
+
+def _download_parts(entry: IndexEntry, downloaded: Path) -> None:
+    """Stream parts into `downloaded` in index order, verifying each part's
+    sha256 as it lands. Used when the artifact exceeds GitHub's 2 GiB
+    per-asset cap; the assembled file is checked against entry.sha256 by
+    the caller, so the cache contract is identical to single-file models."""
+    with downloaded.open("ab") as out:
+        for index, part in enumerate(entry.parts):
+            digest = hashlib.sha256()
+            with _open_channel(part.url) as remote:
+                while chunk := remote.read(1024 * 1024):
+                    out.write(chunk)
+                    digest.update(chunk)
+            actual = digest.hexdigest()
+            if actual != part.sha256:
+                raise RegistryError(
+                    f"part {index} of {entry.filename} sha256 mismatch: "
+                    f"got {actual}, index says {part.sha256}"
+                )
 
 
 def resolve(model_id: str, index_url: str | None = None) -> Path:
@@ -96,7 +135,9 @@ def resolve(model_id: str, index_url: str | None = None) -> Path:
     fd, tmp_name = tempfile.mkstemp(dir=target.parent, suffix=".part")
     os.close(fd)
     downloaded = Path(tmp_name)
-    if entry.url.startswith("file://"):
+    if entry.parts:
+        _download_parts(entry, downloaded)
+    elif entry.url.startswith("file://"):
         source = Path(urlparse(entry.url).path)
         if not source.is_file():
             raise RegistryError(f"channel file missing: {source}")
