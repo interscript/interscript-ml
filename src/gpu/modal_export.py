@@ -45,6 +45,7 @@ CHECKPOINT_VOLUMES = {
         "urdu-diacrit-checkpoints"
     ),
     "/volumes/rababa-checkpoints": modal.Volume.from_name("rababa-checkpoints"),
+    "/volumes/persian-checkpoints": modal.Volume.from_name("persian-g2p-checkpoints"),
 }
 
 DATASET_VOLUMES = {
@@ -52,6 +53,7 @@ DATASET_VOLUMES = {
     "/datasets/secryst": modal.Volume.from_name("secryst-datasets"),
     "/datasets/urdu-g2p": modal.Volume.from_name("urdu-g2p-datasets"),
     "/datasets/urdu-diacrit": modal.Volume.from_name("urdu-diacrit-datasets"),
+    "/datasets/persian": modal.Volume.from_name("persian-g2p-datasets"),
 }
 
 MODELS_VOLUME = modal.Volume.from_name("secryst-models")
@@ -101,6 +103,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_volume": "/datasets/secryst",
         "test_data": "thai-ipa/test.jsonl",
         "probe": "สวัสดี",
+    },
+    "fas-g2p": {
+        "volume": "/volumes/persian-checkpoints",
+        "checkpoint": "persian_g2p/run-001/best",
+        "metadata": "models/fas-g2p/fas-g2p-1.0.metadata.yaml",
+        "readme": "models/fas-g2p/fas-g2p-1.0.README.md",
+        "test_volume": "/datasets/persian",
+        "test_data": "persian-g2p/test.jsonl",
+        "probe": "سلام",
     },
 }
 

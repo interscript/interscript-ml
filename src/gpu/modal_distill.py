@@ -33,9 +33,23 @@ IMAGE = (
         "transformers==5.14.1",
         "pyyaml>=6.0",
         "numpy>=1.26",
+        # arabic gate harness: Misraj evaluator + SadeedDiac-25 parquet
+        "pyarabic",
+        "pandas",
+        "pyarrow",
     )
     .env({"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
+    .add_local_file(
+        "/Users/mulgogi/src/interscript/rababa/sadeed_evaluator.py",
+        "/opt/rababa/sadeed_evaluator.py",
+        copy=True,
+    )
+    .add_local_dir(
+        "/Users/mulgogi/src/interscript/rababa/data/sadeed-diac-25",
+        "/opt/rababa/data/sadeed-diac-25",
+        copy=True,
+    )
     .workdir("/root/ml-models")
 )
 
@@ -67,6 +81,24 @@ SPECS: dict[str, dict[str, str]] = {
         "out": "secryst_thai_g2p_distill_small/run-004",
         "mode": "sequence",  # cross-tokenizer: teacher generates, student trains CE
         "note": "umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate",
+    },
+    "ara-diac-small": {
+        # r5 paragraph-context teacher (2.68 DER-CE windowed @1400B,
+        # RELEASE-FROZEN) -> ByT5-small student. Contract decode is
+        # GREEDY with generation cap 2x window (eval_sadeed_windowed).
+        # Corpus: r5-units joined paragraph units (src = stripped
+        # diacritics, teacher regenerates the labels).
+        "teacher": "rababa_arabic_byt5/run-005-context/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-002",
+        "mode": "sequence",
+        "note": "gate <= teacher_der + 0.5pp windowed DER-CE (prompt target 3.18 from 2.68)",
     },
     "fas-g2p-small": {
         "teacher": "persian_g2p/run-001/best",
@@ -505,23 +537,44 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     student.train()
 
     class Pairs(Dataset):
-        def __init__(self, paths: Path | list[Path], max_len: int = 384):
-            if isinstance(paths, Path):
-                paths = [paths]
+        def __init__(self, files: list[tuple[Path, int]], max_len: int = 1450):
+            # jsonl files carry {src, tgt} rows; .txt unit files are
+            # single-column diacritized paragraph units (the r5 corpus):
+            # src = diacritics stripped, tgt = the unit itself, capped at
+            # max_len bytes, seeded shuffle then per-file limit
+            import random
+            import re
+
             self.rows = []
             seen = set()
-            for path in paths:
-                for line in path.read_text(encoding="utf-8").splitlines():
-                    if not line.strip():
-                        continue
-                    try:
-                        row = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    s = (row.get("src") or "").strip()
-                    if s and s not in seen and len(s.encode()) <= max_len:
-                        seen.add(s)
-                        self.rows.append((s, (row.get("tgt") or "").strip()))
+            for path, limit in files:
+                if path.suffix == ".jsonl":
+                    for line in path.read_text(encoding="utf-8").splitlines():
+                        if not line.strip():
+                            continue
+                        try:
+                            row = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        s = (row.get("src") or "").strip()
+                        if s and s not in seen and len(s.encode()) <= 384:
+                            seen.add(s)
+                            self.rows.append((s, (row.get("tgt") or "").strip()))
+                else:
+                    diac = re.compile("[ً-ٰٟۖ-ۭ]")
+                    units = [
+                        u.strip()
+                        for u in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+                        if u.strip()
+                    ]
+                    random.Random(42).shuffle(units)
+                    for unit in units[:limit]:
+                        if len(unit.encode()) > max_len:
+                            continue
+                        src = diac.sub("", unit).strip()
+                        if src and src not in seen:
+                            seen.add(src)
+                            self.rows.append((src, unit))
 
         def __len__(self):
             return len(self.rows)
@@ -529,25 +582,30 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         def __getitem__(self, i):
             return self.rows[i]
 
+    train_cap = int(spec.get("max_len", 384))
+
     def collate(batch):
         # byte-level tokens: a 2,000-char Wikipedia sentence is 2,000
         # tokens — without truncation a single long pair OOMs the A10G
         src = student_tok(
             [s for s, _ in batch], padding=True, truncation=True,
-            max_length=384, return_tensors="pt",
+            max_length=train_cap, return_tensors="pt",
         )
         labels = student_tok(
             [t for _, t in batch], padding=True, truncation=True,
-            max_length=384, return_tensors="pt",
+            max_length=train_cap, return_tensors="pt",
         ).input_ids
         labels[labels == student_tok.pad_token_id] = -100
         return src.input_ids, src.attention_mask, labels
 
-    train_files = [train_path] + [
-        Path(data_vol) / p for p in spec.get("train_extra", [])
-    ]
+    unit_limits = [int(x) for x in spec.get("unit_limits", [0])]
+    train_files = [(train_path, unit_limits[0] if unit_limits else 0)]
+    for i, p in enumerate(spec.get("train_extra", [])):
+        lim = unit_limits[i + 1] if i + 1 < len(unit_limits) else 0
+        train_files.append((Path(data_vol) / p, lim))
     train_ds = Pairs(train_files)
     print(f"[{spec_id}] train pairs: {len(train_ds)} from {len(train_files)} files", flush=True)
+    label_beams = int(spec.get("label_beams", 4))
 
     # Step 1: teacher generates labels (beam-4) for the full corpus.
     # Resumable: evictions mid-labeling are routine on long jobs —
@@ -570,10 +628,14 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     if todo:
         print(f"[{spec_id}] labeling {len(todo)} remaining...", flush=True)
 
-        def label_batch(batch, max_len: int = 384):
+        seq_max = int(spec.get("max_len", 384))
+
+        def label_batch(batch, max_len: int = 0):
             # lone-src OOM fallback truncates once, then skips: never
             # recurse on the same shape (torch 2.x renames the OOM
             # exception class, so match by message)
+            if not max_len:
+                max_len = seq_max
             try:
                 enc = teacher_tok(
                     [s for s, _ in batch],
@@ -584,7 +646,9 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 ).to("cuda")
                 with torch.inference_mode():
                     out = teacher.generate(
-                        **enc, max_new_tokens=max_len, num_beams=4
+                        # r5 contract: generation cap = 2x window bytes
+                        # (diacritized output runs 1.4-1.6x input)
+                        **enc, max_new_tokens=2 * max_len, num_beams=label_beams
                     )
                 return [decode_joined(teacher_tok, o) for o in out]
             except RuntimeError as e:
@@ -604,7 +668,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         # deterministic token-budget batching: sort by length so long
         # srcs land in small batches — no OOM roulette
         todo.sort(key=lambda p: len(p[0].encode()))
-        budget = 16 * 200
+        budget = 32 * max(200, seq_max)
         batches: list[list[tuple[str, str]]] = []
         cur: list[tuple[str, str]] = []
         cur_max = 0
@@ -746,6 +810,133 @@ def eval_main(spec: str = "heb-diac-small", limit: int = 0) -> None:
     print(evaluate.remote(spec, limit))
 
 
+@app.function(
+    gpu="A10G",
+    cpu=8,
+    memory=32 * 1024,
+    timeout=5 * 3600,
+    volumes={
+        "/datasets": DATASETS,
+        "/checkpoints": CHECKPOINTS,
+        "/secryst-checkpoints": SECRYST_CHECKPOINTS,
+        "/secryst-datasets": SECRYST_DATASETS,
+        "/persian-checkpoints": PERSIAN_CHECKPOINTS,
+    },
+)
+def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
+    """Windowed SadeedDiac-25 DER-CE of teacher vs student, replicating
+    rababa eval_sadeed_windowed.py at the r5 window (1400B): strip
+    diacritics, split at word boundaries, greedy decode with 2x window
+    cap, stitch, project haraqat onto the input letters (zero-skip),
+    DER-CE via the Misraj evaluator. Gate: teacher + 0.5pp
+    (DISTILL-SOURCE-PROMPT: 3.18 target from the 2.68 teacher)."""
+    import difflib
+    import re
+    from pathlib import Path
+
+    import pyarrow.parquet as pq
+    import torch
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    spec = SPECS[spec_id]
+    vol_map = {
+        "rababa": "/checkpoints",
+        "secryst": "/secryst-checkpoints",
+        "persian": "/persian-checkpoints",
+    }
+    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
+                    else str(Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["teacher"]))
+    student_path = Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["out"] / "best"
+
+    tok = AutoTokenizer.from_pretrained("google/byt5-small")
+    teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
+    student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+
+    diac = re.compile("[ً-ٰٟۖ-ۭ]")
+    table = pq.read_table("/opt/rababa/data/sadeed-diac-25/train.parquet")
+    inputs = [diac.sub("", t) for t in table.column("input").to_pylist()]
+    gts = table.column("output").to_pylist()
+    if limit:
+        inputs, gts = inputs[:limit], gts[:limit]
+
+    def split_windows(text: str) -> list[str]:
+        if len(text.encode()) <= window:
+            return [text]
+        wins, cur, n = [], [], 0
+        for w in text.split():
+            c = len(w.encode()) + 1
+            if cur and n + c > window:
+                wins.append(" ".join(cur))
+                cur, n = [], 0
+            cur.append(w)
+            n += c
+        if cur:
+            wins.append(" ".join(cur))
+        return wins
+
+    def project_haraqat(pred: str, text: str) -> str:
+        haraqat = [""]
+        for ch in pred:
+            if diac.match(ch):
+                haraqat[-1] += ch
+            else:
+                haraqat.append("")
+        haraqat = haraqat[1:]
+        pred_letters = [c for c in pred if not diac.match(c)]
+        text_letters = [c for c in text if not diac.match(c)]
+        sm = difflib.SequenceMatcher(None, text_letters, pred_letters, autojunk=False)
+        out = []
+        for op, i1, i2, j1, _ in sm.get_opcodes():
+            if op == "equal":
+                for k in range(i2 - i1):
+                    out.append(text_letters[i1 + k] + haraqat[j1 + k])
+            else:
+                for k in range(i1, i2):
+                    out.append(text_letters[k])
+        return "".join(out)
+
+    def der_ce(model) -> dict:
+        windows, counts = [], []
+        for text in inputs:
+            ws = split_windows(text)
+            counts.append(len(ws))
+            windows.extend(ws)
+        preds = []
+        with torch.no_grad():
+            for i in range(0, len(windows), 8):
+                batch = windows[i : i + 8]
+                enc = tok(batch, return_tensors="pt", padding=True, truncation=True,
+                          max_length=window).to("cuda")
+                with torch.autocast("cuda", torch.bfloat16):
+                    gen = model.generate(**enc, max_new_tokens=window * 2, num_beams=1)
+                preds.extend(tok.batch_decode(gen, skip_special_tokens=True))
+        k = 0
+        paragraphs = []
+        for text, c in zip(inputs, counts, strict=True):
+            paragraphs.append(project_haraqat(" ".join(preds[k : k + c]), text))
+            k += c
+
+        import sys
+
+        sys.path.insert(0, "/opt/rababa")
+        from sadeed_evaluator import ArabicDiacritizationEvaluator as E
+
+        _, _, total_der, _, _ = E.caculate_errors_on_sentences(
+            paragraphs, gts, gt_missing_diacritic_is_error=False
+        )
+        return {"der_ce": round(100 * total_der, 4), "n": len(inputs)}
+
+    result = {"teacher": der_ce(teacher), "student": der_ce(student)}
+    result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
+    result["gate_pass"] = result["gate_delta"] <= 0.5
+    return result
+
+
 @app.local_entrypoint()
 def eval_per(spec: str = "tha-g2p-small", limit: int = 0) -> None:
     print(evaluate_per.remote(spec, limit))
+
+
+@app.local_entrypoint()
+def eval_der(spec: str = "ara-diac-small", limit: int = 0) -> None:
+    print(evaluate_der.remote(spec, limit))

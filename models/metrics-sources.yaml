@@ -49,3 +49,12 @@ tha-g2p-base-1.0:
   tables:
     - {row: "Teacher (B-K/umt5 hub base)", column: PER, as: per_teacher}
     - {row: "Student (ByT5-base, gate)", column: PER, as: per_student}
+fas-g2p-1.0:
+  repo: interscript/ml-models
+  ref: main
+  path: docs/RESULTS.md
+  anchor: fas-g2p-1.0
+  protocol: "greedy decode, editdistance CER on v1 test split; SentenceBench homograph ezafe-normalized"
+  tables:
+    - {row: "CER (v1 test split, greedy, editdistance)", as: cer}
+    - {row: "SentenceBench homograph (ezafe-normalized)", as: sb_homograph_ezafe_norm}
