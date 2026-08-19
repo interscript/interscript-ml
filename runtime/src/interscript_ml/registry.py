@@ -21,8 +21,8 @@ import yaml
 DEFAULT_INDEX_URL = (
     "https://raw.githubusercontent.com/interscript/ml-models/main/models.yaml"
 )
-ENV_INDEX = "INTERSCRIPT_ML_INDEX"
-ENV_CACHE = "INTERSCRIPT_ML_CACHE"
+ENV_INDEX = "SECRYST_INDEX"
+ENV_CACHE = "SECRYST_CACHE"
 
 
 class RegistryError(ValueError):
@@ -51,7 +51,7 @@ class IndexEntry:
 def cache_dir() -> Path:
     if os.environ.get(ENV_CACHE):
         return Path(os.environ[ENV_CACHE])
-    return Path.home() / ".cache" / "interscript"
+    return Path.home() / ".cache" / "secryst"
 
 
 def load_index(index_url: str | None = None) -> dict[str, IndexEntry]:

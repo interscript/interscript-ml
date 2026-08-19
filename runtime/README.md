@@ -1,9 +1,14 @@
-# interscript-ml (Python runtime)
+# secryst (Python crystal)
 
-The reference Python runtime for **IMF v1** model zips — the phonological
-layer of Interscript. The Ruby (secryst gem) and TypeScript
-(@interscript/ml) runtimes are diffed against this one on shared golden
-sets.
+The Python crystal — reference implementation of **IMF v1** model zips
+and the `models.yaml` index (the **interscript-ml** contract), the
+phonological layer of Interscript. The Ruby (`secryst` gem) and
+TypeScript (`@secryst/ml`) crystals are diffed against this one on
+shared golden sets. This crystal owns golden generation and numerical
+adjudication for the family.
+
+Home repo: https://github.com/secryst/secryst-py (this copy in
+ml-models/runtime is the frozen origin; the package now lives there).
 
 ```python
 from interscript_ml import Model
@@ -25,14 +30,14 @@ model = Model.load("khm-latn-1.0.zip")    # or: a local zip path directly
 - Dynamic fetch per the `models.yaml` contract (shared with the Ruby and
   TypeScript runtimes): resolve id -> channel URL, download to temp,
   verify whole-file sha256 against the index, atomically install into
-  `~/.cache/interscript/models/<id>/`. Overrides:
-  `INTERSCRIPT_ML_INDEX` (URL or path), `INTERSCRIPT_ML_CACHE`.
+  `~/.cache/secryst/models/<id>/`. Overrides:
+  `SECRYST_INDEX` (URL or path), `SECRYST_CACHE`.
 
 Install: `pip install ./runtime` (from the ml-models checkout) or
 `pip install -e "./runtime[dev]"` for development.
 
 Tests: `python -m pytest runtime/tests` — tiny-graph zips, no torch
-needed. The end-to-end golden test runs when `INTERSCRIPT_ML_E2E_ZIP`
+needed. The end-to-end golden test runs when `SECRYST_E2E_ZIP`
 points at a real zip (e.g. `models/khm-latn/khm-latn-1.0-fp32.zip`)
 and asserts byte-identical outputs against `golden/khm-latn-100.jsonl`.
 

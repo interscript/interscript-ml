@@ -38,7 +38,7 @@ def test_resolve_downloads_verifies_and_caches(tmp_path: Path) -> None:
     zip_path = build_tiny_zip(tmp_path / "channel" / "tiny.zip")
     index = _index_file(tmp_path, zip_path)
     cache = tmp_path / "cache"
-    os.environ["INTERSCRIPT_ML_CACHE"] = str(cache)
+    os.environ["SECRYST_CACHE"] = str(cache)
     try:
         local = resolve("tiny-1.0", index_url=str(index))
         assert local == cache / "models" / "tiny-1.0" / "tiny.zip"
@@ -47,18 +47,18 @@ def test_resolve_downloads_verifies_and_caches(tmp_path: Path) -> None:
         zip_path.unlink()
         assert resolve("tiny-1.0", index_url=str(index)) == local
     finally:
-        os.environ.pop("INTERSCRIPT_ML_CACHE", None)
+        os.environ.pop("SECRYST_CACHE", None)
 
 
 def test_resolve_rejects_bad_download(tmp_path: Path) -> None:
     zip_path = build_tiny_zip(tmp_path / "channel" / "tiny.zip")
     index = _index_file(tmp_path, zip_path, sha256="0" * 64)
-    os.environ["INTERSCRIPT_ML_CACHE"] = str(tmp_path / "cache")
+    os.environ["SECRYST_CACHE"] = str(tmp_path / "cache")
     try:
         with pytest.raises(RegistryError, match="sha256 mismatch"):
             resolve("tiny-1.0", index_url=str(index))
     finally:
-        os.environ.pop("INTERSCRIPT_ML_CACHE", None)
+        os.environ.pop("SECRYST_CACHE", None)
 
 
 def test_resolve_unknown_id(tmp_path: Path) -> None:
@@ -71,7 +71,7 @@ def test_resolve_unknown_id(tmp_path: Path) -> None:
 def test_model_load_by_id(tmp_path: Path) -> None:
     zip_path = build_tiny_zip(tmp_path / "channel" / "tiny.zip")
     index = _index_file(tmp_path, zip_path)
-    os.environ["INTERSCRIPT_ML_CACHE"] = str(tmp_path / "cache")
+    os.environ["SECRYST_CACHE"] = str(tmp_path / "cache")
     try:
         from interscript_ml import Model
 
@@ -79,7 +79,7 @@ def test_model_load_by_id(tmp_path: Path) -> None:
         assert model.id == "tiny-1.0"
         assert isinstance(model.translate("he", max_len=4), str)
     finally:
-        os.environ.pop("INTERSCRIPT_ML_CACHE", None)
+        os.environ.pop("SECRYST_CACHE", None)
 
 
 def test_resolve_parts_assembles_and_verifies(tmp_path: Path) -> None:
@@ -118,7 +118,7 @@ def test_resolve_parts_assembles_and_verifies(tmp_path: Path) -> None:
     index_path = tmp_path / "models.yaml"
     index_path.write_text(yaml.safe_dump(index), encoding="utf-8")
     cache = tmp_path / "cache"
-    os.environ["INTERSCRIPT_ML_CACHE"] = str(cache)
+    os.environ["SECRYST_CACHE"] = str(cache)
     try:
         local = resolve("tiny-1.0", index_url=str(index_path))
         assert local == cache / "models" / "tiny-1.0" / "tiny.zip"
@@ -127,7 +127,7 @@ def test_resolve_parts_assembles_and_verifies(tmp_path: Path) -> None:
         (channel / "tiny.zip.part-00").unlink()
         assert resolve("tiny-1.0", index_url=str(index_path)) == local
     finally:
-        os.environ.pop("INTERSCRIPT_ML_CACHE", None)
+        os.environ.pop("SECRYST_CACHE", None)
 
 
 def test_resolve_parts_rejects_corrupt_part(tmp_path: Path) -> None:
@@ -162,9 +162,9 @@ def test_resolve_parts_rejects_corrupt_part(tmp_path: Path) -> None:
     }
     index_path = tmp_path / "models.yaml"
     index_path.write_text(yaml.safe_dump(index), encoding="utf-8")
-    os.environ["INTERSCRIPT_ML_CACHE"] = str(tmp_path / "cache")
+    os.environ["SECRYST_CACHE"] = str(tmp_path / "cache")
     try:
         with pytest.raises(RegistryError, match="part 0"):
             resolve("tiny-1.0", index_url=str(index_path))
     finally:
-        os.environ.pop("INTERSCRIPT_ML_CACHE", None)
+        os.environ.pop("SECRYST_CACHE", None)
