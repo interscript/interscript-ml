@@ -10,8 +10,8 @@
 #      verify sha256, atomically rename into place
 #   4. load the zip (IMF v1: member sha256 verification on load)
 #
-# Overrides: INTERSCRIPT_ML_INDEX (URL or path to an index like this one),
-# INTERSCRIPT_ML_CACHE (cache directory; default ~/.cache/interscript).
+# Overrides: SECRYST_INDEX (URL or path to an index like this one),
+# SECRYST_CACHE (cache directory; default ~/.cache/secryst).
 #
 # Adding a model: it must have passed the WO03 gate (strict validation,
 # parity written into the zip) before an entry ships here.

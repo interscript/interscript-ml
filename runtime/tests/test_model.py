@@ -2,7 +2,7 @@
 
 Tiny-graph zips built with the onnx package (no torch, no training
 repo). The end-to-end golden test runs only when a real zip is provided
-via INTERSCRIPT_ML_E2E_ZIP.
+via SECRYST_E2E_ZIP.
 """
 
 from __future__ import annotations
@@ -147,9 +147,9 @@ def test_missing_graph_rejected(tmp_path: Path) -> None:
 
 def test_golden_set_e2e() -> None:
     """Run against a real zip: byte-identical outputs on the golden set."""
-    zip_path = os.environ.get("INTERSCRIPT_ML_E2E_ZIP")
+    zip_path = os.environ.get("SECRYST_E2E_ZIP")
     if not zip_path:
-        pytest.skip("set INTERSCRIPT_ML_E2E_ZIP to a real IMF zip")
+        pytest.skip("set SECRYST_E2E_ZIP to a real IMF zip")
     golden = Path(__file__).resolve().parent.parent.parent / "golden" / "khm-latn-100.jsonl"
     if "khm" not in Path(zip_path).name:
         pytest.skip("golden file is khm-latn specific")
