@@ -38,7 +38,7 @@ CKPTS = modal.Volume.from_name("secryst-checkpoints")
 DATA = modal.Volume.from_name("secryst-datasets")
 
 BASE = "B-K/umt5-thai-g2p-v2-0.5k"
-OUT = "secryst_thai_ipa_teacher_recovery/run-002"
+OUT = "secryst_thai_ipa_teacher_recovery/run-003"
 
 app = modal.App("tha-teacher-recovery", image=IMAGE)
 
@@ -56,8 +56,13 @@ def _decode_joined(tok, ids) -> str:
     timeout=6 * 3600,
     volumes={"/ckpts": CKPTS, "/datasets": DATA},
 )
-def train(epochs: int = 3, lr: float = 3e-4, batch: int = 16) -> dict:
+def train(epochs: int = 2, lr: float = 3e-5, batch: int = 16,
+          stage: int = 1, warmup: int = 50, seed: int = 42, tag: str = "") -> dict:
+    """Stage 1: Kaikki-only (9.7K, 10 ep, lr 3e-5 — the curriculum
+    phase-1 recipe). Stage 2 is intentionally NOT used (the volume's
+    epitran file is tone-less). `tag` variants allow seed selection."""
     import json
+    import random
 
     import torch
     from torch.utils.data import DataLoader, Dataset
@@ -67,12 +72,26 @@ def train(epochs: int = 3, lr: float = 3e-4, batch: int = 16) -> dict:
         get_cosine_schedule_with_warmup,
     )
 
+    torch.manual_seed(seed)
+    random.seed(seed)
+
     device = "cuda"
-    out_root = Path("/ckpts") / OUT
+    out_root = Path("/ckpts") / OUT / f"stage{stage}{tag}"
     out_root.mkdir(parents=True, exist_ok=True)
 
+    if stage == 1:
+        init = BASE
+        train_paths = [Path("/datasets/thai-ipa/train.jsonl")]
+        epochs = epochs if epochs != 2 else 10
+    else:
+        init = str(Path("/ckpts") / OUT / "stage1" / "best")
+        train_paths = [
+            Path("/datasets/thai-ipa/train.jsonl"),
+            Path("/datasets/thai-ipa/augmented_epitran.jsonl"),
+        ]
+
     tok = AutoTokenizer.from_pretrained(BASE)
-    model = AutoModelForSeq2SeqLM.from_pretrained(BASE).to(device)
+    model = AutoModelForSeq2SeqLM.from_pretrained(init).to(device)
     model.train()
 
     class Pairs(Dataset):
@@ -102,18 +121,14 @@ def train(epochs: int = 3, lr: float = 3e-4, batch: int = 16) -> dict:
         return src.input_ids, src.attention_mask, labels
 
     # secryst's exact combined recipe (train_thai_combined.py):
-    # Kaikki 9.7K + epitran-augmented 50K
-    train_paths = [
-        Path("/datasets/thai-ipa/train.jsonl"),
-        Path("/datasets/thai-ipa/augmented_epitran.jsonl"),
-    ]
+    # Kaikki 9.7K + epitran-augmented 50K (stage 2); Kaikki only (stage 1)
     loader = DataLoader(Pairs(train_paths), batch_size=batch, shuffle=True,
                         collate_fn=collate, num_workers=2, drop_last=True)
     total_steps = len(loader) * epochs
-    print(f"pairs={len(loader.dataset)} steps={total_steps}", flush=True)
+    print(f"stage={stage} init={init} pairs={len(loader.dataset)} steps={total_steps}", flush=True)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-    scheduler = get_cosine_schedule_with_warmup(optimizer, total_steps // 20, total_steps)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+    scheduler = get_cosine_schedule_with_warmup(optimizer, warmup, total_steps)
 
     start_step = 0
     ckpts = sorted(out_root.glob("step-*"), key=lambda p: int(p.name.split("-")[1]))
@@ -154,7 +169,7 @@ def train(epochs: int = 3, lr: float = 3e-4, batch: int = 16) -> dict:
     model.save_pretrained(str(best))
     tok.save_pretrained(str(best))
     CKPTS.commit()
-    return {"out": OUT, "steps": step}
+    return {"out": f"{OUT}/stage{stage}{tag}", "steps": step}
 
 
 @app.function(
@@ -164,13 +179,13 @@ def train(epochs: int = 3, lr: float = 3e-4, batch: int = 16) -> dict:
     timeout=2 * 3600,
     volumes={"/ckpts": CKPTS, "/datasets": DATA},
 )
-def evaluate(limit: int = 0) -> dict:
+def evaluate(limit: int = 0, stage: int = 1, tag: str = "") -> dict:
     import json
 
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-    ckpt = Path("/ckpts") / OUT / "best"
+    ckpt = Path("/ckpts") / OUT / f"stage{stage}{tag}" / "best"
     tok = AutoTokenizer.from_pretrained(str(ckpt))
     model = AutoModelForSeq2SeqLM.from_pretrained(str(ckpt)).to("cuda").eval()
 
@@ -211,6 +226,7 @@ def evaluate(limit: int = 0) -> dict:
 
 
 @app.local_entrypoint()
-def main(epochs: int = 3) -> None:
-    print(train.remote(epochs=epochs))
+def main() -> None:
+    print(train.remote(stage=1))
+    print(train.remote(stage=2))
     print(evaluate.remote())
