@@ -28,3 +28,19 @@ from saved artifacts (transformers 5.15 save drops the untied umt5
 lm_head) and the volume's epitran augmentation corpus is tone-less;
 this release distills the best verified teacher available. A repaired
 2.32%-tier teacher re-enters this pipeline when secryst regenerates it.
+
+## fas-g2p-1.0 — Persian G2P (2026-08-19)
+
+The v1 ByT5-small teacher shipped directly (byte-level, client-tier
+size — no distillation step applies). REF teacher: persian-g2p-checkpoints
+`persian_g2p/run-001/best`, RELEASE-FROZEN per rababa
+docs/DISTILL-SOURCE-PROMPT.md (RL variants and the v5/mapped
+representation line are closed negative; v1 is final).
+
+| Metric | Value |
+|---|---|
+| CER (v1 test split, greedy, editdistance) | ≈1.6% |
+| SentenceBench homograph (ezafe-normalized) | 77.34% |
+
+Published reference: Homo-GE2PE homograph 76.89% — v1 is above the
+published SOTA on this benchmark.

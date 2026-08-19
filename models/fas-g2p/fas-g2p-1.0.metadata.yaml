@@ -1,0 +1,29 @@
+format: imf-v1
+id: fas-g2p-1.0
+task: g2p
+source_script: Arab
+target: Latn
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  persian_g2p v1 (ByT5-small, byte-level, RELEASE-FROZEN); checkpoint
+  persian-g2p-checkpoints:/checkpoints/persian_g2p/run-001/best.
+  Shipped directly as the client-tier model — the v1 teacher is already
+  byte-level ByT5-small (no distillation needed; GRPO/RAFT variants and
+  the v5/mapped representation line are closed negative).
+metrics:
+  - name: cer
+    value: 1.6
+    protocol: >-
+      greedy decode, editdistance CER on the v1 test split
+      (persian-g2p-datasets:/persian-g2p/test.jsonl)
+    source: interscript/ml-models docs/RESULTS.md#fas-g2p-1.0
+  - name: sb_homograph_ezafe_norm
+    value: 77.34
+    protocol: >-
+      SentenceBench homograph accuracy, ezafe-normalized
+      (eval_sentencebench.py protocol; published Homo-GE2PE: 76.89%)
+    source: interscript/ml-models docs/RESULTS.md#fas-g2p-1.0
