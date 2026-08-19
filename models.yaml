@@ -74,3 +74,22 @@ models:
       - {name: der_beam4, value: 17.46, source: rababa/docs/RESULTS.md#hebrew-diacritization}
     parity: {samples: 600, cer_delta: 0.0}
     license: BSD-3-Clause
+  tha-g2p-base-1.0:
+    task: g2p
+    scripts: [Thai, IPA]
+    precision: fp32
+    filename: tha-g2p-base-1.0-fp32.zip
+    parts:
+      - url: https://github.com/interscript/ml-models/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-00
+        sha256: c4525414e5dec91a54d055ca9f1acd51c198f81fbfc55977aa82c1fb038d58d7
+        size: 1500000000
+      - url: https://github.com/interscript/ml-models/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-01
+        sha256: f5d11fbd75f92e8b5471add867418e2dd4f49a5e258b9ded2f3b5ffa630abe24
+        size: 1281174343
+    sha256: f341a5868867a9847d3f897d1fcc4d1d63b9a59b8913871bcf4ecab48f4fa895
+    size: 2781174343
+    metrics:
+      - {name: per_teacher, value: 4.43, source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0}
+      - {name: per_student, value: 9.19, source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0}
+    parity: {samples: 1219, cer_delta: 0.0}
+    license: BSD-3-Clause
