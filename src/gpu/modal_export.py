@@ -93,11 +93,11 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "urdu-diacrit/test.jsonl",
         "probe": "اردو",
     },
-    "tha-g2p-small": {
+    "tha-g2p-base": {
         "volume": "/volumes/secryst-checkpoints",
-        "checkpoint": "secryst_thai_g2p_distill_small/run-002/best",
-        "metadata": "models/tha-g2p-small/tha-g2p-small-1.0.metadata.yaml",
-        "readme": "models/tha-g2p-small/tha-g2p-small-1.0.README.md",
+        "checkpoint": "secryst_thai_g2p_distill_small/run-004/best",
+        "metadata": "models/tha-g2p-base/tha-g2p-base-1.0.metadata.yaml",
+        "readme": "models/tha-g2p-base/tha-g2p-base-1.0.README.md",
         "test_volume": "/datasets/secryst",
         "test_data": "thai-ipa/test.jsonl",
         "probe": "สวัสดี",
