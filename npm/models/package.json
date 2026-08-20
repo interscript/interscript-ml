@@ -1,7 +1,7 @@
 {
-  "name": "@interscript/models",
+  "name": "@secryst/models",
   "version": "0.0.1",
-  "description": "Manifest of available Interscript ML models + their current versions, URLs, and checksums.",
+  "description": "Manifest of available secryst (interscript-ml contract) models + their current versions, URLs, and checksums.",
   "license": "MIT",
   "main": "manifest.json",
   "files": [
