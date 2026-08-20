@@ -13,7 +13,7 @@ This repo owns three things and nothing else:
    text is [SPEC.md](SPEC.md); the reference loader now lives in the
    [Python crystal](https://github.com/secryst/secryst-py).
 3. **The model zoo + publish pipeline** — teachers from
-   [interscript-ml-train](https://github.com/interscript/interscript-ml-train)
+   [secryst-train](https://github.com/secryst/secryst-train)
    are distilled, gated (parity written into the artifact), and released
    as index entries here.
 
@@ -31,8 +31,8 @@ secryst crystals       Ruby gem · pip install secryst · npm i secryst
 interscript-ml  ◄────── models/zips resolve through this index
 (THIS repo)     ──────► golden sets: crystals diffed against each other
 
-interscript-ml-train   teachers (arabic · persian · urdu + hebrew docs);
-(interscript org)      students distilled here enter the zoo above
+secryst-train          teachers (arabic · persian · urdu + hebrew docs);
+(secryst org)          secryst's own product; students ship through the zoo
 ```
 
 Dependency directions, stated once:
@@ -44,8 +44,10 @@ Dependency directions, stated once:
   with `pip install secryst` and nothing else.
 - **Engines depend on crystals only optionally.** An engine without a
   crystal simply cannot execute maps that declare a vocalization step.
-- **Training depends on nothing downstream.** Teachers never import the
-  contract; they're consumed by it (via the export gate).
+- **Training is owned by secryst.** Teachers live in
+  [secryst/secryst-train](https://github.com/secryst/secryst-train) —
+  the crystal family's own product. This repo publishes their distilled
+  students through the export gate; it does not train anything.
 
 ## Repositories
 
@@ -56,7 +58,7 @@ Dependency directions, stated once:
 | [secryst/secryst-py](https://github.com/secryst/secryst-py) | Python crystal — reference, owns golden generation |
 | [secryst/secryst-ts](https://github.com/secryst/secryst-ts) | TypeScript crystal (npm `secryst`) |
 | [secryst/secryst.github.io](https://www.secryst.org) | the crystals' documentation site |
-| [interscript/interscript-ml-train](https://github.com/interscript/interscript-ml-train) | training monorepo (arabic/persian/urdu) |
+| [secryst/secryst-train](https://github.com/secryst/secryst-train) | training monorepo — **secryst-owned teachers** |
 | [interscript/rababa](https://github.com/interscript/rababa) · [rababa-farsi](https://github.com/interscript/rababa-farsi) · [rababa-urdu](https://github.com/interscript/rababa-urdu) | archived origins of the train monorepo (full history merged there) |
 
 `runtime/` in this repo is the **frozen origin** of the Python crystal —
