@@ -1,17 +1,12 @@
-# secryst (Python crystal)
+# interscript-ml (Python runtime)
 
-The Python crystal — reference implementation of **IMF v1** model zips
-and the `models.yaml` index (the **interscript-ml** contract), the
-phonological layer of Interscript. The Ruby (`secryst` gem) and
-TypeScript (`npm i secryst`) crystals are diffed against this one on
-shared golden sets. This crystal owns golden generation and numerical
-adjudication for the family.
-
-Home repo: https://github.com/secryst/secryst-py (this copy in
-ml-models/runtime is the frozen origin; the package now lives there).
+The reference Python runtime for **IMF v1** model zips — the phonological
+layer of Interscript. The Ruby (secryst gem) and TypeScript
+(@interscript/ml) runtimes are diffed against this one on shared golden
+sets.
 
 ```python
-from secryst import Model
+from interscript_ml import Model
 
 model = Model.load("khm-latn-1.0")        # id: index resolve -> download
                                           # -> sha256-verify -> cache -> load
@@ -30,7 +25,7 @@ model = Model.load("khm-latn-1.0.zip")    # or: a local zip path directly
 - Dynamic fetch per the `models.yaml` contract (shared with the Ruby and
   TypeScript runtimes): resolve id -> channel URL, download to temp,
   verify whole-file sha256 against the index, atomically install into
-  `~/.cache/secryst/models/<id>/`. Overrides:
+  `~/.cache/interscript/models/<id>/`. Overrides:
   `SECRYST_INDEX` (URL or path), `SECRYST_CACHE`.
 
 Install: `pip install ./runtime` (from the ml-models checkout) or
