@@ -50,7 +50,7 @@ tha-g2p-base-1.0:
     - {row: "Teacher (B-K/umt5 hub base)", column: PER, as: per_teacher}
     - {row: "Student (ByT5-base, gate)", column: PER, as: per_student}
 fas-g2p-1.0:
-  repo: interscript/ml-models
+  repo: interscript/interscript-ml
   ref: main
   path: docs/RESULTS.md
   anchor: fas-g2p-1.0

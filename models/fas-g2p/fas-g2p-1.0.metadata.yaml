@@ -20,10 +20,10 @@ metrics:
     protocol: >-
       greedy decode, editdistance CER on the v1 test split
       (persian-g2p-datasets:/persian-g2p/test.jsonl)
-    source: interscript/ml-models docs/RESULTS.md#fas-g2p-1.0
+    source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
   - name: sb_homograph_ezafe_norm
     value: 77.34
     protocol: >-
       SentenceBench homograph accuracy, ezafe-normalized
       (eval_sentencebench.py protocol; published Homo-GE2PE: 76.89%)
-    source: interscript/ml-models docs/RESULTS.md#fas-g2p-1.0
+    source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
