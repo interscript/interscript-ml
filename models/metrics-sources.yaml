@@ -51,9 +51,9 @@ tha-g2p-base-1.0:
     - {row: "Student (ByT5-base, gate)", column: PER, as: per_student}
 fas-g2p-1.0:
   repo: interscript/interscript-ml
-  ref: main
+  ref: release/fas-g2p-1.0
   path: docs/RESULTS.md
-  anchor: fas-g2p-1.0
+  anchor: fas-g2p-10-persian-g2p-2026-08-19
   protocol: "greedy decode, editdistance CER on v1 test split; SentenceBench homograph ezafe-normalized"
   tables:
     - {row: "CER (v1 test split, greedy, editdistance)", as: cer}
