@@ -1,125 +1,71 @@
-# interscript/ml-models
+# interscript-ml
 
-Unified training framework for Interscript ML-powered maps.
+The **contract** for Interscript's phonological layer — the normative
+definition of what a "hidden reading" model is, and the zoo that
+publishes models conforming to it.
 
-**Status:** skeleton (P0 in TODO.rababa/10). Framework abstractions
-implemented and tested. Task data modules + configs ready; full
-training requires GPU + dataset fetch.
+This repo owns three things and nothing else:
 
-## What this is
+1. **The `models.yaml` index** — the stable URL every runtime resolves
+   model ids against (with per-artifact sha256s and split-part support).
+2. **The IMF v1 model-zip format** — the artifact contract:
+   `metadata.yaml` + ONNX graphs + member sha256 manifest. The normative
+   text is [SPEC.md](SPEC.md); the reference loader now lives in the
+   [Python crystal](https://github.com/secryst/secryst-py).
+3. **The model zoo + publish pipeline** — teachers from
+   [interscript-ml-train](https://github.com/interscript/interscript-ml-train)
+   are distilled, gated (parity written into the artifact), and released
+   as index entries here.
 
-One training repo for every ML map in Interscript:
-
-- **rababa_arabic** — Arabic diacritization (adds harakat)
-- **rababa_hebrew** — Hebrew diacritization (adds nikud)
-- **secryst_thai_ipa** — Thai → IPA transliteration
-
-Each task is a **config + data module**. The training framework is
-shared. Adding a new transliteration pair (Khmer → IPA, Japanese →
-Romaji) is one new directory under `src/tasks/` — zero edits to
-framework code.
-
-## Architecture
+## The system
 
 ```
-src/
-├── framework/          # SHARED abstractions (MECE)
-│   ├── config.py       # TaskConfig loaded from YAML
-│   ├── registry.py     # Plugin registry (OCP)
-│   ├── data.py         # DataModule ABC
-│   ├── model.py        # ModelModule ABC (teacher + student)
-│   ├── trainer.py      # BaseTrainer + FineTune + Distill (DRY)
-│   ├── evaluator.py    # BaseEvaluator + edit_distance + DER/PER utils
-│   ├── exporter.py     # OnnxExporter ABC
-│   └── pipeline.py     # TrainingPipeline orchestrator
-├── tasks/
-│   ├── rababa_arabic/  # config.yaml + data.py + student.py + metrics.py
-│   ├── rababa_hebrew/
-│   └── secryst_thai_ipa/
-└── cli.py              # python -m src.cli train --task rababa_arabic
+interscript            deterministic transliteration maps + engines
+(ruby · js · py)         │ maps that need vocalization dispatch to a
+                        │ crystal through stdlib adapters (optional)
+                        ▼
+secryst crystals       Ruby gem · pip install secryst · npm i secryst
+(secryst org)          implement IMF v1 + models.yaml — nothing else
+                        │
+                        ▼
+interscript-ml  ◄────── models/zips resolve through this index
+(THIS repo)     ──────► golden sets: crystals diffed against each other
+
+interscript-ml-train   teachers (arabic · persian · urdu + hebrew docs);
+(interscript org)      students distilled here enter the zoo above
 ```
 
-## Design principles (project conventions)
+Dependency directions, stated once:
 
-- **OCP** — adding a task = one new directory. Adding a metric, model
-  architecture, or data source = one new subclass + `@register_*`
-  decorator. Framework code is never edited.
-- **MECE** — each module owns one concern. Data has no knowledge of
-  model architecture. Model has no knowledge of trainer. Trainer has
-  no knowledge of evaluator.
-- **DRY** — the epoch loop, edit-distance math, and ONNX export
-  wrapper are written once.
-- **Model-driven, semantically-driven** — class names mirror domain
-  concepts (`RababaArabicData`, `DEREvaluator`, `SecrystThaiIpaStudent`).
-- **Performance** — frozen dataclasses for config; lazy imports for
-  torch so framework tests run without GPU deps.
+- **interscript-ml depends on nothing.** It is the contract: an index,
+  a format, golden sets, and release tooling.
+- **Crystals depend only on the contract.** A crystal has zero
+  interscript-core dependency — a TTS front-end can phonemize Khmer
+  with `pip install secryst` and nothing else.
+- **Engines depend on crystals only optionally.** An engine without a
+  crystal simply cannot execute maps that declare a vocalization step.
+- **Training depends on nothing downstream.** Teachers never import the
+  contract; they're consumed by it (via the export gate).
 
-## Quick start
+## Repositories
 
-```bash
-scripts/setup_env.sh               # creates .venv, installs deps
-scripts/fetch_data.sh              # fetch raw datasets (set env vars first)
-scripts/train.sh rababa_arabic     # full training pipeline
-scripts/export.sh rababa_arabic    # export student to ONNX
-scripts/publish.sh rababa_arabic   # upload to HuggingFace Hub
-```
+| repo | role |
+|---|---|
+| [interscript/interscript-ml](https://github.com/interscript/interscript-ml) | this — contract + zoo |
+| [secryst/secryst](https://github.com/secryst/secryst) | Ruby crystal (the original, est. 2020) |
+| [secryst/secryst-py](https://github.com/secryst/secryst-py) | Python crystal — reference, owns golden generation |
+| [secryst/secryst-ts](https://github.com/secryst/secryst-ts) | TypeScript crystal (npm `secryst`) |
+| [secryst/secryst.github.io](https://www.secryst.org) | the crystals' documentation site |
+| [interscript/interscript-ml-train](https://github.com/interscript/interscript-ml-train) | training monorepo (arabic/persian/urdu) |
+| [interscript/rababa](https://github.com/interscript/rababa) · [rababa-farsi](https://github.com/interscript/rababa-farsi) · [rababa-urdu](https://github.com/interscript/rababa-urdu) | archived origins of the train monorepo (full history merged there) |
 
-Or via the CLI directly:
+`runtime/` in this repo is the **frozen origin** of the Python crystal —
+kept for provenance; live code and releases are in secryst-py.
 
-```bash
-python -m src.cli list
-python -m src.cli train --task rababa_arabic --data-root data --out-root models
-python -m src.cli evaluate --task secryst_thai_ipa
-python -m src.cli export --task rababa_hebrew
-```
+## Environment (as implemented by every crystal)
 
-## Adding a new task
+`SECRYST_INDEX` (index URL or path; default: `models.yaml` on this
+repo's main) · `SECRYST_CACHE` (default `~/.cache/secryst`). Cache hits
+are re-verified against the index on every load.
 
-1. Create `src/tasks/<name>/config.yaml` (copy from an existing task).
-2. Create `src/tasks/<name>/data.py` extending `DataModule`, decorated
-   with `@register_data_module("<name>_data")`.
-3. Create `src/tasks/<name>/student.py` extending `ModelModule`,
-   decorated with `@register_model_module("<name>_student")`.
-4. Create `src/tasks/<name>/metrics.py` extending `BaseEvaluator`,
-   decorated with `@register_evaluator("<metric>")`.
-5. Run `python -m src.cli train --task <name>`.
-
-That's it. No framework edits.
-
-## Tests
-
-```bash
-pytest -v
-```
-
-Framework tests run without torch (CPU-only, fast). Training and ONNX
-export tests are gated behind `@pytest.mark.gpu` and require the
-`[train]` and `[export]` extras.
-
-## Distribution
-
-Models ship as **IMF v1** zips (Interscript Model Format — spec in
-[`docs/imf-v1.md`](./docs/imf-v1.md)): byte-level tokenizer only, ONNX
-opset 14, sha256-verified graphs, metrics traceable to `RESULTS.md`
-anchors. Build/validate with `PYTHONPATH=src python -m imf pack|validate`.
-
-Models reach end users through three channels (full plan in
-[`TODO.distribution/`](./TODO.distribution/)):
-
-| Channel | Audience | Why |
-|---|---|---|
-| **GitHub Releases** (primary) | All consumers | Versioned, immutable, checksums, tied to source tags |
-| **HuggingFace Hub** (canonical) | Researchers | Model cards, datasets, auto-conversion, inference API |
-| **jsdelivr CDN** (edge) | Browser | Edge-cached, CORS-friendly, no rate limits |
-
-Per-task versioning: `rababa_arabic-v1.0.0`, `secryst_thai_ipa-v1.2.0`,
-etc. Each release ships fp32 + int8 + int4 variants with SHA256
-sidecars, SLSA provenance, and Sigstore signatures.
-
-Distribution phases (P2–P8) are tracked in `TODO.distribution/`. The
-first production release lands when phase P6 (first trained model)
-completes.
-
-## License
-
-BSD-3-Clause, for code and model weights alike (see `LICENSE`).
+License: BSD-3-Clause.

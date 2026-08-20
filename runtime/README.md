@@ -11,7 +11,7 @@ Home repo: https://github.com/secryst/secryst-py (this copy in
 ml-models/runtime is the frozen origin; the package now lives there).
 
 ```python
-from interscript_ml import Model
+from secryst import Model
 
 model = Model.load("khm-latn-1.0")        # id: index resolve -> download
                                           # -> sha256-verify -> cache -> load
