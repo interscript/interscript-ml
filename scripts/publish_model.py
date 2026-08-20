@@ -131,7 +131,7 @@ def release_notes(model_id: str, meta: dict, filename: str, size: int,
         "Runtimes reassemble split parts transparently and verify every sha256:",
         "",
         "```python",
-        "from interscript_ml import Model",
+        "from secryst import Model",
         f'model = Model.load("{model_id}")',
         "```",
     ]
