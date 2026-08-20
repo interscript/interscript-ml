@@ -18,12 +18,12 @@ metrics:
   value: 4.43
   protocol: beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece
     decode); 1,219 Kaikki Thai test sentences; B-K/umt5-thai-g2p-v2-0.5k teacher
-  source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0
 - name: per_student
   value: 9.19
   protocol: beam-4, corpus-level PER, same harness as the teacher; gate +4.76pp <=
     +5pp (docs/DISTILL-SOURCE-PROMPT.md); exact match 90.81%
-  source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0
 parity:
   samples: 1219
   cer_delta: 0.0
