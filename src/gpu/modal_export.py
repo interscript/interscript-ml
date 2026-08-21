@@ -95,6 +95,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "urdu-diacrit/test.jsonl",
         "probe": "اردو",
     },
+    "heb-diac-small": {
+        "volume": "/volumes/rababa-checkpoints",
+        "checkpoint": "rababa_hebrew_distill_small/run-001/best",
+        "metadata": "models/heb-diac-small/heb-diac-small-1.0.metadata.yaml",
+        "readme": "models/heb-diac-small/heb-diac-small-1.0.README.md",
+        "test_volume": "/datasets/rababa",
+        "test_data": "nakdimon/test-imf.jsonl",
+        "probe": "שלום",
+    },
     "tha-g2p-base": {
         "volume": "/volumes/secryst-checkpoints",
         "checkpoint": "secryst_thai_g2p_distill_small/run-004/best",

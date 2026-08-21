@@ -44,3 +44,18 @@ representation line are closed negative; v1 is final).
 
 Published reference: Homo-GE2PE homograph 76.89% — v1 is above the
 published SOTA on this benchmark.
+
+## heb-diac-small-1.0 — Hebrew student distillation (2026-08-20)
+
+Logit KD from the s43 teacher (rababa_hebrew_byt5_s43/run-001/best):
+KL + CE on hebrew-v4, ByT5-small init. Harness: greedy decode, Nakdimon
+IMF test split (1,864 long sentences), same harness for both models
+(`src/gpu/modal_distill.py::evaluate`).
+
+| Model | DER | CER |
+|---|---|---|
+| Teacher (s43, ByT5-base) | 24.79% | 22.14% |
+| **Student (ByT5-small, gate)** | **30.37%** | 24.47% |
+
+Shrink cost +5.58pp — inside the ~5.6pp budget pre-accepted for this
+pair (rababa docs/DISTILL-SOURCE-PROMPT.md section 2).
