@@ -58,3 +58,12 @@ fas-g2p-1.0:
   tables:
     - {row: "CER (v1 test split, greedy, editdistance)", as: cer}
     - {row: "SentenceBench homograph (ezafe-normalized)", as: sb_homograph_ezafe_norm}
+heb-diac-small-1.0:
+  repo: interscript/interscript-ml
+  ref: main
+  path: docs/RESULTS.md
+  anchor: heb-diac-small-1.0
+  protocol: "greedy decode; Nakdimon IMF test split, 1,864 long sentences"
+  tables:
+    - {row: "Teacher (s43, ByT5-base)", column: DER, as: der_teacher_greedy}
+    - {row: "Student (ByT5-small, gate)", column: DER, as: der_student_greedy}
