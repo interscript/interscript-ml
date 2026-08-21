@@ -58,6 +58,7 @@ DATASETS = modal.Volume.from_name("rababa-datasets")
 SECRYST_CHECKPOINTS = modal.Volume.from_name("secryst-checkpoints")
 SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
 PERSIAN_CHECKPOINTS = modal.Volume.from_name("persian-g2p-checkpoints")
+PERSIAN_DATASETS = modal.Volume.from_name("persian-g2p-datasets")
 
 SPECS: dict[str, dict[str, str]] = {
     "tha-g2p-small": {
@@ -88,7 +89,7 @@ SPECS: dict[str, dict[str, str]] = {
         # GREEDY with generation cap 2x window (eval_sadeed_windowed).
         # Corpus: r5-units joined paragraph units (src = stripped
         # diacritics, teacher regenerates the labels).
-        "teacher": "rababa_arabic_byt5/run-005-context/best",
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
         "teacher_volume": "rababa",
         "student_init": "google/byt5-small",
         "train": "r5-units/domain.txt",
@@ -98,7 +99,88 @@ SPECS: dict[str, dict[str, str]] = {
         "label_beams": "1",
         "out": "rababa_arabic_distill_small/run-002",
         "mode": "sequence",
-        "note": "gate <= teacher_der + 0.5pp windowed DER-CE (prompt target 3.18 from 2.68)",
+        "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
+    },
+    "ara-diac-tiny": {
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "out_volume": "secryst",
+        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
+                           "enc_layers": 8, "dec_layers": 8},
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [8000, 4000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_tiny/run-004",
+        "mode": "sequence",
+        "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
+    },
+    "tha-g2p-tiny": {
+        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
+        "teacher_is_hub": "true",
+        "teacher_volume": "secryst",
+        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
+                           "enc_layers": 8, "dec_layers": 8},
+        "train": "thai-ipa-expanded/train.jsonl",
+        "train_extra": ["thai-ipa/train.jsonl", "thai-ipa/augmented_epitran.jsonl"],
+        "eval_test": "thai-ipa/test.jsonl",
+        "out": "secryst_thai_g2p_distill_tiny/run-001",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "label_beams": "4",
+        "max_len": 384,
+        "note": "client tier; collapsed from-scratch (75.8 PER) — see run-002 mk",
+    },
+    "tha-g2p-tiny-mk": {
+        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
+        "teacher_is_hub": "true",
+        "teacher_volume": "secryst",
+        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
+                           "enc_layers": 8, "dec_layers": 8},
+        "eval_test": "thai-ipa/test.jsonl",
+        "out": "secryst_thai_g2p_distill_tiny/run-002",
+        "labels_complete": "true",
+        "max_len": 384,
+        "note": "microkimi bridges; 71.12 PER — improved, not rescued",
+    },
+    "tha-g2p-mid-mk": {
+        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
+        "teacher_is_hub": "true",
+        "teacher_volume": "secryst",
+        "student_config": {"d_model": 512, "d_ff": 2048, "num_heads": 8,
+                           "enc_layers": 10, "dec_layers": 10},
+        "eval_test": "thai-ipa/test.jsonl",
+        "out": "secryst_thai_g2p_distill_mid/run-001",
+        "labels_complete": "true",
+        "max_len": 384,
+        "note": "70M bridge rung; labels reused from tiny run-002",
+    },
+    "fas-g2p-tiny": {
+        "teacher": "persian_g2p/run-001/best",
+        "teacher_volume": "persian",
+        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
+                           "enc_layers": 8, "dec_layers": 8},
+        "data_volume": "/datasets",
+        "train": "persian_g2p/train.jsonl",
+        "unit_limits": [60000],
+        "test": "persian_g2p/test.jsonl",
+        "out": "interscript_fas_g2p_distill_tiny/run-001",
+        "mode": "sequence",
+        "label_beams": "4",
+        "note": "client tier; collapsed from-scratch (77.97 PER)",
+    },
+    "heb-diac-tiny": {
+        "teacher": "rababa_hebrew_byt5_s43/run-001/best",
+        "teacher_volume": "rababa",
+        "out_volume": "secryst",
+        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
+                           "enc_layers": 8, "dec_layers": 8},
+        "train": "hebrew-v4/train.jsonl",
+        "out": "rababa_hebrew_distill_tiny/run-002",
+        "mode": "sequence",
+        "label_beams": "4",
+        "note": "client tier; collapsed from-scratch (100 DER)",
     },
     "fas-g2p-small": {
         "teacher": "persian_g2p/run-001/best",
@@ -403,11 +485,17 @@ def evaluate_per(spec_id: str, limit: int = 0) -> dict:
         "secryst": "/secryst-checkpoints",
         "persian": "/persian-checkpoints",
     }
-    data_vol = "/secryst-datasets" if teacher_vol == "secryst" else "/datasets"
+    data_vol = {"secryst": "/secryst-datasets",
+                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
+    data_vol = spec.get("data_volume", data_vol)
     teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
                     else str(Path(vol_map[teacher_vol]) / spec["teacher"]))
-    student_path = Path(vol_map[teacher_vol]) / spec["out"] / "best"
-    test_path = Path(data_vol) / spec.get("eval_test", spec["test"])
+    student_vol = vol_map[spec.get("out_volume", teacher_vol)]
+    student_path = Path(student_vol) / spec["out"] / "best"
+    test_rel = spec.get("eval_test") or spec.get("test")
+    if not test_rel:
+        raise RuntimeError(f"{spec_id}: no test path")
+    test_path = Path(data_vol) / test_rel
 
     teacher_tok = AutoTokenizer.from_pretrained(teacher_path)
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
@@ -474,13 +562,14 @@ def evaluate_per(spec_id: str, limit: int = 0) -> dict:
     gpu="A10G",
     cpu=8,
     memory=32 * 1024,
-    timeout=5 * 3600,
+    timeout=12 * 3600,
     volumes={
         "/datasets": DATASETS,
         "/checkpoints": CHECKPOINTS,
         "/secryst-checkpoints": SECRYST_CHECKPOINTS,
         "/secryst-datasets": SECRYST_DATASETS,
         "/persian-checkpoints": PERSIAN_CHECKPOINTS,
+        "/persian-datasets": PERSIAN_DATASETS,
     },
 )
 def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
@@ -508,10 +597,13 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         "persian": "/persian-checkpoints",
     }
     teacher_root = vol_map[teacher_vol]
+    out_root_vol = vol_map[spec.get("out_volume", teacher_vol)]
     teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
                     else str(Path(teacher_root) / spec["teacher"]))
 
-    data_vol = "/secryst-datasets" if teacher_vol == "secryst" else "/datasets"
+    data_vol = {"secryst": "/secryst-datasets",
+                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
+    data_vol = spec.get("data_volume", data_vol)
     train_path = Path(data_vol) / spec["train"]
 
     # Teacher: use its OWN tokenizer (sentencepiece for umt5)
@@ -533,7 +625,28 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # Student: byte-level ByT5. Kept on CPU during labeling — only the
     # teacher needs the GPU there; eviction-prone A10G headroom matters.
     student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
-    student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    if spec.get("student_config"):
+        from transformers import T5Config, T5ForConditionalGeneration
+
+        cfg = spec["student_config"]
+        config = T5Config(
+            vocab_size=259,
+            d_model=cfg.get("d_model", 384),
+            d_ff=cfg.get("d_ff", 1536),
+            d_kv=cfg.get("d_model", 384) // cfg.get("num_heads", 6),
+            num_layers=cfg.get("enc_layers", 8),
+            num_decoder_layers=cfg.get("dec_layers", 8),
+            num_heads=cfg.get("num_heads", 6),
+            dropout_rate=0.1,
+            feed_forward_proj="relu",
+            decoder_start_token_id=0,
+            relative_attention_max_distance=128,
+        )
+        student = T5ForConditionalGeneration(config)
+        n_params = sum(q.numel() for q in student.parameters()) / 1e6
+        print(f"[{spec_id}] tiny student: {n_params:.1f}M params", flush=True)
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
     student.train()
 
     class Pairs(Dataset):
@@ -549,6 +662,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             seen = set()
             for path, limit in files:
                 if path.suffix == ".jsonl":
+                    rows = []
                     for line in path.read_text(encoding="utf-8").splitlines():
                         if not line.strip():
                             continue
@@ -559,7 +673,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                         s = (row.get("src") or "").strip()
                         if s and s not in seen and len(s.encode()) <= 384:
                             seen.add(s)
-                            self.rows.append((s, (row.get("tgt") or "").strip()))
+                            rows.append((s, (row.get("tgt") or "").strip()))
+                    if limit:
+                        random.Random(42).shuffle(rows)
+                        rows = rows[:limit]
+                    self.rows.extend(rows)
                 else:
                     diac = re.compile("[ً-ٰٟۖ-ۭ]")
                     units = [
@@ -610,12 +728,15 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # Step 1: teacher generates labels (beam-4) for the full corpus.
     # Resumable: evictions mid-labeling are routine on long jobs —
     # already-labeled srcs are skipped, the rest are appended.
-    out_root = Path(teacher_root) / spec["out"]
+    out_root = Path(out_root_vol) / spec["out"]
     out_root.mkdir(parents=True, exist_ok=True)
-    teacher_labels_path = out_root / "teacher_labels.jsonl"
+    teacher_labels_path = out_root / spec.get("labels_file", "teacher_labels.jsonl")
 
     done: set[str] = set()
-    if teacher_labels_path.exists():
+    if spec.get("labels_complete") and teacher_labels_path.exists():
+        print(f"[{spec_id}] labels trusted complete", flush=True)
+        done = {s_ for s_, _ in train_ds.rows}
+    elif teacher_labels_path.exists():
         for line in teacher_labels_path.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 try:
@@ -716,14 +837,25 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     student.to("cuda")
     student.gradient_checkpointing_enable()
     teacher_labels = []
-    for line in teacher_labels_path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
+    seen_labels: set[str] = set()
+    for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if not line.strip():
+            continue
+        try:
             row = json.loads(line)
-            # drop degenerate outputs (repetition junk hits the token cap)
-            label = (row["teacher"] or "").strip()
-            if label and len(label.encode()) <= 384:
-                teacher_labels.append((row["src"], label))
+        except json.JSONDecodeError:
+            continue  # torn line from a volume replication race
+        label = (row.get("teacher") or "").strip()
+        src = (row.get("src") or "").strip()
+        if src and src not in seen_labels and label and len(label.encode()) <= 384:
+            seen_labels.add(src)
+            teacher_labels.append((src, label))
     print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
+    if spec.get("labels_complete") and len(teacher_labels) < 0.5 * len(train_ds.rows):
+        raise RuntimeError(
+            f"labels file view is torn: {len(teacher_labels)} valid pairs for "
+            f"{len(train_ds.rows)} srcs — volume replication race; relaunch"
+        )
 
     class TeacherPairs(Dataset):
         def __len__(self):
@@ -935,6 +1067,258 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
 @app.local_entrypoint()
 def eval_per(spec: str = "tha-g2p-small", limit: int = 0) -> None:
     print(evaluate_per.remote(spec, limit))
+
+
+@app.function(
+    gpu="A10G",
+    cpu=8,
+    memory=32 * 1024,
+    timeout=12 * 3600,
+    volumes={
+        "/datasets": DATASETS,
+        "/checkpoints": CHECKPOINTS,
+        "/secryst-checkpoints": SECRYST_CHECKPOINTS,
+        "/secryst-datasets": SECRYST_DATASETS,
+        "/persian-checkpoints": PERSIAN_CHECKPOINTS,
+        "/persian-datasets": PERSIAN_DATASETS,
+    },
+)
+def distill_microkimi(spec_id: str, epochs: int = 3, calib_batches: int = 64,
+                      ridge_lambda: float = 1e-2, hidden_weight: float = 1.0) -> dict:
+    """Bridge distillation (microkimi recipe): teacher and student share
+    the byte tokenizer, so activations align token-for-token. Calibration
+    collects per-layer-pair Gram stats; closed-form ridge solve gives
+    frozen projectors teacher_h (d_t) -> student_h (d_s); training = CE +
+    hidden-MSE through the frozen bridges. Rescues the from-scratch
+    collapse seen at 33M params on G2P."""
+    import json
+    from pathlib import Path
+
+    import torch
+    from torch.utils.data import DataLoader, Dataset
+    from transformers import (
+        AutoModelForSeq2SeqLM,
+        AutoTokenizer,
+        T5Config,
+        T5ForConditionalGeneration,
+        get_cosine_schedule_with_warmup,
+    )
+
+    spec = SPECS[spec_id]
+    teacher_vol = spec.get("teacher_volume", "rababa")
+    vol_map = {
+        "rababa": "/checkpoints",
+        "secryst": "/secryst-checkpoints",
+        "persian": "/persian-checkpoints",
+    }
+    data_vol = {"secryst": "/secryst-datasets",
+                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
+    data_vol = spec.get("data_volume", data_vol)
+    out_root_vol = vol_map[spec.get("out_volume", teacher_vol)]
+    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
+                    else str(Path(vol_map[teacher_vol]) / spec["teacher"]))
+    out_root = Path(out_root_vol) / spec["out"]
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
+    teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
+    for q in teacher.parameters():
+        q.requires_grad_(False)
+
+    if spec.get("student_config"):
+        cfg = spec["student_config"]
+        config = T5Config(
+            vocab_size=259,
+            d_model=cfg.get("d_model", 384),
+            d_ff=cfg.get("d_ff", 1536),
+            d_kv=cfg.get("d_model", 384) // cfg.get("num_heads", 6),
+            num_layers=cfg.get("enc_layers", 8),
+            num_decoder_layers=cfg.get("dec_layers", 8),
+            num_heads=cfg.get("num_heads", 6),
+            dropout_rate=0.1,
+            feed_forward_proj="relu",
+            decoder_start_token_id=0,
+            relative_attention_max_distance=128,
+        )
+        student = T5ForConditionalGeneration(config)
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    student.to("cuda").train()
+    n_s = sum(q.numel() for q in student.parameters()) / 1e6
+    print(f"[{spec_id}] microkimi: student {n_s:.1f}M params", flush=True)
+
+    labels_file = out_root / spec.get("labels_file", "teacher_labels.jsonl")
+    if not (labels_file.exists() and spec.get("labels_complete")):
+        raise RuntimeError("microkimi expects pre-generated trusted labels")
+    teacher_labels = []
+    seen: set[str] = set()
+    for line in labels_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        src = (row.get("src") or "").strip()
+        label = (row.get("teacher") or "").strip()
+        if src and src not in seen and label and len(label.encode()) <= 384:
+            seen.add(src)
+            teacher_labels.append((src, label))
+    print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
+
+    cap = int(spec.get("max_len", 384))
+
+    def collate(batch):
+        src = student_tok([s for s, _ in batch], padding=True, truncation=True,
+                          max_length=cap, return_tensors="pt")
+        labels = student_tok([t for _, t in batch], padding=True, truncation=True,
+                             max_length=cap, return_tensors="pt").input_ids
+        labels[labels == student_tok.pad_token_id] = -100
+        return src.input_ids, src.attention_mask, labels
+
+    class TeacherPairs(Dataset):
+        def __len__(self):
+            return len(teacher_labels)
+
+        def __getitem__(self, i):
+            return teacher_labels[i]
+
+    loader = DataLoader(TeacherPairs(), batch_size=8, shuffle=True,
+                        collate_fn=collate, num_workers=2, drop_last=True)
+
+    t_enc = teacher.config.num_layers
+    t_dec = teacher.config.num_decoder_layers or teacher.config.num_layers
+    s_enc = student.config.num_layers
+    s_dec = student.config.num_decoder_layers or student.config.num_layers
+    enc_pairs = [(j, round(j * (t_enc - 1) / max(1, s_enc - 1))) for j in range(s_enc)]
+    dec_pairs = [(j, round(j * (t_dec - 1) / max(1, s_dec - 1))) for j in range(s_dec)]
+    d_t = teacher.config.d_model
+    d_s = student.config.d_model
+
+    def fwd(model, ids, am, labels):
+        return model(input_ids=ids, attention_mask=am, labels=labels,
+                     output_hidden_states=True)
+
+    stats = {}
+    for kind, pairs in (("enc", enc_pairs), ("dec", dec_pairs)):
+        for j, _ in pairs:
+            stats[(kind, j)] = [torch.zeros(d_t, d_t, device="cuda"),
+                                torch.zeros(d_t, d_s, device="cuda"),
+                                torch.zeros(d_t, device="cuda"),
+                                torch.zeros(d_s, device="cuda"),
+                                0]
+    calib = DataLoader(TeacherPairs(), batch_size=8, shuffle=True,
+                       collate_fn=collate, num_workers=2, drop_last=True)
+    n_cal = 0
+    with torch.no_grad():
+        for i, (ids, am, labels) in enumerate(calib):
+            if i >= calib_batches:
+                break
+            ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
+            t_out = fwd(teacher, ids, am, labels)
+            s_out = fwd(student, ids, am, labels)
+            for kind, pairs, t_hs, s_hs in (
+                ("enc", enc_pairs, t_out.encoder_hidden_states, s_out.encoder_hidden_states),
+                ("dec", dec_pairs, t_out.decoder_hidden_states, s_out.decoder_hidden_states),
+            ):
+                for j, t_idx in pairs:
+                    h_t = t_hs[t_idx].reshape(-1, d_t)
+                    h_s = s_hs[j].reshape(-1, d_s)
+                    st = stats[(kind, j)]
+                    st[0] += h_t.T @ h_t
+                    st[1] += h_t.T @ h_s
+                    st[2] += h_t.sum(0)
+                    st[3] += h_s.sum(0)
+                    st[4] += h_t.shape[0]
+            n_cal += ids.shape[0]
+    print(f"[{spec_id}] calibration over {n_cal} pairs", flush=True)
+
+    bridges = {}
+    for key, (gxx, gxd, mx, ms, n) in stats.items():
+        mean_t = mx / n
+        mean_s = ms / n
+        a = gxx + ridge_lambda * torch.eye(d_t, device="cuda") * gxx.diagonal().mean()
+        w = torch.linalg.solve(a, gxd)
+        b = mean_s - mean_t @ w
+        bridges[key] = (w.detach(), b.detach())
+        print(f"[{spec_id}] bridge {key} solved", flush=True)
+
+    total_steps = len(loader) * epochs
+    optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
+    scheduler = get_cosine_schedule_with_warmup(optimizer, total_steps // 20, total_steps)
+
+    start_step = 0
+    ckpts = sorted(out_root.glob("mk-step-*"), key=lambda q: int(q.name.split("-")[2]))
+    if ckpts:
+        student.load_state_dict(torch.load(ckpts[-1] / "student.pt", map_location="cpu",
+                                           weights_only=True))
+        student.to("cuda")
+        optimizer.load_state_dict(torch.load(ckpts[-1] / "optim.pt", map_location="cpu",
+                                             weights_only=True))
+        start_step = int(ckpts[-1].name.split("-")[2])
+        for _ in range(start_step):
+            scheduler.step()
+        print(f"[{spec_id}] resume microkimi from step-{start_step}", flush=True)
+
+    step = start_step
+    for _ in range(epochs):
+        for ids, am, labels in loader:
+            if step >= total_steps:
+                break
+            ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
+            s_out = fwd(student, ids, am, labels)
+            with torch.no_grad():
+                t_out = fwd(teacher, ids, am, labels)
+            loss = s_out.loss
+            mse_total = s_out.loss.new_zeros(())
+            n_tok = 0
+            mask_e = (am == 1).unsqueeze(-1).float()
+            for j, t_idx in enc_pairs:
+                w, b = bridges[("enc", j)]
+                target = t_out.encoder_hidden_states[t_idx] @ w + b
+                diff = ((s_out.encoder_hidden_states[j] - target) ** 2 * mask_e).sum()
+                mse_total = mse_total + diff
+                n_tok += mask_e.sum() * d_s
+            mask_d = (labels != -100).float().unsqueeze(-1)
+            for j, t_idx in dec_pairs:
+                w, b = bridges[("dec", j)]
+                target = t_out.decoder_hidden_states[t_idx] @ w + b
+                diff = ((s_out.decoder_hidden_states[j] - target) ** 2 * mask_d).sum()
+                mse_total = mse_total + diff
+                n_tok += mask_d.sum() * d_s
+            hidden_loss = mse_total / (n_tok + 1e-9)
+            total = loss + hidden_weight * hidden_loss
+            total.backward()
+            torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
+            step += 1
+            if step % 50 == 0:
+                print(f"[{spec_id} mk-step {step}/{total_steps}] "
+                      f"ce={float(loss):.4f} hidden={float(hidden_loss):.6f}", flush=True)
+            if step % 500 == 0:
+                ck = out_root / f"mk-step-{step}"
+                ck.mkdir(exist_ok=True)
+                torch.save(student.state_dict(), ck / "student.pt")
+                torch.save(optimizer.state_dict(), ck / "optim.pt")
+                CHECKPOINTS.commit()
+                SECRYST_CHECKPOINTS.commit()
+                PERSIAN_CHECKPOINTS.commit()
+
+    best = out_root / "best"
+    best.mkdir(exist_ok=True)
+    student.save_pretrained(str(best))
+    student_tok.save_pretrained(str(best))
+    CHECKPOINTS.commit()
+    SECRYST_CHECKPOINTS.commit()
+    PERSIAN_CHECKPOINTS.commit()
+    return {"spec": spec_id, "steps": step, "mode": "microkimi"}
+
+
+@app.local_entrypoint()
+def mk(spec: str = "tha-g2p-tiny-mk", epochs: int = 3) -> None:
+    print(distill_microkimi.remote(spec, epochs=epochs))
 
 
 @app.local_entrypoint()
