@@ -59,3 +59,29 @@ IMF test split (1,864 long sentences), same harness for both models
 
 Shrink cost +5.58pp — inside the ~5.6pp budget pre-accepted for this
 pair (rababa docs/DISTILL-SOURCE-PROMPT.md section 2).
+
+## Client-tier size–quality frontier (2026-08-22)
+
+Thai G2P, same harness (beam-4 corpus PER, 1,219 Kaikki sentences; teacher
+B-K umt5 4.43%):
+
+| Student | Init | Params | Artifact (int8) | PER |
+|---|---|---|---|---|
+| custom 8+8 d384 | random | 33M | ~30MB | 75.80 (collapsed) |
+| custom 8+8 d384 + bridges | random | 33M | ~30MB | 71.12 |
+| custom 10+10 d512 + bridges | random | 70M | ~70MB | 78.51 |
+| ByT5-small | pretrained | 300M | ~300MB | 12.63 |
+| ByT5-base (server tier) | pretrained | 580M | 1.2GB fp32 | 9.19 |
+
+Findings: (1) random-init byte-level seq2seq collapses regardless of
+capacity at this scale — the microkimi bridges improve structure (75.8 →
+71.1) but cannot rescue G2P accuracy; enlarging without pretraining does
+not help (70M = 78.5). (2) ByT5-small's width (d=1472) dominates its
+parameter count — depth-pruning yields no useful intermediate rung
+(263M). (3) The pretrained rung is the whole quality cliff: 300M at
+12.63% vs 70M at 78.5%.
+
+Conclusion: G2P client tier ships at the ByT5-small rung (~300MB int8)
+today; a 30–70MB G2P tier requires byte-level pretraining of the small
+model first (future work). Copy-task languages (Arabic/Hebrew
+diacritization) have a different viability and are evaluated separately.
