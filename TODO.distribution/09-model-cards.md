@@ -110,7 +110,7 @@ Interscript.transliterate("<map_code>", "<input>")
 ### Direct ONNX (any language)
 
 \`\`\`bash
-curl -LO https://github.com/interscript/ml-models/releases/download/<task>-v<VERSION>/<task>.onnx
+curl -LO https://github.com/interscript/interscript-ml/releases/download/<task>-v<VERSION>/<task>.onnx
 # Use onnxruntime to load + run
 \`\`\`
 
@@ -119,7 +119,7 @@ curl -LO https://github.com/interscript/ml-models/releases/download/<task>-v<VER
 \`\`\`bibtex
 @software{interscript_<task>,
   title = {Interscript <task_full_name>},
-  url = {https://github.com/interscript/ml-models},
+  url = {https://github.com/interscript/interscript-ml},
   version = {<VERSION>}
 }
 \`\`\`

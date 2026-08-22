@@ -50,7 +50,7 @@ METADATA = {
             "name": "cer",
             "value": 0.0,
             "protocol": "fixture self-check",
-            "source": "ml-models/tests/test_imf_export.py#fixture",
+            "source": "interscript-ml/tests/test_imf_export.py#fixture",
         }
     ],
 }

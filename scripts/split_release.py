@@ -8,7 +8,7 @@ remains the index contract, each part carries its own sha256 so a
 corrupt part is identified, not just "the download failed".
 
     python scripts/split_release.py models/heb-diac/heb-diac-1.0-fp32.zip \
-        --url-base https://github.com/interscript/ml-models/releases/download/heb-diac-1.0
+        --url-base https://github.com/interscript/interscript-ml/releases/download/heb-diac-1.0
 """
 
 from __future__ import annotations

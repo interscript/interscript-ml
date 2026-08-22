@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Update the @interscript/models manifest after a release.
+# DEPRECATED 2026-08-22: the npm manifest package (npm/models, formerly
+# @interscript/models) is superseded by the models.yaml index consumed
+# by the three secryst crystals. Kept for history; do not run.
+#
+# Update the npm models manifest after a release.
 #
 # Usage:
 #   ./scripts/update_npm_manifest.sh <task> <version>
@@ -31,7 +35,7 @@ manifest_path = Path("npm/models/manifest.json")
 data = json.loads(manifest_path.read_text(encoding="utf-8"))
 
 # Pull checksums from the GH Release API
-api = f"repos/interscript/ml-models/releases/tags/{tag}"
+api = f"repos/interscript/interscript-ml/releases/tags/{tag}"
 release = json.loads(subprocess.check_output(["gh", "api", api], text=True))
 
 assets = {}
@@ -40,7 +44,7 @@ for asset in release.get("assets", []):
     if name.endswith(".sha256"):
         # Download the sidecar to read the digest
         digest = subprocess.check_output(
-            ["gh", "release", "download", tag, "--repo", "interscript/ml-models",
+            ["gh", "release", "download", tag, "--repo", "interscript/interscript-ml",
              "--pattern", name, "--output", "-"], text=True
         ).strip().split()[0]
         base = name[:-len(".sha256")]

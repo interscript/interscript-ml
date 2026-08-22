@@ -34,8 +34,8 @@ IMAGE = (
         "onnxruntime==1.23.2",
         "pyyaml>=6.0",
     )
-    .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
-    .workdir("/root/ml-models")
+    .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
+    .workdir("/root/interscript-ml")
 )
 
 CHECKPOINT_VOLUMES = {
@@ -165,12 +165,12 @@ def _load_pairs(path: Path) -> list[tuple[str, str]]:
 def export_model(model_id: str, precisions: list[str]) -> dict[str, str]:
     import sys
 
-    sys.path.insert(0, "/root/ml-models/src")
+    sys.path.insert(0, "/root/interscript-ml/src")
 
     spec = MODELS[model_id]
     checkpoint = Path(spec["volume"]) / spec["checkpoint"]
-    metadata_path = Path("/root/ml-models") / spec["metadata"]
-    readme_path = Path("/root/ml-models") / spec["readme"]
+    metadata_path = Path("/root/interscript-ml") / spec["metadata"]
+    readme_path = Path("/root/interscript-ml") / spec["readme"]
 
     from imf.export import export_zips, load_byte_seq2seq, onnx_greedy_kv
     from imf.validator import validate_zip
@@ -222,7 +222,7 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     split; writes the parity block into each zip (strict gate enforced)."""
     import sys
 
-    sys.path.insert(0, "/root/ml-models/src")
+    sys.path.insert(0, "/root/interscript-ml/src")
 
     spec = MODELS[model_id]
     checkpoint = Path(spec["volume"]) / spec["checkpoint"]

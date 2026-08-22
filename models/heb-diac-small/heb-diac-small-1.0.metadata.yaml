@@ -19,11 +19,11 @@ metrics:
     protocol: >-
       greedy decode; Nakdimon IMF test split, 1,864 long sentences;
       s43 teacher on the same harness as the student
-    source: interscript/ml-models docs/RESULTS.md#heb-diac-small-1.0
+    source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0
   - name: der_student_greedy
     value: 30.37
     protocol: >-
       greedy decode; same harness; +5.58pp shrink cost, inside the
       ~5.6pp budget pre-accepted for this pair
       (docs/DISTILL-SOURCE-PROMPT.md section 2)
-    source: interscript/ml-models docs/RESULTS.md#heb-diac-small-1.0
+    source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0

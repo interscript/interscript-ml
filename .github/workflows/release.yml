@@ -133,7 +133,7 @@ jobs:
         uses: actions/attest-build-provenance@v1
         continue-on-error: true
         with:
-          subject-name: github.com/interscript/ml-models
+          subject-name: github.com/interscript/interscript-ml
           subject-digest: sha256:${{ github.sha }}
 
   publish-hf:

@@ -39,7 +39,7 @@ IMAGE = (
         "pyarrow",
     )
     .env({"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
-    .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
+    .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
     .add_local_file(
         "/Users/mulgogi/src/interscript/rababa/sadeed_evaluator.py",
         "/opt/rababa/sadeed_evaluator.py",
@@ -50,7 +50,7 @@ IMAGE = (
         "/opt/rababa/data/sadeed-diac-25",
         copy=True,
     )
-    .workdir("/root/ml-models")
+    .workdir("/root/interscript-ml")
 )
 
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")

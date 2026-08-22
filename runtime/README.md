@@ -28,7 +28,7 @@ model = Model.load("khm-latn-1.0.zip")    # or: a local zip path directly
   `~/.cache/interscript/models/<id>/`. Overrides:
   `SECRYST_INDEX` (URL or path), `SECRYST_CACHE`.
 
-Install: `pip install ./runtime` (from the ml-models checkout) or
+Install: `pip install ./runtime` (from the interscript-ml checkout) or
 `pip install -e "./runtime[dev]"` for development.
 
 Tests: `python -m pytest runtime/tests` — tiny-graph zips, no torch

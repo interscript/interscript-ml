@@ -1,4 +1,4 @@
-# ml-models results
+# interscript-ml results
 
 Evaluated results for models produced in this repository. Each section
 anchor is the provenance target referenced by model metadata

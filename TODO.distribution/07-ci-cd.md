@@ -11,7 +11,7 @@
 3. Benchmarks (DER/PER, latency)
 4. GH Release with auto-generated notes
 5. HF Hub upload (PyTorch + ONNX + card)
-6. `@interscript/models` npm manifest bump
+6. `npm `secryst` (manifest now the models.yaml index)` npm manifest bump
 7. (Optional) `@interscript/model-<task>` npm publish
 
 Zero manual steps after the tag.

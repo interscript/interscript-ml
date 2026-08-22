@@ -1,8 +1,8 @@
 {
   "name": "@secryst/models",
   "version": "0.0.1",
-  "description": "Manifest of available secryst (interscript-ml contract) models + their current versions, URLs, and checksums.",
-  "license": "MIT",
+  "description": "DEPRECATED, never published: superseded by the models.yaml index that the three secryst crystals (RubyGems/PyPI/npm 'secryst') resolve at load time. Kept for history.",
+  "license": "BSD-3-Clause",
   "main": "manifest.json",
   "files": [
     "manifest.json"
@@ -16,10 +16,10 @@
     "rababa",
     "secryst"
   ],
-  "homepage": "https://github.com/interscript/ml-models#readme",
+  "homepage": "https://github.com/interscript/interscript-ml#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/interscript/ml-models.git"
+    "url": "git+https://github.com/interscript/interscript-ml.git"
   },
   "author": "Interscript Project"
 }

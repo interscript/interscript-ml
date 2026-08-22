@@ -49,12 +49,12 @@ GPU_IMAGE = (
         "huggingface_hub>=0.23",
         index_url="https://download.pytorch.org/whl/cu121",
     )
-    .copy_directory(str(REPO_ROOT), "/root/ml-models")
-    .workdir("/root/ml-models")
+    .copy_directory(str(REPO_ROOT), "/root/interscript-ml")
+    .workdir("/root/interscript-ml")
     .run_commands("pip install -e '.[dev]'")
 )
 
-stub = modal.Stub("interscript-ml-train", image=GPU_IMAGE) if _MODAL_AVAILABLE else None
+stub = modal.Stub("interscript-ml-gpu", image=GPU_IMAGE) if _MODAL_AVAILABLE else None
 
 
 if _MODAL_AVAILABLE:
@@ -63,13 +63,13 @@ if _MODAL_AVAILABLE:
     def train_task(task: str, max_steps: int | None = None) -> dict:
         """Train one task on Modal. Returns the pipeline result as a dict."""
         import sys
-        sys.path.insert(0, "/root/ml-models/src")
+        sys.path.insert(0, "/root/interscript-ml/src")
         from framework.pipeline import TrainingPipeline
 
         pipeline = TrainingPipeline.from_config(
             task_name=task,
-            data_root=Path("/root/ml-models/data"),
-            out_root=Path("/root/ml-models/models") / task,
+            data_root=Path("/root/interscript-ml/data"),
+            out_root=Path("/root/interscript-ml/models") / task,
         )
         result = pipeline.run(max_steps=max_steps, skip_export=False)
         return {

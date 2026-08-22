@@ -7,22 +7,22 @@
       "status": "preview",
       "version": "0.0.0",
       "note": "No trained release yet. Framework only.",
-      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v{version}/",
-      "github_base": "https://github.com/interscript/ml-models/releases/download/rababa_arabic-v{version}/"
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v{version}/",
+      "github_base": "https://github.com/interscript/interscript-ml/releases/download/rababa_arabic-v{version}/"
     },
     "rababa_hebrew": {
       "status": "preview",
       "version": "0.0.0",
       "note": "No trained release yet. Framework only.",
-      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_hebrew-v{version}/",
-      "github_base": "https://github.com/interscript/ml-models/releases/download/rababa_hebrew-v{version}/"
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_hebrew-v{version}/",
+      "github_base": "https://github.com/interscript/interscript-ml/releases/download/rababa_hebrew-v{version}/"
     },
     "secryst_thai_ipa": {
       "status": "preview",
       "version": "0.0.0",
       "note": "No trained release yet. Framework only.",
-      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/ml-models@secryst_thai_ipa-v{version}/",
-      "github_base": "https://github.com/interscript/ml-models/releases/download/secryst_thai_ipa-v{version}/"
+      "cdn_base": "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@secryst_thai_ipa-v{version}/",
+      "github_base": "https://github.com/interscript/interscript-ml/releases/download/secryst_thai_ipa-v{version}/"
     }
   },
   "conventions": {

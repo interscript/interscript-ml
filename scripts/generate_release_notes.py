@@ -44,7 +44,7 @@ Interscript.transliterate("{map_code}", "<input>")
 ### Direct download
 
 ```
-https://github.com/interscript/ml-models/releases/download/{task}-v{version}/{task}.onnx
+https://github.com/interscript/interscript-ml/releases/download/{task}-v{version}/{task}.onnx
 ```
 
 Full distribution plan: see ``TODO.distribution/`` in the source repo.
