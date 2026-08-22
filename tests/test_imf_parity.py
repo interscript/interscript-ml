@@ -82,6 +82,19 @@ def test_gate_rejects_high_cer_delta(gated_zip: Path) -> None:
         write_parity(gated_zip, bad)
 
 
+def test_parity_limits_are_precision_aware() -> None:
+    def report(precision: str, cer_delta: float) -> ParityReport:
+        return ParityReport(
+            samples=600, cer_reference=10.0, cer_onnx=10.0,
+            cer_delta=cer_delta, token_mismatches=0, precision=precision,
+        )
+
+    assert not report("fp32", 0.5).passed
+    assert report("fp16", 0.5).passed
+    assert not report("fp16", 1.5).passed
+    assert report("int8", 1.5).passed
+
+
 def test_gate_rejects_small_sample(gated_zip: Path) -> None:
     small = ParityReport(
         samples=100, cer_reference=10.0, cer_onnx=10.0,

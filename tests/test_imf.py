@@ -228,10 +228,17 @@ def test_strict_gate_requires_parity_and_metrics(tmp_path: Path) -> None:
 
 def test_strict_gate_rejects_high_cer_delta(tmp_path: Path) -> None:
     meta = dict(METADATA)
-    meta["parity"] = {"samples": 500, "cer_delta": 0.5}
+    meta["parity"] = {"samples": 500, "cer_delta": 1.5}
     z = _write_zip(tmp_path / "m.zip", metadata=meta)
     strict = validate_zip(z, strict=True)
     assert any("cer_delta" in e for e in strict.errors)
+
+
+def test_strict_gate_allows_quantization_scale_cer_delta(tmp_path: Path) -> None:
+    meta = dict(METADATA)
+    meta["parity"] = {"samples": 500, "cer_delta": 0.5}
+    z = _write_zip(tmp_path / "m.zip", metadata=meta)
+    assert validate_zip(z, strict=True).ok
 
 
 def test_strict_gate_rejects_small_parity_sample(tmp_path: Path) -> None:
