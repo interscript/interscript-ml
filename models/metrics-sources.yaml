@@ -62,8 +62,17 @@ heb-diac-small-1.0:
   repo: interscript/interscript-ml
   ref: main
   path: docs/RESULTS.md
-  anchor: heb-diac-small-1.0
+  anchor: heb-diac-small-10-hebrew-student-distillation-2026-08-20
   protocol: "greedy decode; Nakdimon IMF test split, 1,864 long sentences"
   tables:
     - {row: "Teacher (s43, ByT5-base)", column: DER, as: der_teacher_greedy}
     - {row: "Student (ByT5-small, gate)", column: DER, as: der_student_greedy}
+tha-g2p-small-1.0:
+  repo: interscript/interscript-ml
+  ref: release/tha-g2p-small-1.0
+  path: docs/RESULTS.md
+  anchor: tha-g2p-small-10-thai-g2p-client-tier-2026-08-22
+  protocol: "beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece decode); 1,219 held-out Kaikki Thai test sentences"
+  tables:
+    - {row: "Teacher (B-K/umt5 hub base)", column: PER, as: per_teacher}
+    - {row: "Student (ByT5-small, client rung)", column: PER, as: per_student}

@@ -2,7 +2,7 @@
 
 Urdu diacritization (adds haraqat). Byte-level seq2seq (ByT5-small):
 the tokenizer is raw UTF-8 bytes (pad=0, EOS=1) — no vocab files.
-IMF v1 artifact; format spec: interscript/ml-models docs/imf-v1.md.
+IMF v1 artifact; format spec: interscript/interscript-ml docs/imf-v1.md.
 
 - decoder: kv greedy (plain fallback included in the zip)
 - metrics: CER 3.74 on 11,940 held-out —

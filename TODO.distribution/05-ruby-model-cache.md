@@ -74,7 +74,7 @@ rababa_arabic:
   version: "1.0.0"
   sha256: "3a7f2b..."
   size_bytes: 6197600
-  url_base: "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v1.0.0"
+  url_base: "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v1.0.0"
 ```
 
 Override at runtime:

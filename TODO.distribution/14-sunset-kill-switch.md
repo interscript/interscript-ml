@@ -22,7 +22,7 @@ across every consumer — without breaking anyone's app.
 
 ## Manifest as the kill switch
 
-`@interscript/models` manifest is the source of truth for "what's the current version". Pull the entry, every consumer sees the retraction.
+`npm `secryst` (manifest now the models.yaml index)` manifest is the source of truth for "what's the current version". Pull the entry, every consumer sees the retraction.
 
 ```json
 {
@@ -46,7 +46,7 @@ across every consumer — without breaking anyone's app.
 
 A retraction script `scripts/retract.sh <task> <version>` performs:
 
-1. **Manifest bump** — publish new `@interscript/models` with `status: retracted`.
+1. **Manifest bump** — publish new `npm `secryst` (manifest now the models.yaml index)` with `status: retracted`.
 2. **HF Hub** — add `retracted: true` to model card metadata, pin a banner.
 3. **GH Release** — convert to "draft" (preserves asset URLs but hides from listing).
 4. **Slack / mailing list** — automated announcement.
@@ -81,7 +81,7 @@ Building this on day one (even if we never need it) is far cheaper than retrofit
 
 ## Acceptance
 
-- [ ] `@interscript/models` manifest carries `status` field
+- [ ] `npm `secryst` (manifest now the models.yaml index)` manifest carries `status` field
 - [ ] `scripts/retract.sh` and `scripts/restore.sh` work end-to-end
 - [ ] interscript-ts warns on startup if cached version is retracted
 - [ ] Game-day exercise: simulate a retraction, verify consumers respond

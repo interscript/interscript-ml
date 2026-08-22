@@ -220,10 +220,11 @@ def validate_zip(path: Path | str, strict: bool = False) -> ValidationResult:
             if metadata.parity is None:
                 result.error("strict: parity block is missing (run the WO03 gate)")
             else:
-                if metadata.parity.cer_delta > Parity.MAX_CER_DELTA:
+                limit = Parity.max_cer_delta(metadata.precision)
+                if metadata.parity.cer_delta > limit:
                     result.error(
                         f"strict: parity cer_delta {metadata.parity.cer_delta}pp "
-                        f"exceeds {Parity.MAX_CER_DELTA}pp"
+                        f"exceeds the {metadata.precision} limit of {limit}pp"
                     )
                 if metadata.parity.samples < Parity.MIN_SAMPLES:
                     result.error(

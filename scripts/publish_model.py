@@ -35,7 +35,7 @@ from split_release import split as split_zip  # noqa: E402
 
 # GitHub hard-caps release assets at 2,147,483,648 bytes; split well below.
 SPLIT_THRESHOLD = 2_000_000_000
-DEFAULT_REPO = "interscript/ml-models"
+DEFAULT_REPO = "interscript/interscript-ml"
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:

@@ -57,7 +57,7 @@ Asset filenames follow `<task>-<variant>.<ext>`:
 The CDN URL is computable from `<task>` + `<version>` + `<variant>`:
 
 ```
-https://github.com/interscript/ml-models/releases/download/<task>-v<ver>/<task>-<variant>.onnx
+https://github.com/interscript/interscript-ml/releases/download/<task>-v<ver>/<task>-<variant>.onnx
 ```
 
 No central manifest needed to compute URLs. The convention IS the API.

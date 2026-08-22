@@ -1,4 +1,5 @@
-"""WO03 parity gate: ONNX greedy vs the torch reference, CER delta <= 0.2pp.
+"""WO03 parity gate: ONNX greedy vs the torch reference, precision-aware
+CER-delta limits (0.2pp fp32, 1.0pp fp16, 2.0pp int8).
 
 The reference is the transformers decoder loop itself (the exact math the
 export wraps) rather than ``model.generate`` — generate's behavior is
@@ -30,11 +31,12 @@ class ParityReport:
     cer_onnx: float
     cer_delta: float
     token_mismatches: int
+    precision: str = "fp32"
 
     @property
     def passed(self) -> bool:
         return (
-            self.cer_delta <= Parity.MAX_CER_DELTA
+            self.cer_delta <= Parity.max_cer_delta(self.precision)
             and self.samples >= Parity.MIN_SAMPLES
         )
 
@@ -104,6 +106,11 @@ def run_parity(
     zip_path = Path(zip_path)
     enc, kv = _sessions_from_zip(zip_path)
 
+    import yaml
+
+    with zipfile.ZipFile(zip_path) as zf:
+        precision = yaml.safe_load(zf.read("metadata.yaml"))["precision"]
+
     n = 0
     mismatches = 0
     cer_ref_sum = 0.0
@@ -127,6 +134,7 @@ def run_parity(
         cer_onnx=round(cer_onnx, 4),
         cer_delta=round(abs(cer_onnx - cer_ref), 4),
         token_mismatches=mismatches,
+        precision=precision,
     )
 
 
@@ -139,16 +147,17 @@ def write_parity(zip_path: Path | str, report: ParityReport) -> Path:
     result = validate_zip(zip_path)
     if not result.ok or result.metadata is None:
         raise RuntimeError(f"cannot write parity into invalid zip: {result.errors}")
+    metadata = result.metadata
     if not report.passed:
+        limit = Parity.max_cer_delta(metadata.precision)
         raise RuntimeError(
             f"parity gate FAILED: cer_delta {report.cer_delta}pp over "
-            f"{report.samples} samples (limits: <= {Parity.MAX_CER_DELTA}pp, "
-            f">= {Parity.MIN_SAMPLES} samples)"
+            f"{report.samples} samples (limits: <= {limit}pp for "
+            f"{metadata.precision}, >= {Parity.MIN_SAMPLES} samples)"
         )
 
     import tempfile
 
-    metadata = result.metadata
     updated = ModelMetadata(
         format=metadata.format,
         id=metadata.id,

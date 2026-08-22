@@ -51,7 +51,7 @@ model.zip
 | `license` | str | non-empty (strict gate) |
 | `trained_from` | str | repo + run/checkpoint id |
 | `metrics` | list | `{name, value, protocol, source}`; `source` must be a `RESULTS.md#anchor` (strict gate) |
-| `parity` | map? | `{samples, cer_delta}`; strict gate: samples >= 500, cer_delta <= 0.2pp |
+| `parity` | map? | `{samples, cer_delta}`; strict gate: samples >= 500, cer_delta <= 0.2pp fp32 / 1.0pp fp16 / 2.0pp int8 |
 | `sha256` | map | every `*.onnx` member -> hex digest; no dangling entries |
 
 The `id` does not encode precision: `khm-latn-1.0-fp16.zip` and

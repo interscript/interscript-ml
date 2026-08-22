@@ -22,7 +22,7 @@ models:
     scripts: [Khmr, Latn]
     precision: fp32
     filename: khm-latn-1.0-fp32.zip
-    url: https://github.com/interscript/ml-models/releases/download/khm-latn-1.0/khm-latn-1.0-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/khm-latn-1.0/khm-latn-1.0-fp32.zip
     sha256: 55993d473a2ed9489058779cad7e115db05e4020085b71616468cfae4f2f65cb
     size: 1418009977
     metrics:
@@ -35,7 +35,7 @@ models:
     scripts: [Arab, IPA]
     precision: fp32
     filename: urd-g2p-1.0-fp32.zip
-    url: https://github.com/interscript/ml-models/releases/download/urd-g2p-1.0/urd-g2p-1.0-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/urd-g2p-1.0/urd-g2p-1.0-fp32.zip
     sha256: 9f0a248c7116aa7f6b9ac125fb9684a3556f3b8ce8b64567c05a5e7e7a018ebf
     size: 1418039605
     metrics:
@@ -48,7 +48,7 @@ models:
     scripts: [Arab, Arab]
     precision: fp32
     filename: urd-diac-1.0-fp32.zip
-    url: https://github.com/interscript/ml-models/releases/download/urd-diac-1.0/urd-diac-1.0-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/urd-diac-1.0/urd-diac-1.0-fp32.zip
     sha256: c299ea44a4da4851a52283f8e42d2fb6f8c7a9c443ba7eb0270f97372e10b8ea
     size: 1417851421
     metrics:
@@ -61,10 +61,10 @@ models:
     precision: fp32
     filename: heb-diac-1.0-fp32.zip
     parts:
-      - url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-00
+      - url: https://github.com/interscript/interscript-ml/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-00
         sha256: 5497f70cc3c96829e65f1eb0cc401c2d1ffeb4fa909acd4def824c2e019cbc37
         size: 1500000000
-      - url: https://github.com/interscript/ml-models/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-01
+      - url: https://github.com/interscript/interscript-ml/releases/download/heb-diac-1.0/heb-diac-1.0-fp32.zip.part-01
         sha256: a7d2011ab4f9326a86e234cc49cb50daf82949e51efbf03a21d5796c46465e9d
         size: 1281139753
     sha256: b32fa239e0c56708b6004942de4b9e6e9f265e7cc3828f41d560e96386e20dd8
@@ -80,16 +80,16 @@ models:
     precision: fp32
     filename: tha-g2p-base-1.0-fp32.zip
     parts:
-      - url: https://github.com/interscript/ml-models/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-00
+      - url: https://github.com/interscript/interscript-ml/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-00
         sha256: c4525414e5dec91a54d055ca9f1acd51c198f81fbfc55977aa82c1fb038d58d7
         size: 1500000000
-      - url: https://github.com/interscript/ml-models/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-01
+      - url: https://github.com/interscript/interscript-ml/releases/download/tha-g2p-base-1.0/tha-g2p-base-1.0-fp32.zip.part-01
         sha256: f5d11fbd75f92e8b5471add867418e2dd4f49a5e258b9ded2f3b5ffa630abe24
         size: 1281174343
     sha256: f341a5868867a9847d3f897d1fcc4d1d63b9a59b8913871bcf4ecab48f4fa895
     size: 2781174343
     metrics:
-      - {name: per_teacher, value: 4.43, source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0}
-      - {name: per_student, value: 9.19, source: interscript/ml-models docs/RESULTS.md#tha-g2p-base-1.0}
+      - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
+      - {name: per_student, value: 9.19, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
     parity: {samples: 1219, cer_delta: 0.0}
     license: BSD-3-Clause

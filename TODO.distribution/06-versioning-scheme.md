@@ -65,8 +65,8 @@ Following SemVer pre-release syntax:
 Pre-releases are:
 - Uploaded to GH Releases as drafts
 - Published to HF Hub with `stage: prerelease` tag
-- **NOT** added to `@interscript/models` manifest until promoted
-- Available via explicit URL: `cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v1.0.0-rc.1/`
+- **NOT** added to `npm `secryst` (manifest now the models.yaml index)` manifest until promoted
+- Available via explicit URL: `cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v1.0.0-rc.1/`
 
 ## Versioning the framework itself
 
@@ -79,7 +79,7 @@ Framework: `0.1.0` → `0.2.0` → ... → `1.0.0` (after first production task)
 
 When a task version is superseded:
 1. New release tag pushes normally.
-2. `@interscript/models` manifest points `default` → new version.
+2. `npm `secryst` (manifest now the models.yaml index)` manifest points `default` → new version.
 3. Old version stays in GH Releases (immutable).
 4. Old version's HF model card gets a banner: "Superseded by v1.1.0".
 5. `Interscript.clear_cache!(older_than: 90.days)` eventually prunes.

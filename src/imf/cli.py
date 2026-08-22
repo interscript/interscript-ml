@@ -103,7 +103,7 @@ def _default_readme(metadata: ModelMetadata) -> str:
         f"decoder: {metadata.decoder}.\n\n"
         f"Trained from: {metadata.trained_from}\n"
         f"License: {metadata.license}\n\n"
-        "IMF v1 artifact — see the interscript/ml-models docs/imf-v1.md spec.\n"
+        "IMF v1 artifact — see the interscript/interscript-ml docs/imf-v1.md spec.\n"
     )
 
 

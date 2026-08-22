@@ -18,7 +18,7 @@ zero manual steps after a `git tag`.
 ## Channel architecture (hybrid, MECE)
 
 ```
-Source code           → github.com/interscript/ml-models
+Source code           → github.com/interscript/interscript-ml
                          (this repo: framework, configs, tests, CI/CD,
                           release changelog, issue tracking)
 
@@ -26,15 +26,15 @@ Trained weights       → huggingface.co/interscript/<task_name>
    (PyTorch, full)      (model card, datasets, transformers.js hook,
                           free Cloudflare-backed CDN, researcher entry)
 
-Browser-ready ONNX    → github.com/interscript/ml-models/releases/tag/<task>-v<X.Y.Z>
+Browser-ready ONNX    → github.com/interscript/interscript-ml/releases/tag/<task>-v<X.Y.Z>
                          (one .onnx asset per release; checksums attached;
                           stable immutable URLs; programmatic via `gh`)
 
-CDN mirror            → jsdelivr.net/gh/interscript/ml-models@<tag>/...
+CDN mirror            → jsdelivr.net/gh/interscript/interscript-ml@<tag>/...
                          (global edge cache of the GH release assets;
                           CORS-friendly; no rate limits for end users)
 
-JS glue package       → npm: @interscript/models
+JS glue package       → npm: npm `secryst` (manifest now the models.yaml index)
                          (tiny manifest of current versions per task;
                           consumed by interscript-ts to resolve URLs)
 
@@ -59,7 +59,7 @@ Each channel serves a real audience. None is redundant.
 - `01-github-releases.md` — release asset layout, tag conventions, asset naming
 - `02-huggingface-hub.md` — HF org, model cards, datasets, auto-conversion
 - `03-cdn-strategy.md` — jsdelivr + GH releases URL convention, fallback chain
-- `04-npm-packages.md` — `@interscript/models` manifest package
+- `04-npm-packages.md` — `npm `secryst` (manifest now the models.yaml index)` manifest package
 - `05-ruby-model-cache.md` — gem-side download + verify + atomic write
 - `06-versioning-scheme.md` — per-task semver, breaking-change rules
 - `07-ci-cd.md` — `.github/workflows/release.yml` full design

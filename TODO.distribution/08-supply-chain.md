@@ -60,12 +60,12 @@ Every release asset has `<asset>.provenance.json`:
     "runner": "ubuntu-latest"
   },
   "source": {
-    "repository": "github.com/interscript/ml-models",
+    "repository": "github.com/interscript/interscript-ml",
     "ref": "refs/tags/rababa_arabic-v1.0.0",
     "commit_sha": "abc123def456..."
   },
   "materials": [
-    { "uri": "git+github.com/interscript/ml-models", "digest": { "sha1": "abc123..." } },
+    { "uri": "git+github.com/interscript/interscript-ml", "digest": { "sha1": "abc123..." } },
     { "uri": "pypi://torch@2.2.0", "digest": { "sha256": "..." } },
     { "uri": "pypi://transformers@4.42.0", "digest": { "sha256": "..." } }
   ],
@@ -84,7 +84,7 @@ Consumers can verify with `gh attestation verify`:
 
 ```bash
 gh attestation verify rababa_arabic.onnx \
-  --repo interscript/ml-models \
+  --repo interscript/interscript-ml \
   --predicate-type https://slsa.dev/provenance/v1
 ```
 
@@ -114,16 +114,16 @@ private key to manage (keyless signing via short-lived cert).
 
 ## Manifest package ties it together
 
-`@interscript/models` manifest carries all three:
+`npm `secryst` (manifest now the models.yaml index)` manifest carries all three:
 
 ```json
 {
   "rababa_arabic": {
     "version": "1.0.0",
-    "url": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v1.0.0/rababa_arabic.onnx",
+    "url": "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v1.0.0/rababa_arabic.onnx",
     "sha256": "3a7f2b...",
-    "provenance_url": "https://github.com/interscript/ml-models/attestations/...",
-    "sigstore_bundle_url": "https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v1.0.0/rababa_arabic.onnx.bundle"
+    "provenance_url": "https://github.com/interscript/interscript-ml/attestations/...",
+    "sigstore_bundle_url": "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v1.0.0/rababa_arabic.onnx.bundle"
   }
 }
 ```
@@ -148,7 +148,7 @@ Three threats, three mitigations. MECE.
 
 If our signing identity is compromised:
 1. Revoke the cert via Sigstore Rekor entry (public log).
-2. Yank the manifest entry (publish new `@interscript/models`).
+2. Yank the manifest entry (publish new `npm `secryst` (manifest now the models.yaml index)`).
 3. Cut new release with new signing identity.
 4. Announce via RSS / mailing list / model card banner.
 

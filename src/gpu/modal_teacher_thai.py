@@ -30,8 +30,8 @@ IMAGE = (
         "pyyaml>=6.0",
         "numpy>=1.26",
     )
-    .add_local_dir(str(REPO_ROOT), "/root/ml-models", copy=True)
-    .workdir("/root/ml-models")
+    .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
+    .workdir("/root/interscript-ml")
 )
 
 CKPTS = modal.Volume.from_name("secryst-checkpoints")

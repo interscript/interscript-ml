@@ -2,7 +2,7 @@
 
 Hebrew diacritization (adds nikud). Byte-level seq2seq (ByT5-base):
 the tokenizer is raw UTF-8 bytes (pad=0, EOS=1) — no vocab files.
-IMF v1 artifact; format spec: interscript/ml-models docs/imf-v1.md.
+IMF v1 artifact; format spec: interscript/interscript-ml docs/imf-v1.md.
 
 - decoder: kv greedy (plain fallback included in the zip)
 - metrics: greedy DER 29.0% (the v1 runtime path); beam=4 DER 17.46%

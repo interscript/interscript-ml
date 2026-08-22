@@ -13,12 +13,12 @@ Zero cost to us.
 
 Primary (CDN-cached):
 ```
-https://cdn.jsdelivr.net/gh/interscript/ml-models@<task>-v<x.y.z>/<task>.onnx
+https://cdn.jsdelivr.net/gh/interscript/interscript-ml@<task>-v<x.y.z>/<task>.onnx
 ```
 
 Fallback (direct GH):
 ```
-https://github.com/interscript/ml-models/releases/download/<task>-v<x.y.z>/<task>.onnx
+https://github.com/interscript/interscript-ml/releases/download/<task>-v<x.y.z>/<task>.onnx
 ```
 
 jsdelivr mirrors GitHub Releases content via the `@<tag>` syntax. The
@@ -89,19 +89,19 @@ Result: second visit loads instantly. Models cached indefinitely
 becomes:
 
 ```typescript
-const DEFAULT_MODEL_BASE = "https://cdn.jsdelivr.net/gh/interscript/ml-models@"
+const DEFAULT_MODEL_BASE = "https://cdn.jsdelivr.net/gh/interscript/interscript-ml@"
 ```
 
 `loadModel({ kind: "rababa", id: "default" })` resolves to:
 1. Look up `<task>` from id (e.g. `"default"` → `"rababa_arabic"`)
-2. Look up `<version>` from `@interscript/models` npm package
+2. Look up `<version>` from `npm `secryst` (manifest now the models.yaml index)` npm package
 3. Build URL: `${DEFAULT_MODEL_BASE}<task>-v<version>/<task>.onnx`
 4. Fetch with fallback chain
 5. Cache in IndexedDB
 
 ## Version manifest (npm)
 
-The `@interscript/models` npm package exposes a tiny JSON manifest:
+The `npm `secryst` (manifest now the models.yaml index)` npm package exposes a tiny JSON manifest:
 
 ```json
 {
@@ -114,7 +114,7 @@ The `@interscript/models` npm package exposes a tiny JSON manifest:
 `interscript-ts` reads this at startup. Users can pin a version via:
 
 ```typescript
-setModelBase("https://cdn.jsdelivr.net/gh/interscript/ml-models@rababa_arabic-v1.0.0/")
+setModelBase("https://cdn.jsdelivr.net/gh/interscript/interscript-ml@rababa_arabic-v1.0.0/")
 ```
 
 ## Acceptance

@@ -2,7 +2,7 @@
 
 Urdu → IPA grapheme-to-phoneme conversion. Byte-level seq2seq
 (ByT5-small): the tokenizer is raw UTF-8 bytes (pad=0, EOS=1) — no vocab
-files. IMF v1 artifact; format spec: interscript/ml-models docs/imf-v1.md.
+files. IMF v1 artifact; format spec: interscript/interscript-ml docs/imf-v1.md.
 
 - decoder: kv greedy (plain fallback included in the zip)
 - metrics: CER 14.77 / EM 33.6 on 12,699 held-out words —

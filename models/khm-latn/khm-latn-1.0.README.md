@@ -2,7 +2,7 @@
 
 Khmer → Latin transliteration. Byte-level seq2seq (ByT5-small):
 the tokenizer is raw UTF-8 bytes (pad=0, EOS=1) — no vocab files.
-IMF v1 artifact; format spec: interscript/ml-models docs/imf-v1.md.
+IMF v1 artifact; format spec: interscript/interscript-ml docs/imf-v1.md.
 
 - precision: fp16 (mixed: LayerNorm parameters in fp32)
 - decoder: kv greedy (plain fallback included in the zip)
