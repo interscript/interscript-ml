@@ -193,6 +193,12 @@ def main() -> None:
             print(f"release {tag} exists; re-uploading assets (clobber)")
             run(["gh", "release", "upload", tag, *[str(a) for a in assets], "--clobber"])
         run(["gh", "release", "edit", tag, "--notes-file", notes_path])
+        # a create that died mid-upload leaves the release as a draft;
+        # the re-run must publish it
+        is_draft = run(["gh", "release", "view", tag, "--json", "isDraft"],
+                       capture_output=True, text=True).stdout
+        if yaml.safe_load(is_draft):
+            run(["gh", "release", "edit", tag, "--draft=false"])
     else:
         run(["gh", "release", "create", tag, *[str(a) for a in assets],
              "--title", tag, "--notes-file", notes_path])
@@ -244,8 +250,23 @@ def main() -> None:
                          f"## Test plan\n- [ ] CI green\n- [ ] runtime fetch "
                          f"`Model.load(\"{args.model_id}\")` resolves and verifies\n")
                 body_path = fh.name
-            run(["gh", "pr", "create", "--title", f"release: {args.model_id}",
-                 "--body-file", body_path])
+            # the branch push propagates asynchronously; an immediate
+            # pr create reliably fails with "head branch not found"
+            import time
+
+            for attempt in range(3):
+                proc = subprocess.run(
+                    ["gh", "pr", "create", "-R", args.repo,
+                     "--head", branch, "--title", f"release: {args.model_id}",
+                     "--body-file", body_path],
+                    capture_output=True, text=True,
+                )
+                if proc.returncode == 0:
+                    break
+                print(f"pr create attempt {attempt + 1} failed: {proc.stderr.strip()}")
+                time.sleep(20)
+            else:
+                raise SystemExit("gh pr create failed after retries")
     finally:
         run(["git", "worktree", "remove", "--force", str(worktree)])
     print(f"published {args.model_id}: release {tag}, branch {branch}")
