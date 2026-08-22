@@ -105,4 +105,16 @@ models:
       - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
       - {name: per_student, value: 12.06, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
     parity: {samples: 1219, cer_delta: 0.0803}
+  heb-diac-small-1.0:
+    task: diacritization
+    scripts: [Hebr, Hebr]
+    precision: fp32
+    filename: heb-diac-small-1.0-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/heb-diac-small-1.0/heb-diac-small-1.0-fp32.zip
+    sha256: 905c53873d5a62bbe6252c6ec0ecef5f37e96e78cb01e8cd99b6b24c4d4d74ad
+    size: 1418663344
+    metrics:
+      - {name: der_teacher_greedy, value: 24.79, source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0}
+      - {name: der_student_greedy, value: 30.37, source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0}
+    parity: {samples: 1864, cer_delta: 0.0}
     license: BSD-3-Clause
