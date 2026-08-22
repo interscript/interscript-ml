@@ -193,6 +193,12 @@ def main() -> None:
             print(f"release {tag} exists; re-uploading assets (clobber)")
             run(["gh", "release", "upload", tag, *[str(a) for a in assets], "--clobber"])
         run(["gh", "release", "edit", tag, "--notes-file", notes_path])
+        # a create that died mid-upload leaves the release as a draft;
+        # the re-run must publish it
+        is_draft = run(["gh", "release", "view", tag, "--json", "isDraft"],
+                       capture_output=True, text=True).stdout
+        if yaml.safe_load(is_draft):
+            run(["gh", "release", "edit", tag, "--draft=false"])
     else:
         run(["gh", "release", "create", tag, *[str(a) for a in assets],
              "--title", tag, "--notes-file", notes_path])
