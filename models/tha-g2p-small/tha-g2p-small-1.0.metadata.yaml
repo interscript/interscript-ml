@@ -6,30 +6,33 @@ target: IPA
 tokenizer: bytes
 opset: 14
 decoder: kv
-precision: fp32
+precision: int8
 license: BSD-3-Clause
-trained_from: >-
-  sequence-level KD from the B-K/umt5-thai-g2p-v2-0.5k teacher (4.43%
-  PER on this harness; the secryst-saved umt5 artifacts are unusable —
-  transformers 5.15 dropped the untied lm_head); 48,757 usable beam-4
-  teacher-generated labels (51,321 raw, deduplicated, degenerate outputs
-  filtered); ByT5-small init google/byt5-small; checkpoint
-  secryst-checkpoints:/secryst_thai_g2p_distill_small/run-003/best.
-  Client tier: capacity-limited at +7.63pp over the teacher — the +5pp
-  gate is met by tha-g2p-base-1.0; this is the smallest rung that does
-  not collapse (docs/RESULTS.md frontier table, ~300MB int8).
+trained_from: 'sequence-level KD from the B-K/umt5-thai-g2p-v2-0.5k teacher (4.43%
+  PER on this harness; the secryst-saved umt5 artifacts are unusable — transformers
+  5.15 dropped the untied lm_head); 48,757 usable beam-4 teacher-generated labels
+  (51,321 raw, deduplicated, degenerate outputs filtered); ByT5-small init google/byt5-small;
+  checkpoint secryst-checkpoints:/secryst_thai_g2p_distill_small/run-003/best. Client
+  tier: capacity-limited at +7.63pp over the teacher — the +5pp gate is met by tha-g2p-base-1.0;
+  this is the smallest rung that does not collapse (docs/RESULTS.md frontier table,
+  ~300MB int8).'
 metrics:
-  - name: per_teacher
-    value: 4.43
-    protocol: >-
-      beam-4, corpus-level PER (total_ed/total_gold over chars of
-      joined-piece decode); 1,219 Kaikki Thai test sentences; B-K/
-      umt5-thai-g2p-v2-0.5k teacher; exact match 95.57%
-    source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
-  - name: per_student
-    value: 12.06
-    protocol: >-
-      beam-4, corpus-level PER, same harness as the teacher (src/gpu/
-      modal_distill.py::evaluate_per, run-003 checkpoint re-measured
-      2026-08-22); exact match 87.94%; +7.63pp client-tier shrink cost
-    source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
+- name: per_teacher
+  value: 4.43
+  protocol: beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece
+    decode); 1,219 Kaikki Thai test sentences; B-K/ umt5-thai-g2p-v2-0.5k teacher;
+    exact match 95.57%
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
+- name: per_student
+  value: 12.06
+  protocol: beam-4, corpus-level PER, same harness as the teacher (src/gpu/ modal_distill.py::evaluate_per,
+    run-003 checkpoint re-measured 2026-08-22); exact match 87.94%; +7.63pp client-tier
+    shrink cost
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
+parity:
+  samples: 1219
+  cer_delta: 0.0803
+sha256:
+  decoder-kv.onnx: b8d67ecbec9f4a29beafd3e6d431422f084c703a35467d836e81bdb8ceff4cba
+  decoder.onnx: 81b3580d1d26f78e2aa1786218f50ebe970b23309386fa06bb73b0f27333c0a8
+  encoder.onnx: 53416ec4c14ede50d2a5b3cd4b0de73c2b7c62e744a7d48d60e12a81ee89244d

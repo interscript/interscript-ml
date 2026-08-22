@@ -69,7 +69,7 @@ heb-diac-small-1.0:
     - {row: "Student (ByT5-small, gate)", column: DER, as: der_student_greedy}
 tha-g2p-small-1.0:
   repo: interscript/interscript-ml
-  ref: release/tha-g2p-small-1.0
+  ref: main
   path: docs/RESULTS.md
   anchor: tha-g2p-small-10-thai-g2p-client-tier-2026-08-22
   protocol: "beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece decode); 1,219 held-out Kaikki Thai test sentences"

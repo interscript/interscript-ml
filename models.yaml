@@ -93,3 +93,16 @@ models:
       - {name: per_student, value: 9.19, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
     parity: {samples: 1219, cer_delta: 0.0}
     license: BSD-3-Clause
+  tha-g2p-small-1.0:
+    task: g2p
+    scripts: [Thai, IPA]
+    precision: int8
+    filename: tha-g2p-small-1.0-int8.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/tha-g2p-small-1.0/tha-g2p-small-1.0-int8.zip
+    sha256: f2cfa93a42d98aabf08fdc82dfc6bd1574e21993f36558aa581fbe29e0588a94
+    size: 257468517
+    metrics:
+      - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
+      - {name: per_student, value: 12.06, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
+    parity: {samples: 1219, cer_delta: 0.0803}
+    license: BSD-3-Clause
