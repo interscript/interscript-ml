@@ -764,54 +764,52 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
     todo = [(s, t) for s, t in train_ds.rows if s not in done]
     fresh_rows: list[tuple[str, str]] = []
-    if todo:
-        print(f"[{spec_id}] labeling {len(todo)} remaining...", flush=True)
+    seq_max = int(spec.get("max_len", 384))
 
-        seq_max = int(spec.get("max_len", 384))
-
-        def label_batch(batch, max_len: int = 0):
-            # lone-src OOM fallback truncates once, then skips: never
-            # recurse on the same shape (torch 2.x renames the OOM
-            # exception class, so match by message)
-            if not max_len:
-                max_len = seq_max
-            try:
-                enc = teacher_tok(
-                    [s for s, _ in batch],
-                    padding=True,
-                    truncation=True,
-                    max_length=max_len,
-                    return_tensors="pt",
-                ).to("cuda")
-                with torch.inference_mode():
-                    out = teacher.generate(
-                        # r5 contract: generation cap = 2x window bytes
-                        # (diacritized output runs 1.4-1.6x input)
-                        **enc, max_new_tokens=2 * max_len, num_beams=label_beams
-                    )
-                return [decode_joined(teacher_tok, o) for o in out]
-            except RuntimeError as e:
-                if "out of memory" not in str(e).lower():
-                    raise
-                torch.cuda.empty_cache()
-                if len(batch) == 1:
-                    if max_len > 128:
-                        return label_batch(batch, max_len=128)
-                    print(f"  [{spec_id}] skipping pathological src", flush=True)
-                    return [None]
-                mid = len(batch) // 2
-                return label_batch(batch[:mid], max_len) + label_batch(
-                    batch[mid:], max_len
+    def label_batch(batch, max_len: int = 0):
+        # lone-src OOM fallback truncates once, then skips: never
+        # recurse on the same shape (torch 2.x renames the OOM
+        # exception class, so match by message)
+        if not max_len:
+            max_len = seq_max
+        try:
+            enc = teacher_tok(
+                [s for s, _ in batch],
+                padding=True,
+                truncation=True,
+                max_length=max_len,
+                return_tensors="pt",
+            ).to("cuda")
+            with torch.inference_mode():
+                out = teacher.generate(
+                    # r5 contract: generation cap = 2x window bytes
+                    # (diacritized output runs 1.4-1.6x input)
+                    **enc, max_new_tokens=2 * max_len, num_beams=label_beams
                 )
+            return [decode_joined(teacher_tok, o) for o in out]
+        except RuntimeError as e:
+            if "out of memory" not in str(e).lower():
+                raise
+            torch.cuda.empty_cache()
+            if len(batch) == 1:
+                if max_len > 128:
+                    return label_batch(batch, max_len=128)
+                print(f"  [{spec_id}] skipping pathological src", flush=True)
+                return [None]
+            mid = len(batch) // 2
+            return label_batch(batch[:mid], max_len) + label_batch(
+                batch[mid:], max_len
+            )
 
+    def label_all(pairs: list[tuple[str, str]]) -> list[tuple[str, str]]:
         # deterministic token-budget batching: sort by length so long
         # srcs land in small batches — no OOM roulette
-        todo.sort(key=lambda p: len(p[0].encode()))
+        pairs = sorted(pairs, key=lambda p: len(p[0].encode()))
         budget = 32 * max(200, seq_max)
         batches: list[list[tuple[str, str]]] = []
         cur: list[tuple[str, str]] = []
         cur_max = 0
-        for pair in todo:
+        for pair in pairs:
             length = len(pair[0].encode())
             new_max = max(cur_max, length)
             if cur and (len(cur) + 1) * new_max > budget:
@@ -823,6 +821,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         if cur:
             batches.append(cur)
 
+        rows: list[tuple[str, str]] = []
         labeled = 0
         with teacher_labels_path.open("a", encoding="utf-8") as fh:
             for batch in batches:
@@ -837,12 +836,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                             )
                             + "\n"
                         )
-                        fresh_rows.append((src, text))
+                        rows.append((src, text))
                 labeled += len(batch)
                 if labeled <= 200 * 16 or labeled % 3200 < len(batch):
                     mem = torch.cuda.memory_allocated() / 2**30
                     print(
-                        f"  labeled {labeled}/{len(todo)} (gpu {mem:.2f} GiB)",
+                        f"  labeled {labeled}/{len(pairs)} (gpu {mem:.2f} GiB)",
                         flush=True,
                     )
                 if labeled % 3200 < len(batch):
@@ -853,6 +852,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             "rababa": CHECKPOINTS,
             "persian": PERSIAN_CHECKPOINTS,
         }.get(spec.get("out_volume", teacher_vol), SECRYST_CHECKPOINTS).commit()
+        return rows
+
+    if todo:
+        print(f"[{spec_id}] labeling {len(todo)} remaining...", flush=True)
+        fresh_rows = label_all(todo)
     else:
         print(f"[{spec_id}] teacher labels already complete", flush=True)
 
@@ -871,13 +875,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             seen_labels.add(src)
             teacher_labels.append((src, label))
 
-    if fresh_rows:
-        # this run generated the labels: use them directly. The volume
-        # replica can serve a stale view of the just-written file (the
-        # rababa/secrets tear: 2 visible pairs after 11,790 written).
-        for src, label in fresh_rows:
-            accept_label(src, label)
-    else:
+    if not fresh_rows:
         for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
             if not line.strip():
                 continue
@@ -886,11 +884,25 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             except json.JSONDecodeError:
                 continue  # torn line from a volume replication race
             accept_label(row.get("src") or "", row.get("teacher") or "")
+        if len(teacher_labels) < 0.5 * len(train_ds.rows):
+            # stale replica of a complete file: regenerate rather than
+            # fail (relaunch-only loops forever on this path)
+            print(
+                f"[{spec_id}] labels view torn ({len(teacher_labels)} valid "
+                f"pairs); regenerating all labels",
+                flush=True,
+            )
+            teacher_labels = []
+            seen_labels = set()
+            fresh_rows = label_all(list(train_ds.rows))
+    if fresh_rows:
+        for src, label in fresh_rows:
+            accept_label(src, label)
     print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
     if len(teacher_labels) < 0.5 * len(train_ds.rows):
         raise RuntimeError(
-            f"labels view is torn: {len(teacher_labels)} valid pairs for "
-            f"{len(train_ds.rows)} srcs — volume replication race; relaunch"
+            f"labels view is torn even after regeneration: "
+            f"{len(teacher_labels)} valid pairs for {len(train_ds.rows)} srcs"
         )
 
     class TeacherPairs(Dataset):
