@@ -763,6 +763,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         print(f"[{spec_id}] resuming labels: {len(done)} already done", flush=True)
 
     todo = [(s, t) for s, t in train_ds.rows if s not in done]
+    fresh_rows: list[tuple[str, str]] = []
     if todo:
         print(f"[{spec_id}] labeling {len(todo)} remaining...", flush=True)
 
@@ -828,13 +829,15 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 preds = label_batch(batch)
                 for (src, _), pred in zip(batch, preds, strict=True):
                     if pred is not None:
+                        text = pred.strip()
                         fh.write(
                             json.dumps(
-                                {"src": src, "teacher": pred.strip()},
+                                {"src": src, "teacher": text},
                                 ensure_ascii=False,
                             )
                             + "\n"
                         )
+                        fresh_rows.append((src, text))
                 labeled += len(batch)
                 if labeled <= 200 * 16 or labeled % 3200 < len(batch):
                     mem = torch.cuda.memory_allocated() / 2**30
@@ -844,6 +847,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                     )
                 if labeled % 3200 < len(batch):
                     SECRYST_CHECKPOINTS.commit()
+        # the modulo can leave the tail uncommitted
+        {
+            "secryst": SECRYST_CHECKPOINTS,
+            "rababa": CHECKPOINTS,
+            "persian": PERSIAN_CHECKPOINTS,
+        }.get(spec.get("out_volume", teacher_vol), SECRYST_CHECKPOINTS).commit()
     else:
         print(f"[{spec_id}] teacher labels already complete", flush=True)
 
@@ -855,22 +864,32 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     student.gradient_checkpointing_enable()
     teacher_labels = []
     seen_labels: set[str] = set()
-    for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError:
-            continue  # torn line from a volume replication race
-        label = (row.get("teacher") or "").strip()
-        src = (row.get("src") or "").strip()
+
+    def accept_label(src: str, label: str) -> None:
+        src, label = src.strip(), label.strip()
         if src and src not in seen_labels and label and len(label.encode()) <= 384:
             seen_labels.add(src)
             teacher_labels.append((src, label))
+
+    if fresh_rows:
+        # this run generated the labels: use them directly. The volume
+        # replica can serve a stale view of the just-written file (the
+        # rababa/secrets tear: 2 visible pairs after 11,790 written).
+        for src, label in fresh_rows:
+            accept_label(src, label)
+    else:
+        for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # torn line from a volume replication race
+            accept_label(row.get("src") or "", row.get("teacher") or "")
     print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
-    if spec.get("labels_complete") and len(teacher_labels) < 0.5 * len(train_ds.rows):
+    if len(teacher_labels) < 0.5 * len(train_ds.rows):
         raise RuntimeError(
-            f"labels file view is torn: {len(teacher_labels)} valid pairs for "
+            f"labels view is torn: {len(teacher_labels)} valid pairs for "
             f"{len(train_ds.rows)} srcs — volume replication race; relaunch"
         )
 
