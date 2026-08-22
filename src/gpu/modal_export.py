@@ -113,6 +113,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "thai-ipa/test.jsonl",
         "probe": "สวัสดี",
     },
+    "tha-g2p-small": {
+        "volume": "/volumes/secryst-checkpoints",
+        "checkpoint": "secryst_thai_g2p_distill_small/run-003/best",
+        "metadata": "models/tha-g2p-small/tha-g2p-small-1.0.metadata.yaml",
+        "readme": "models/tha-g2p-small/tha-g2p-small-1.0.README.md",
+        "test_volume": "/datasets/secryst",
+        "test_data": "thai-ipa/test.jsonl",
+        "probe": "สวัสดี",
+    },
     "fas-g2p": {
         "volume": "/volumes/persian-checkpoints",
         "checkpoint": "persian_g2p/run-001/best",

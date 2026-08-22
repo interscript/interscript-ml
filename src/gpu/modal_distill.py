@@ -83,6 +83,23 @@ SPECS: dict[str, dict[str, str]] = {
         "mode": "sequence",  # cross-tokenizer: teacher generates, student trains CE
         "note": "umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate",
     },
+    "tha-g2p-client": {
+        # the shipped client rung: run-003, ByT5-small on the full label
+        # set — capacity-limited (+7.6pp) but the smallest artifact that
+        # does not collapse (see docs/RESULTS.md frontier table)
+        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
+        "teacher_is_hub": "true",
+        "teacher_volume": "secryst",
+        "student_init": "google/byt5-small",
+        "train": "thai-ipa-expanded/train.jsonl",
+        "train_extra": ["thai-ipa/train.jsonl", "thai-ipa/augmented_epitran.jsonl"],
+        "val": "thai-ipa-expanded/val.jsonl",
+        "test": "thai-ipa-expanded/test.jsonl",
+        "eval_test": "thai-ipa/test.jsonl",
+        "out": "secryst_thai_g2p_distill_small/run-003",
+        "mode": "sequence",
+        "note": "eval-only spec for tha-g2p-small-1.0 (client tier)",
+    },
     "ara-diac-small": {
         # r5 paragraph-context teacher (2.68 DER-CE windowed @1400B,
         # RELEASE-FROZEN) -> ByT5-small student. Contract decode is
