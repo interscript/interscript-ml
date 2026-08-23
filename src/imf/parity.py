@@ -1,5 +1,5 @@
 """WO03 parity gate: ONNX greedy vs the torch reference, precision-aware
-CER-delta limits (0.2pp fp32, 1.0pp fp16, 2.0pp int8).
+CER-delta limits (0.2pp fp32, 1.0pp fp16, 2.0pp int8, 3.0pp int4).
 
 The reference is the transformers decoder loop itself (the exact math the
 export wraps) rather than ``model.generate`` — generate's behavior is
