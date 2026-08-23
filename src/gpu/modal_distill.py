@@ -35,6 +35,7 @@ IMAGE = (
         "numpy>=1.26",
         # arabic gate harness: Misraj evaluator + SadeedDiac-25 parquet
         "pyarabic",
+        "prettytable",
         "pandas",
         "pyarrow",
     )
