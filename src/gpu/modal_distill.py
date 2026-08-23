@@ -1076,7 +1076,10 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     }
     teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
                     else str(Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["teacher"]))
-    student_path = Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["out"] / "best"
+    student_path = (
+        Path(vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))])
+        / spec["out"] / "best"
+    )
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
