@@ -101,7 +101,31 @@ parameter count — depth-pruning yields no useful intermediate rung
 (263M). (3) The pretrained rung is the whole quality cliff: 300M at
 12.06% (run-003, full labels; 12.63% on the 23K subset) vs 70M at 78.5%.
 
-Conclusion: G2P client tier ships at the ByT5-small rung (~300MB int8)
-today; a 30–70MB G2P tier requires byte-level pretraining of the small
-model first (future work). Copy-task languages (Arabic/Hebrew
-diacritization) have a different viability and are evaluated separately.
+Conclusion: G2P client tier ships at the ByT5-small rung — 246MB at
+int8, 202MB at int4 (parity 0.0734pp, quality cost ~0.17pp CER; PRs
+#30/#31) — today; a 30–70MB G2P tier requires byte-level pretraining
+of the small model first (future work). Copy-task languages are
+evaluated separately below.
+
+## ara-diac-tiny verdict — 33MB from-scratch student collapsed (2026-08-23)
+
+The Arabic copy-task hypothesis test: a 33M-parameter custom byte-level
+student (d384, 8+8) trained CE on 11,792 r6-teacher labels for 3
+epochs (train CE converged to 0.46). Gate harness: windowed DER-CE at
+the 1400-byte r5 window, greedy, haraqat-projected, Misraj evaluator —
+identical to rababa's eval_sadeed_windowed; validated by the teacher
+reproducing its documented tier on this replication.
+
+| Model | DER-CE (300 Sadeed paragraphs) |
+|---|---|
+| Teacher (r6, run-006-morph) | 1.32% |
+| **Student (33M from-scratch)** | **83.08%** — REJECTED |
+
+Gate ≤ teacher + 0.5pp: the student misses by two orders of magnitude
+with the same collapse signature as the Thai tiny tier (train loss
+converges, test generalization absent). Verdict: sub-100M from-scratch
+byte students do not generalize for diacritization any more than for
+G2P — a pretrained backbone is non-negotiable. The Arabic client tier
+therefore ships at the ByT5-small rung (ara-diac-small) or parks until
+byte-level pretraining exists. The 30MB tier is closed as a negative
+result across both task families.
