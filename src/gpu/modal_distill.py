@@ -217,6 +217,15 @@ SPECS: dict[str, dict[str, str]] = {
         "val": "hebrew-v4/val.jsonl",
         "out": "rababa_hebrew_distill_small/run-001",
     },
+    "heb-diac-small-s46": {
+        # re-distill the client tier from the s46 teacher (greedy 16.44
+        # vs s43's 29.0) — the 1.0 student tracked its teacher's greedy
+        "teacher": "rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best",
+        "student_init": "google/byt5-small",
+        "train": "hebrew-v4/train.jsonl",
+        "val": "hebrew-v4/val.jsonl",
+        "out": "rababa_hebrew_distill_small/run-002-s46",
+    },
 }
 
 app = modal.App("interscript-ml-distill", image=IMAGE)
