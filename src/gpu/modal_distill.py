@@ -130,7 +130,7 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_tiny/run-004",
-        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl",
+        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl.gz.b64",
         "mode": "sequence",
         "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
     },
@@ -749,11 +749,27 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     out_root = Path(out_root_vol) / spec["out"]
     out_root.mkdir(parents=True, exist_ok=True)
     labels_file = spec.get("labels_file", "teacher_labels.jsonl")
-    teacher_labels_path = (
-        Path(labels_file)
-        if labels_file.startswith("/")
-        else out_root / labels_file
-    )
+    if labels_file.endswith(".b64"):
+        # non-ASCII text is re-encoded somewhere in the modal
+        # transfer layers (image COPY and volume put both mojibake'd a
+        # UTF-8 jsonl to 3 parseable srcs); ship labels gzip+base64 and
+        # decode to plain container-local bytes
+        import base64
+        import gzip
+
+        teacher_labels_path = Path("/tmp/labels_decoded.jsonl")
+        if not teacher_labels_path.exists():
+            raw = gzip.decompress(
+                base64.b64decode(Path(labels_file).read_text(encoding="ascii"))
+            )
+            teacher_labels_path.write_bytes(raw)
+            print(f"[{spec_id}] decoded {len(raw)} label bytes", flush=True)
+    else:
+        teacher_labels_path = (
+            Path(labels_file)
+            if labels_file.startswith("/")
+            else out_root / labels_file
+        )
 
     def read_label_srcs() -> set[str]:
         # volume replicas can serve a stale view of a large file; retry
@@ -854,7 +870,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                         fh.write(
                             json.dumps(
                                 {"src": src, "teacher": text},
-                                ensure_ascii=False,
+                                ensure_ascii=True,
                             )
                             + "\n"
                         )
