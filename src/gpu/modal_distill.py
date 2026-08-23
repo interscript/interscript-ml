@@ -1162,7 +1162,7 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
         _, _, total_der, _, _ = E.caculate_errors_on_sentences(
             paragraphs, gts, gt_missing_diacritic_is_error=False
         )
-        return {"der_ce": round(100 * total_der, 4), "n": len(inputs)}
+        return {"der_ce": round(total_der, 4), "n": len(inputs)}  # evaluator already returns %
 
     result = {"teacher": der_ce(teacher), "student": der_ce(student)}
     result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
