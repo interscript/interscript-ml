@@ -275,6 +275,28 @@ def quantize_int8(src: Path | str, dst: Path | str) -> Path:
     return Path(dst)
 
 
+def quantize_int4(src: Path | str, dst: Path | str, block_size: int = 64) -> Path:
+    """fp32 -> 4-bit blockwise MatMul (MatMulNBits, com.microsoft domain).
+
+    Halves int8 again at some quality cost; meant for the browser/edge
+    client tier. NOTE: old runtimes (the Ruby gem's bundled ORT) cannot
+    execute MatMulNBits — int4 zips are client-crystal territory and
+    their loaders should fail loudly rather than silently fall back.
+    """
+    import onnx
+    from onnxruntime.quantization.matmul_nbits_quantizer import (
+        MatMulNBitsQuantizer,
+    )
+
+    model = onnx.load(str(src))
+    quant = MatMulNBitsQuantizer(
+        model=model, block_size=block_size, is_symmetric=True
+    )
+    quant.process()
+    quant.model.save_model_to_file(str(dst))
+    return Path(dst)
+
+
 def onnx_greedy_plain(encoder_sess, decoder_sess, text: str, max_len: int = 256) -> list[int]:
     """Greedy decode over ONNX sessions (plain decoder). Self-check helper.
 
@@ -380,6 +402,8 @@ def export_zips(
                     dst.write_bytes(src.read_bytes())
                 elif precision == "int8":
                     quantize_int8(graphs[name], dst)
+                elif precision == "int4":
+                    quantize_int4(graphs[name], dst)
                 else:
                     raise ValueError(f"unknown precision {precision!r}")
             meta = replace(metadata, precision=precision)

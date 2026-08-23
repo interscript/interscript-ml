@@ -18,7 +18,7 @@ FORMAT = "imf-v1"
 
 TASKS = frozenset({"g2p", "diacritization", "translit"})
 DECODERS = frozenset({"plain", "kv"})
-PRECISIONS = frozenset({"fp32", "fp16", "int8"})
+PRECISIONS = frozenset({"fp32", "fp16", "int8", "int4"})
 
 # The Ruby onnxruntime gem bundles an old ORT that cannot load opset > 14.
 # Opset is pinned to 14 and validated against the actual graphs on load.
@@ -71,7 +71,7 @@ class Parity:
     # Quantization widens the torch-vs-ONNX gap: measured deltas on khm
     # were ~0.43pp (fp16) and ~0.84pp (int8) against the 0.2pp fp32 bar,
     # so the gate is keyed on the declared precision.
-    MAX_CER_DELTA_BY_PRECISION = {"fp32": 0.2, "fp16": 1.0, "int8": 2.0}
+    MAX_CER_DELTA_BY_PRECISION = {"fp32": 0.2, "fp16": 1.0, "int8": 2.0, "int4": 3.0}
     MIN_SAMPLES = 500
 
     @classmethod
