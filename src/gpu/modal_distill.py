@@ -35,6 +35,7 @@ IMAGE = (
         "numpy>=1.26",
         # arabic gate harness: Misraj evaluator + SadeedDiac-25 parquet
         "pyarabic",
+        "prettytable",
         "pandas",
         "pyarrow",
     )
@@ -216,6 +217,15 @@ SPECS: dict[str, dict[str, str]] = {
         "train": "hebrew-v4/train.jsonl",
         "val": "hebrew-v4/val.jsonl",
         "out": "rababa_hebrew_distill_small/run-001",
+    },
+    "heb-diac-small-s46": {
+        # re-distill the client tier from the s46 teacher (greedy 16.44
+        # vs s43's 29.0) — the 1.0 student tracked its teacher's greedy
+        "teacher": "rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best",
+        "student_init": "google/byt5-small",
+        "train": "hebrew-v4/train.jsonl",
+        "val": "hebrew-v4/val.jsonl",
+        "out": "rababa_hebrew_distill_small/run-002-s46",
     },
 }
 
@@ -1067,11 +1077,18 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     }
     teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
                     else str(Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["teacher"]))
-    student_path = Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["out"] / "best"
+    student_path = (
+        Path(vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))])
+        / spec["out"] / "best"
+    )
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
     student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+    # custom students carry T5's default max_length=20; windowed inputs
+    # run to 1400 bytes, clamping max_new_tokens to zero
+    for m in (teacher, student):
+        m.generation_config.max_length = 100_000
 
     diac = re.compile("[ً-ٰٟۖ-ۭ]")
     table = pq.read_table("/opt/rababa/data/sadeed-diac-25/train.parquet")
@@ -1412,4 +1429,4 @@ def mk(spec: str = "tha-g2p-tiny-mk", epochs: int = 3) -> None:
 
 @app.local_entrypoint()
 def eval_der(spec: str = "ara-diac-small", limit: int = 0) -> None:
-    print(evaluate_der.remote(spec, limit))
+    print(evaluate_der.remote(spec, limit=limit))
