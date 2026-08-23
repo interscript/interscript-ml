@@ -1428,4 +1428,4 @@ def mk(spec: str = "tha-g2p-tiny-mk", epochs: int = 3) -> None:
 
 @app.local_entrypoint()
 def eval_der(spec: str = "ara-diac-small", limit: int = 0) -> None:
-    print(evaluate_der.remote(spec, limit))
+    print(evaluate_der.remote(spec, limit=limit))
