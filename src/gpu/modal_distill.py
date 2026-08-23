@@ -781,7 +781,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             got: set[str] = set()
             for line in teacher_labels_path.read_text(
                 encoding="utf-8", errors="ignore"
-            ).splitlines():
+            ).split("\n"):
                 if line.strip():
                     try:
                         got.add(json.loads(line)["src"])
@@ -914,7 +914,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             teacher_labels.append((src, label))
 
     if not fresh_rows:
-        for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").split("\n"):
             if not line.strip():
                 continue
             try:
@@ -1238,7 +1238,7 @@ def distill_microkimi(spec_id: str, epochs: int = 3, calib_batches: int = 64,
         raise RuntimeError("microkimi expects pre-generated trusted labels")
     teacher_labels = []
     seen: set[str] = set()
-    for line in labels_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in labels_file.read_text(encoding="utf-8", errors="ignore").split("\n"):
         if not line.strip():
             continue
         try:
