@@ -8,22 +8,24 @@ opset: 14
 decoder: kv
 precision: fp32
 license: BSD-3-Clause
-trained_from: >-
-  persian_g2p v1 (ByT5-small, byte-level, RELEASE-FROZEN); checkpoint
-  persian-g2p-checkpoints:/checkpoints/persian_g2p/run-001/best.
-  Shipped directly as the client-tier model — the v1 teacher is already
-  byte-level ByT5-small (no distillation needed; GRPO/RAFT variants and
-  the v5/mapped representation line are closed negative).
+trained_from: persian_g2p v1 (ByT5-small, byte-level, RELEASE-FROZEN); checkpoint
+  persian-g2p-checkpoints:/checkpoints/persian_g2p/run-001/best. Shipped directly
+  as the client-tier model — the v1 teacher is already byte-level ByT5-small (no distillation
+  needed; GRPO/RAFT variants and the v5/mapped representation line are closed negative).
 metrics:
-  - name: cer
-    value: 1.6
-    protocol: >-
-      greedy decode, editdistance CER on the v1 test split
-      (persian-g2p-datasets:/persian-g2p/test.jsonl)
-    source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
-  - name: sb_homograph_ezafe_norm
-    value: 77.34
-    protocol: >-
-      SentenceBench homograph accuracy, ezafe-normalized
-      (eval_sentencebench.py protocol; published Homo-GE2PE: 76.89%)
-    source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
+- name: cer
+  value: 1.6
+  protocol: greedy decode, editdistance CER on the v1 test split (persian-g2p-datasets:/persian-g2p/test.jsonl)
+  source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
+- name: sb_homograph_ezafe_norm
+  value: 77.34
+  protocol: 'SentenceBench homograph accuracy, ezafe-normalized (eval_sentencebench.py
+    protocol; published Homo-GE2PE: 76.89%)'
+  source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0
+parity:
+  samples: 1000
+  cer_delta: 0.0
+sha256:
+  decoder-kv.onnx: ca5845e41ee7b0be050801a136399a0f1fd78f66973d68a68bfc09c97fd1550c
+  decoder.onnx: 0301054d602736bb0333c3c10c2836a74764c28a61e49b8472e7c637defd7f31
+  encoder.onnx: 811c0fd2e3e275dc00b49d299d4c3091cc841e4b87c775a528a0fa88fd36f488

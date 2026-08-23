@@ -117,4 +117,22 @@ models:
       - {name: der_teacher_greedy, value: 24.79, source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0}
       - {name: der_student_greedy, value: 30.37, source: interscript/interscript-ml docs/RESULTS.md#heb-diac-small-1.0}
     parity: {samples: 1864, cer_delta: 0.0}
+  fas-g2p-1.0:
+    task: g2p
+    scripts: [Arab, Latn]
+    precision: fp32
+    filename: fas-g2p-1.0-fp32.zip
+    parts:
+      - url: https://github.com/interscript/interscript-ml/releases/download/fas-g2p-1.0/fas-g2p-1.0-fp32.zip.part-00
+        sha256: 6c475e53f3c7ef3edcef5a24d2d81f51d13ddf4c417de98440943c9a32b03e55
+        size: 1500000000
+      - url: https://github.com/interscript/interscript-ml/releases/download/fas-g2p-1.0/fas-g2p-1.0-fp32.zip.part-01
+        sha256: c5656c649412f41e201c567e002514d31390b636d4650d9dcb6dfed1973fb3d5
+        size: 1280254270
+    sha256: b53fd69196127efcc596935d24e135b3c897006872c1646c674e70f3c0d9a0e3
+    size: 2780254270
+    metrics:
+      - {name: cer, value: 1.6, source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0}
+      - {name: sb_homograph_ezafe_norm, value: 77.34, source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0}
+    parity: {samples: 1000, cer_delta: 0.0}
     license: BSD-3-Clause
