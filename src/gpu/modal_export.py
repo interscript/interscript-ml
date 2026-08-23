@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import re
+
 import modal
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -248,9 +250,11 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     reference = reference_decode(model, [src for src, _ in pairs], max_len=128)
 
     out_dir = Path("/outputs/imf") / model_id
+    meta_path = Path("/root/interscript-ml", spec["metadata"])
+    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
     for precision in precisions:
-        zip_path = out_dir / f"{model_id}-1.0-{precision}.zip"
+        zip_path = out_dir / f"{mid}-{precision}.zip"
         report = run_parity(model, zip_path, pairs, max_len=128, reference=reference)
         reports[precision] = (
             f"samples={report.samples} cer_ref={report.cer_reference}pp "
