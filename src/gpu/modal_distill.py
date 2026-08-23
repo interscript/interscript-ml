@@ -130,7 +130,7 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_tiny/run-004",
-        "labels_file": "labels_snapshot.jsonl",
+        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl",
         "mode": "sequence",
         "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
     },
@@ -748,7 +748,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # already-labeled srcs are skipped, the rest are appended.
     out_root = Path(out_root_vol) / spec["out"]
     out_root.mkdir(parents=True, exist_ok=True)
-    teacher_labels_path = out_root / spec.get("labels_file", "teacher_labels.jsonl")
+    labels_file = spec.get("labels_file", "teacher_labels.jsonl")
+    teacher_labels_path = (
+        Path(labels_file)
+        if labels_file.startswith("/")
+        else out_root / labels_file
+    )
 
     def read_label_srcs() -> set[str]:
         # volume replicas can serve a stale view of a large file; retry
@@ -768,8 +773,6 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                         continue
             if len(got) > len(best):
                 best = got
-            if best:
-                break
             _time.sleep(20)
         return best
 
