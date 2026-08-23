@@ -777,7 +777,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         import time as _time
 
         best: set[str] = set()
-        for attempt in range(3):
+        for _attempt in range(3):
             got: set[str] = set()
             for line in teacher_labels_path.read_text(
                 encoding="utf-8", errors="ignore"
