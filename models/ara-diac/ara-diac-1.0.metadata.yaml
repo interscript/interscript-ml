@@ -1,0 +1,26 @@
+format: imf-v1
+id: ara-diac-1.0
+task: diacritization
+source_script: Arab
+target: Arab
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: >-
+  rababa train_arabic_r6.py run-006-morph (morphological aux-task:
+  plain + "TAG: "-prefixed iʿrāb stream from qalsadi labels, init from
+  r5); checkpoint rababa-checkpoints:/rababa_arabic_byt5/run-006-morph/best
+metrics:
+  - name: der_total_greedy
+    value: 2.5793
+    protocol: >-
+      greedy decode (the v1 runtime path); SadeedDiac-25, windowed
+      zero-skip at 1400 bytes, 1,200 paragraphs; ByT5-base r6
+    source: rababa/docs/RESULTS.md#r6-verdict-table-sadeeddiac-25-2026-08-21
+  - name: der_morph_greedy
+    value: 1.5317
+    protocol: >-
+      same harness; Morphological DER (word-final case endings only)
+    source: rababa/docs/RESULTS.md#r6-verdict-table-sadeeddiac-25-2026-08-21

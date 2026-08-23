@@ -130,6 +130,7 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_tiny/run-004",
+        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl.gz.b64",
         "mode": "sequence",
         "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
     },
@@ -747,19 +748,56 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # already-labeled srcs are skipped, the rest are appended.
     out_root = Path(out_root_vol) / spec["out"]
     out_root.mkdir(parents=True, exist_ok=True)
-    teacher_labels_path = out_root / spec.get("labels_file", "teacher_labels.jsonl")
+    labels_file = spec.get("labels_file", "teacher_labels.jsonl")
+    if labels_file.endswith(".b64"):
+        # non-ASCII text is re-encoded somewhere in the modal
+        # transfer layers (image COPY and volume put both mojibake'd a
+        # UTF-8 jsonl to 3 parseable srcs); ship labels gzip+base64 and
+        # decode to plain container-local bytes
+        import base64
+        import gzip
+
+        teacher_labels_path = Path("/tmp/labels_decoded.jsonl")
+        if not teacher_labels_path.exists():
+            raw = gzip.decompress(
+                base64.b64decode(Path(labels_file).read_text(encoding="ascii"))
+            )
+            teacher_labels_path.write_bytes(raw)
+            print(f"[{spec_id}] decoded {len(raw)} label bytes", flush=True)
+    else:
+        teacher_labels_path = (
+            Path(labels_file)
+            if labels_file.startswith("/")
+            else out_root / labels_file
+        )
+
+    def read_label_srcs() -> set[str]:
+        # volume replicas can serve a stale view of a large file; retry
+        # and keep the best parse rather than relabeling from zero
+        import time as _time
+
+        best: set[str] = set()
+        for _attempt in range(3):
+            got: set[str] = set()
+            for line in teacher_labels_path.read_text(
+                encoding="utf-8", errors="ignore"
+            ).split("\n"):
+                if line.strip():
+                    try:
+                        got.add(json.loads(line)["src"])
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+            if len(got) > len(best):
+                best = got
+            _time.sleep(20)
+        return best
 
     done: set[str] = set()
     if spec.get("labels_complete") and teacher_labels_path.exists():
         print(f"[{spec_id}] labels trusted complete", flush=True)
         done = {s_ for s_, _ in train_ds.rows}
     elif teacher_labels_path.exists():
-        for line in teacher_labels_path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                try:
-                    done.add(json.loads(line)["src"])
-                except (json.JSONDecodeError, KeyError):
-                    continue  # torn last line from an eviction
+        done = read_label_srcs()
         print(f"[{spec_id}] resuming labels: {len(done)} already done", flush=True)
 
     todo = [(s, t) for s, t in train_ds.rows if s not in done]
@@ -832,7 +870,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                         fh.write(
                             json.dumps(
                                 {"src": src, "teacher": text},
-                                ensure_ascii=False,
+                                ensure_ascii=True,
                             )
                             + "\n"
                         )
@@ -860,23 +898,21 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     else:
         print(f"[{spec_id}] teacher labels already complete", flush=True)
 
-    # Step 2: student trains on teacher labels (teacher no longer
-    # needed on GPU — free it before the training loop)
-    teacher.to("cpu")
-    torch.cuda.empty_cache()
-    student.to("cuda")
-    student.gradient_checkpointing_enable()
+    # Step 2: student trains on teacher labels. The teacher stays on the
+    # GPU until the labels are confirmed usable — regeneration (below)
+    # still needs it.
+    label_cap = 2 * int(spec.get("max_len", 384))
     teacher_labels = []
     seen_labels: set[str] = set()
 
     def accept_label(src: str, label: str) -> None:
         src, label = src.strip(), label.strip()
-        if src and src not in seen_labels and label and len(label.encode()) <= 384:
+        if src and src not in seen_labels and label and len(label.encode()) <= label_cap:
             seen_labels.add(src)
             teacher_labels.append((src, label))
 
     if not fresh_rows:
-        for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        for line in teacher_labels_path.read_text(encoding="utf-8", errors="ignore").split("\n"):
             if not line.strip():
                 continue
             try:
@@ -885,10 +921,10 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 continue  # torn line from a volume replication race
             accept_label(row.get("src") or "", row.get("teacher") or "")
         if len(teacher_labels) < 0.5 * len(train_ds.rows):
-            # stale replica of a complete file: regenerate rather than
-            # fail (relaunch-only loops forever on this path)
+            # the file is unusable from this container: regenerate rather
+            # than fail (relaunch-only loops forever on this path)
             print(
-                f"[{spec_id}] labels view torn ({len(teacher_labels)} valid "
+                f"[{spec_id}] labels unusable ({len(teacher_labels)} valid "
                 f"pairs); regenerating all labels",
                 flush=True,
             )
@@ -901,9 +937,14 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
     if len(teacher_labels) < 0.5 * len(train_ds.rows):
         raise RuntimeError(
-            f"labels view is torn even after regeneration: "
+            f"labels unusable even after regeneration: "
             f"{len(teacher_labels)} valid pairs for {len(train_ds.rows)} srcs"
         )
+
+    teacher.to("cpu")
+    torch.cuda.empty_cache()
+    student.to("cuda")
+    student.gradient_checkpointing_enable()
 
     class TeacherPairs(Dataset):
         def __len__(self):
@@ -1200,7 +1241,7 @@ def distill_microkimi(spec_id: str, epochs: int = 3, calib_batches: int = 64,
         raise RuntimeError("microkimi expects pre-generated trusted labels")
     teacher_labels = []
     seen: set[str] = set()
-    for line in labels_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in labels_file.read_text(encoding="utf-8", errors="ignore").split("\n"):
         if not line.strip():
             continue
         try:
