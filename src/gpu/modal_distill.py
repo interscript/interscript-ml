@@ -898,18 +898,16 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     else:
         print(f"[{spec_id}] teacher labels already complete", flush=True)
 
-    # Step 2: student trains on teacher labels (teacher no longer
-    # needed on GPU — free it before the training loop)
-    teacher.to("cpu")
-    torch.cuda.empty_cache()
-    student.to("cuda")
-    student.gradient_checkpointing_enable()
+    # Step 2: student trains on teacher labels. The teacher stays on the
+    # GPU until the labels are confirmed usable — regeneration (below)
+    # still needs it.
+    label_cap = 2 * int(spec.get("max_len", 384))
     teacher_labels = []
     seen_labels: set[str] = set()
 
     def accept_label(src: str, label: str) -> None:
         src, label = src.strip(), label.strip()
-        if src and src not in seen_labels and label and len(label.encode()) <= 384:
+        if src and src not in seen_labels and label and len(label.encode()) <= label_cap:
             seen_labels.add(src)
             teacher_labels.append((src, label))
 
@@ -923,10 +921,10 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 continue  # torn line from a volume replication race
             accept_label(row.get("src") or "", row.get("teacher") or "")
         if len(teacher_labels) < 0.5 * len(train_ds.rows):
-            # stale replica of a complete file: regenerate rather than
-            # fail (relaunch-only loops forever on this path)
+            # the file is unusable from this container: regenerate rather
+            # than fail (relaunch-only loops forever on this path)
             print(
-                f"[{spec_id}] labels view torn ({len(teacher_labels)} valid "
+                f"[{spec_id}] labels unusable ({len(teacher_labels)} valid "
                 f"pairs); regenerating all labels",
                 flush=True,
             )
@@ -939,9 +937,14 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     print(f"[{spec_id}] trainable label pairs: {len(teacher_labels)}", flush=True)
     if len(teacher_labels) < 0.5 * len(train_ds.rows):
         raise RuntimeError(
-            f"labels view is torn even after regeneration: "
+            f"labels unusable even after regeneration: "
             f"{len(teacher_labels)} valid pairs for {len(train_ds.rows)} srcs"
         )
+
+    teacher.to("cpu")
+    torch.cuda.empty_cache()
+    student.to("cuda")
+    student.gradient_checkpointing_enable()
 
     class TeacherPairs(Dataset):
         def __len__(self):
