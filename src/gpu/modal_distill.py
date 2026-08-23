@@ -130,6 +130,7 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_tiny/run-004",
+        "labels_file": "labels_snapshot.jsonl",
         "mode": "sequence",
         "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
     },
@@ -749,17 +750,35 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     out_root.mkdir(parents=True, exist_ok=True)
     teacher_labels_path = out_root / spec.get("labels_file", "teacher_labels.jsonl")
 
+    def read_label_srcs() -> set[str]:
+        # volume replicas can serve a stale view of a large file; retry
+        # and keep the best parse rather than relabeling from zero
+        import time as _time
+
+        best: set[str] = set()
+        for attempt in range(3):
+            got: set[str] = set()
+            for line in teacher_labels_path.read_text(
+                encoding="utf-8", errors="ignore"
+            ).splitlines():
+                if line.strip():
+                    try:
+                        got.add(json.loads(line)["src"])
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+            if len(got) > len(best):
+                best = got
+            if best:
+                break
+            _time.sleep(20)
+        return best
+
     done: set[str] = set()
     if spec.get("labels_complete") and teacher_labels_path.exists():
         print(f"[{spec_id}] labels trusted complete", flush=True)
         done = {s_ for s_, _ in train_ds.rows}
     elif teacher_labels_path.exists():
-        for line in teacher_labels_path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                try:
-                    done.add(json.loads(line)["src"])
-                except (json.JSONDecodeError, KeyError):
-                    continue  # torn last line from an eviction
+        done = read_label_srcs()
         print(f"[{spec_id}] resuming labels: {len(done)} already done", flush=True)
 
     todo = [(s, t) for s, t in train_ds.rows if s not in done]
