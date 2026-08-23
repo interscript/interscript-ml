@@ -105,6 +105,19 @@ models:
       - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
       - {name: per_student, value: 12.06, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
     parity: {samples: 1219, cer_delta: 0.0803}
+  tha-g2p-small-1.0-int4:
+    task: g2p
+    scripts: [Thai, IPA]
+    precision: int4
+    filename: tha-g2p-small-1.0-int4.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/tha-g2p-small-1.0/tha-g2p-small-1.0-int4.zip
+    sha256: e5d12a3d65c6ac39fa08f52c975c99ff7a51c3e7b7aca7fbb461d2de2345e4cb
+    size: 201958073
+    metrics:
+      - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
+      - {name: per_student, value: 12.06, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0}
+    parity: {samples: 600, cer_delta: 0.0734}
+    license: BSD-3-Clause
   heb-diac-small-1.0:
     task: diacritization
     scripts: [Hebr, Hebr]
