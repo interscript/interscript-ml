@@ -1084,6 +1084,10 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
     student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+    # custom students carry T5's default max_length=20; windowed inputs
+    # run to 1400 bytes, clamping max_new_tokens to zero
+    for m in (teacher, student):
+        m.generation_config.max_length = 100_000
 
     diac = re.compile("[ً-ٰٟۖ-ۭ]")
     table = pq.read_table("/opt/rababa/data/sadeed-diac-25/train.parquet")
