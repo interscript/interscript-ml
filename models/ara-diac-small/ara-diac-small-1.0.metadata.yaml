@@ -1,0 +1,30 @@
+format: imf-v1
+id: ara-diac-small-1.0
+task: diacritization
+source_script: Arab
+target: Arab
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: 'sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph/best,
+  2.5793 windowed DER-CE on the full SadeedDiac-25 protocol): 29,322 greedy
+  teacher-generated labels on the r5-units corpus (domain + replay, 1400-byte
+  windows); ByT5-small init google/byt5-small; 3 epochs; checkpoint
+  rababa-checkpoints:/rababa_arabic_distill_small/run-002/best. Client tier:
+  capacity-limited at +2.34pp over the teacher — the strict gate is met by the
+  teacher release (ara-diac-1.0); shipped as the Arabic client rung per the
+  documented Thai precedent.'
+metrics:
+- name: der_teacher_greedy
+  value: 1.3205
+  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy,
+    haraqat-projected, Misraj evaluator); 300 SadeedDiac-25 paragraphs; r6 teacher
+    on the same harness as the student
+  source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
+- name: der_student_greedy
+  value: 3.658
+  protocol: same harness; +2.34pp client-tier shrink cost (strict gate was teacher
+    +0.5pp); shipped capacity-limited — see the RESULTS gate discussion
+  source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
