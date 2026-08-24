@@ -399,7 +399,6 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
             if step % save_every == 0:
                 ck = out_root / f"step-{step}"
                 ck.mkdir(exist_ok=True)
-                (ck / "labels.sha").write_text(labels_digest)
                 torch.save(student.state_dict(), ck / "student.pt")
                 torch.save(optimizer.state_dict(), ck / "optim.pt")
                 CHECKPOINTS.commit()
