@@ -163,8 +163,8 @@ paragraphs, Misraj evaluator, haraqat projection):
 
 | Model | DER-CE |
 |---|---|
-| Teacher (r6) | 1.32% |
-| **Student (ByT5-small, client rung)** | **3.66%** |
+| Teacher (r6) | 1.3205% |
+| **Student (ByT5-small, client rung)** | **3.6580%** |
 
 Gate discussion: the strict budget (teacher +0.5pp) is missed by
 +2.34pp — the measured capacity cost of ByT5-small on Arabic
