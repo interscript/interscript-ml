@@ -144,11 +144,13 @@ reproducing its documented tier on this replication.
 
 Gate ≤ teacher + 0.5pp: the student misses by two orders of magnitude.
 
-**RETRACTION (2026-08-24):** this verdict is CONFOUNDED — every Arabic
-label generated before the byt5 `decode_joined` fix was mojibake
-(double-encoded targets); both Arabic students trained on corrupted
-labels, and their identical DER scores are the bare-text constant, not
-a capacity result. The numbers stand as measured but the capacity
-conclusion for Arabic is UNPROVEN pending a clean-label re-run. The
-Thai tiny verdict is unaffected (umt5/sentencepiece labels were
-byte-exact); the pretrained-backbone law rests on Thai evidence.
+**RETRACTION (2026-08-24) and RESTORATION (same day):** the original
+verdict was retracted when the labels proved mojibake (the byt5
+decode_joined bug); the clean-label re-run restores it — 33M student,
+11,792 byte-exact r6 labels, train CE 1.55, windowed DER-CE **82.87%**
+vs the teacher's 1.32% on the same 300-paragraph harness. The failure
+mode is total: the trained student emits EOS immediately on free
+running (empty output; it fits the training set under teacher forcing
+but cannot sustain generation). The capacity conclusion for Arabic is
+now UNCONFOUNDED and matches Thai: sub-100M from-scratch byte students
+do not generalize; a pretrained backbone is non-negotiable.
