@@ -10,7 +10,6 @@ Auth: X-API-Key header must match the `api-inference-key` secret.
 """
 
 import hmac
-import re
 from pathlib import Path
 
 import modal
@@ -34,19 +33,17 @@ ALLOWED_TASKS = ("diacritization", "g2p")
 _sessions: dict[str, tuple] = {}
 
 
-_ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*-\d+\.\d+$")
-
-
 def _zip_path(model_id: str) -> Path:
-    # model_id arrives from the request body — a strict id check before
-    # any path construction (CodeQL: path traversal, CWE-22)
-    if not _ID_RE.match(model_id):
-        raise KeyError(model_id)
-    family = model_id.rsplit("-", 1)[0]
-    p = Path("/v/imf") / family / f"{model_id}-fp32.zip"
-    if not p.exists():
-        raise KeyError(model_id)
-    return p
+    # model_id arrives from the request body — paths are built ONLY from
+    # the server's own volume listing; the user value is used solely in
+    # an equality comparison, never in path construction (CWE-22)
+    import glob
+
+    wanted = f"{model_id}-fp32.zip"
+    for z in glob.glob("/v/imf/*/*-fp32.zip"):
+        if z.rsplit("/", 1)[1] == wanted:
+            return Path(z)
+    raise KeyError(model_id)
 
 
 def _get_sessions(model_id: str) -> tuple:
