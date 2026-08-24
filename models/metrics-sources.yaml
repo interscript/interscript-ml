@@ -78,7 +78,7 @@ tha-g2p-small-1.0:
     - {row: "greedy (runtime protocol)", column: PER, as: per_student}
 ara-diac-small-1.0:
   repo: interscript/interscript-ml
-  ref: main
+  ref: release/ara-diac-small-1.0
   path: docs/RESULTS.md
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
   protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300 SadeedDiac-25 paragraphs"
