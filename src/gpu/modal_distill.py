@@ -134,7 +134,9 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_tiny/run-004",
-        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl.gz.b64",
+        # v2: the b64 snapshot is mojibake (pre byt5-decode_joined fix);
+        # relabel clean onto a volume file
+        "labels_file": "teacher_labels_v2.jsonl",
         "mode": "sequence",
         "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
     },
