@@ -995,7 +995,20 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
     save_every = 500
     step = 0
-    ckpts = sorted(out_root.glob("step-*"), key=lambda p: int(p.name.split("-")[1]))
+    import hashlib
+
+    labels_digest = hashlib.sha256(
+        teacher_labels_path.read_bytes()
+    ).hexdigest()[:12] if teacher_labels_path.exists() else "none"
+
+    def _usable(ck: Path) -> bool:
+        marker = ck / "labels.sha"
+        return marker.exists() and marker.read_text().strip() == labels_digest
+
+    ckpts = sorted(
+        (c for c in out_root.glob("step-*") if _usable(c)),
+        key=lambda p: int(p.name.split("-")[1]),
+    )
     if ckpts:
         student.load_state_dict(
             torch.load(ckpts[-1] / "student.pt", map_location="cpu", weights_only=True)
@@ -1028,6 +1041,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             if step % save_every == 0:
                 ck = out_root / f"step-{step}"
                 ck.mkdir(exist_ok=True)
+                (ck / "labels.sha").write_text(labels_digest)
                 torch.save(student.state_dict(), ck / "student.pt")
                 torch.save(optimizer.state_dict(), ck / "optim.pt")
                 CHECKPOINTS.commit()
