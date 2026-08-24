@@ -121,11 +121,13 @@ reproducing its documented tier on this replication.
 | Teacher (r6, run-006-morph) | 1.32% |
 | **Student (33M from-scratch)** | **83.08%** — REJECTED |
 
-Gate ≤ teacher + 0.5pp: the student misses by two orders of magnitude
-with the same collapse signature as the Thai tiny tier (train loss
-converges, test generalization absent). Verdict: sub-100M from-scratch
-byte students do not generalize for diacritization any more than for
-G2P — a pretrained backbone is non-negotiable. The Arabic client tier
-therefore ships at the ByT5-small rung (ara-diac-small) or parks until
-byte-level pretraining exists. The 30MB tier is closed as a negative
-result across both task families.
+Gate ≤ teacher + 0.5pp: the student misses by two orders of magnitude.
+
+**RETRACTION (2026-08-24):** this verdict is CONFOUNDED — every Arabic
+label generated before the byt5 `decode_joined` fix was mojibake
+(double-encoded targets); both Arabic students trained on corrupted
+labels, and their identical DER scores are the bare-text constant, not
+a capacity result. The numbers stand as measured but the capacity
+conclusion for Arabic is UNPROVEN pending a clean-label re-run. The
+Thai tiny verdict is unaffected (umt5/sentencepiece labels were
+byte-exact); the pretrained-backbone law rests on Thai evidence.

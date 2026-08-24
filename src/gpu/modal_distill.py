@@ -116,6 +116,9 @@ SPECS: dict[str, dict[str, str]] = {
         "max_len": 1450,
         "label_beams": "1",
         "out": "rababa_arabic_distill_small/run-002",
+        # v2: every label generated before the byt5 decode_joined fix is
+        # mojibake (double-encoded); relabel from scratch on the new file
+        "labels_file": "teacher_labels_v2.jsonl",
         "mode": "sequence",
         "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
     },
@@ -233,11 +236,24 @@ app = modal.App("interscript-ml-distill", image=IMAGE)
 
 
 def decode_joined(tok, ids) -> str:
-    """Correct decode for umt5 teachers: 5.x batch_decode inserts spurious
-    spaces between sentencepiece pieces; pieces must join directly (the
-    targets are unspaced IPA strings)."""
+    """Decode teacher generations correctly per tokenizer family.
+
+    umt5/sentencepiece: 5.x batch_decode inserts spurious spaces between
+    pieces; joining convert_ids_to_tokens is correct.
+
+    byt5/byte-level: convert_ids_to_tokens returns each byte token as a
+    RAW CHARACTER (latin-1 view) — joining them produces mojibake. This
+    poisoned every Arabic label generated under 5.14 (both students
+    trained on double-encoded targets and scored the identical bare-text
+    DER). batch_decode is byte-exact here, so branch on it: if its
+    output round-trips the same token ids it is authoritative.
+    """
     skip = {tok.pad_token, tok.eos_token, tok.bos_token}
-    return "".join(p for p in tok.convert_ids_to_tokens(ids) if p not in skip)
+    joined = "".join(p for p in tok.convert_ids_to_tokens(ids) if p not in skip)
+    if joined and all(ord(c) < 256 for c in joined):
+        # byte-level vocab decoded to raw chars — use the byte-exact path
+        return tok.batch_decode([ids], skip_special_tokens=True)[0]
+    return joined
 
 
 @app.function(
