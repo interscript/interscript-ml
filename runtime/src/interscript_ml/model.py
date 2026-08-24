@@ -59,18 +59,102 @@ class Model:
     def id(self) -> str:
         return self.manifest.id
 
-    def translate(self, text: str, max_len: int = 256) -> str:
-        token_ids = self.generate(text, max_len=max_len)
+    def translate(self, text: str, max_len: int = 256, num_beams: int = 1) -> str:
+        token_ids = self.generate(text, max_len=max_len, num_beams=num_beams)
         return decode(token_ids)
 
-    def generate(self, text: str, max_len: int = 256) -> list[int]:
+    def generate(self, text: str, max_len: int = 256, num_beams: int = 1) -> list[int]:
         ids = np.array([encode(text)], dtype=np.int64)
         if ids.shape[1] == 1:  # only the trailing EOS: empty input
             return []
         hidden = self._encoder.run(None, {"input_ids": ids})[0]
         if self._kv_session:
+            if num_beams > 1:
+                return self._beam_kv(hidden, max_len, num_beams)
             return self._greedy_kv(hidden, max_len)
         return self._greedy_plain(hidden, max_len)
+
+    def _beam_kv(self, hidden, max_len: int, num_beams: int) -> list[int]:
+        """Batched beam search over the KV graph: the export's batch axis
+        carries the beams; per-step presents are gathered on beam reorder.
+        Canonical semantics: EOS hypotheses are recorded but never shrink
+        the live set (candidates come from a 2K window); the search runs
+        to max_len or exhaustion, and the winner is picked by raw
+        cumulative logprob — length normalization measurably rewards
+        long garbage on low-confidence byte models."""
+        beams = num_beams
+        enc = np.repeat(hidden, beams, axis=0)
+        pasts = {
+            name: np.repeat(zero, beams, axis=0)
+            for name, zero in self._pasts.items()
+        }
+        current = np.full((beams, 1), PAD_ID, dtype=np.int64)
+        scores = np.full((beams,), -np.inf, dtype=np.float32)
+        scores[0] = 0.0  # only beam 0 is live at step 0
+        sequences: list[list[int]] = [[] for _ in range(beams)]
+        finished: list[tuple[float, list[int]]] = []
+
+        for _ in range(max_len):
+            outputs = self._decoder.run(
+                None,
+                {"input_ids": current, "encoder_hidden_states": enc, **pasts},
+            )
+            results = dict(zip(self._output_names, outputs, strict=True))
+            logits = results["logits"][:, -1, :].astype(np.float32)
+            logprobs = logits - np.log(
+                np.exp(logits - logits.max(axis=1, keepdims=True)).sum(
+                    axis=1, keepdims=True
+                )
+            )  # stable log-softmax
+            cand = np.where(
+                (scores > -np.inf)[:, None],
+                scores[:, None] + logprobs,
+                -np.inf,
+            )
+            flat = cand.reshape(-1)
+            window = min(2 * beams, flat.size)
+            order = np.argpartition(flat, -window)[-window:]
+            order = order[np.argsort(-flat[order])]
+            new_pasts = {
+                name: results[name.replace("past_", "present_", 1)] for name in pasts
+            }
+            next_pasts: dict[str, np.ndarray] = {}
+            next_sequences: list[list[int]] = []
+            next_scores = np.full((beams,), -np.inf, dtype=np.float32)
+            next_current = np.full((beams, 1), PAD_ID, dtype=np.int64)
+            slot = 0
+            for idx in order:
+                src = int(idx // cand.shape[1])
+                token = int(idx % cand.shape[1])
+                score = float(flat[idx])
+                if token == EOS_ID:
+                    finished.append((score, sequences[src]))
+                    continue
+                if slot >= beams:
+                    continue
+                next_scores[slot] = score
+                next_sequences.append(sequences[src] + [token])
+                next_current[slot, 0] = token
+                for name, tensor in new_pasts.items():
+                    holder = next_pasts.setdefault(
+                        name, np.empty((beams,) + tensor.shape[1:], tensor.dtype)
+                    )
+                    holder[slot : slot + 1] = tensor[src : src + 1]
+                slot += 1
+            if slot == 0:
+                break
+            pasts = next_pasts
+            sequences = next_sequences + [
+                [] for _ in range(beams - len(next_sequences))
+            ]
+            scores = next_scores
+            current = next_current
+
+        pool = finished + [
+            (float(scores[i]), sequences[i]) for i in range(beams) if scores[i] > -np.inf
+        ]
+        best = max(pool, key=lambda s: s[0])
+        return best[1]
 
     def _greedy_kv(self, hidden, max_len: int) -> list[int]:
         pasts = dict(self._pasts)

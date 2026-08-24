@@ -80,6 +80,27 @@ below, as the smallest artifact that does not collapse. Exported at
 int8 (~300MB); see the frontier table for why no smaller rung exists
 today.
 
+**Correction (2026-08-24): greedy is the real decode, and it is far
+better than the beam-4 harness numbers.** Re-measured on the shipped
+int4 zip through the Python runtime (the exact ONNX KV decode users
+get), true Levenshtein, full 1,219-sentence set:
+
+| Decode | PER | Exact match |
+|---|---|---|
+| beam-4 (published, torch harness) | 12.06% | 87.94% |
+| **greedy (runtime protocol)** | **2.85%** | **88.93%** |
+
+The beam-4 numbers are inflated by length-normalized beam preferring
+long garbage on this model's flat per-token distributions (top-1
+logprob ≈ -4.6 vs uniform -5.6): exact-match barely moves but every
+non-exact output runs long, multiplying edit distance. Beam decode is
+COUNTERPRODUCTIVE for these students; the runtimes ship greedy and
+that is optimal. The runtime exposes num_beams as an opt-in (verified
+correct against per-beam batch-1 references); the published beam-4
+figures stand as measurements under that decode, not as quality
+claims. All future gates decode greedy (the Arabic harness already
+does).
+
 ## Client-tier size–quality frontier (2026-08-22)
 
 Thai G2P, same harness (beam-4 corpus PER, 1,219 Kaikki sentences; teacher

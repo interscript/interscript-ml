@@ -17,17 +17,17 @@ trained_from: 'sequence-level KD from the B-K/umt5-thai-g2p-v2-0.5k teacher (4.4
   this is the smallest rung that does not collapse (docs/RESULTS.md frontier table,
   ~300MB int8).'
 metrics:
-- name: per_teacher
-  value: 4.43
-  protocol: beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece
-    decode); 1,219 Kaikki Thai test sentences; B-K/ umt5-thai-g2p-v2-0.5k teacher;
-    exact match 95.57%
-  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
-- name: per_student
+- name: per_student_beam4
   value: 12.06
   protocol: beam-4, corpus-level PER, same harness as the teacher (src/gpu/ modal_distill.py::evaluate_per,
-    run-003 checkpoint re-measured 2026-08-22); exact match 87.94%; +7.63pp client-tier
-    shrink cost
+    run-003 checkpoint re-measured 2026-08-22); exact match 87.94%; beam length-norm
+    inflates the non-exact outputs — see the 2026-08-24 correction
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
+- name: per_student
+  value: 2.85
+  protocol: greedy decode through the Python runtime (the shipped ONNX KV
+    path), corpus-level PER, true Levenshtein; 1,219 Kaikki Thai test sentences;
+    exact match 88.93% — the runtime protocol and the real quality of this model
   source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
 parity:
   samples: 1219

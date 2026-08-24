@@ -69,10 +69,10 @@ heb-diac-small-1.0:
     - {row: "Student (ByT5-small, gate)", column: DER, as: der_student_greedy}
 tha-g2p-small-1.0:
   repo: interscript/interscript-ml
-  ref: main
+  ref: docs/greedy-correction
   path: docs/RESULTS.md
   anchor: tha-g2p-small-10-thai-g2p-client-tier-2026-08-22
-  protocol: "beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece decode); 1,219 held-out Kaikki Thai test sentences"
+  protocol: "greedy decode via the Python runtime (the shipped ONNX KV path), corpus-level PER, true Levenshtein; 1,219 held-out Kaikki Thai test sentences"
   tables:
-    - {row: "Teacher (B-K/umt5 hub base)", column: PER, as: per_teacher}
-    - {row: "Student (ByT5-small, client rung)", column: PER, as: per_student}
+    - {row: "beam-4 (published, torch harness)", column: PER, as: per_student_beam4}
+    - {row: "greedy (runtime protocol)", column: PER, as: per_student}
