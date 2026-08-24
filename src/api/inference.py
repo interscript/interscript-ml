@@ -67,15 +67,13 @@ def _decode(tokens: list) -> str:
 
 def make_api():
     import os
-    from fastapi import FastAPI, HTTPException, Request
 
-    from pydantic import BaseModel
+    from fastapi import FastAPI, HTTPException, Request
 
     api = FastAPI(title="Interscript inference", version="1.0.0")
 
     @api.post("/infer")
     async def infer(request: Request) -> dict:
-        import sys
 
         key = request.headers.get("x-api-key", "")
         if not key or key != os.environ.get("API_INFERENCE_KEY"):
