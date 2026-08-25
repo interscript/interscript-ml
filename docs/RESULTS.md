@@ -144,13 +144,40 @@ reproducing its documented tier on this replication.
 
 Gate ≤ teacher + 0.5pp: the student misses by two orders of magnitude.
 
-**RETRACTION (2026-08-24) and RESTORATION (same day):** the original
-verdict was retracted when the labels proved mojibake (the byt5
-decode_joined bug); the clean-label re-run restores it — 33M student,
-11,792 byte-exact r6 labels, train CE 1.55, windowed DER-CE **82.87%**
-vs the teacher's 1.32% on the same 300-paragraph harness. The failure
-mode is total: the trained student emits EOS immediately on free
-running (empty output; it fits the training set under teacher forcing
-but cannot sustain generation). The capacity conclusion for Arabic is
-now UNCONFOUNDED and matches Thai: sub-100M from-scratch byte students
-do not generalize; a pretrained backbone is non-negotiable.
+**RETRACTION (2026-08-24):** this verdict is CONFOUNDED — every Arabic
+label generated before the byt5 `decode_joined` fix was mojibake
+(double-encoded targets); both Arabic students trained on corrupted
+labels, and their identical DER scores are the bare-text constant, not
+a capacity result. The numbers stand as measured but the capacity
+conclusion for Arabic is UNPROVEN pending a clean-label re-run. The
+Thai tiny verdict is unaffected (umt5/sentencepiece labels were
+byte-exact); the pretrained-backbone law rests on Thai evidence.
+
+## ara-diac-small-1.0 — Arabic client tier (2026-08-24)
+
+Sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph,
+2.5793 windowed DER-CE full-protocol): 29,322 greedy labels on r5-units
+(domain + replay, 1400-byte windows), ByT5-small init, 3 epochs. Same
+windowed harness as the ara-diac-tiny verdict (300 SadeedDiac-25
+paragraphs, Misraj evaluator, haraqat projection):
+
+| Model | DER-CE |
+|---|---|
+| Teacher (r6) | 1.3205% |
+| **Student (ByT5-small, client rung)** | **3.6580%** |
+
+Gate discussion: the strict budget (teacher +0.5pp) is missed by
++2.34pp — the measured capacity cost of ByT5-small on Arabic
+diacritization, consistent with the Thai client tier (+7.63pp beam-4 /
+2.85% greedy against a 4.43% teacher). Shipped as the Arabic client
+rung per that precedent: the student generates real, well-voweled
+Arabic at a fraction of the teacher's artifact (1.3 vs 2.6 GiB), the
+strict gate is met by the teacher release (ara-diac-1.0), and the miss
+is disclosed rather than averaged away. For comparison, this student's
+3.66% sits in the same league as the r3 production teacher's era
+(2.68% on the older full-set protocol).
+
+Training notes: this is the third training of run-002 — the first on
+mojibake labels (byt5 decode_joined bug), the second silently resumed
+from the poisoned lineage's checkpoints (now guarded by labels.sha
+digest matching), this one clean end-to-end. CE plateaued at ~0.016.

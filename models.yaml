@@ -151,6 +151,19 @@ models:
       - {name: sb_homograph_ezafe_norm, value: 77.34, source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0}
     parity: {samples: 1000, cer_delta: 0.0}
     license: BSD-3-Clause
+  ara-diac-small-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp32
+    filename: ara-diac-small-1.0-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-1.0/ara-diac-small-1.0-fp32.zip
+    sha256: 8b149beb04294a2e482af876a34ae0fca3e87412606116fae1a376845fd4111a
+    size: 1418126835
+    metrics:
+      - {name: der_teacher_greedy, value: 1.3205, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_student_greedy, value: 3.658, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+    parity: {samples: 800, cer_delta: 0.0}
+    license: BSD-3-Clause
   heb-diac-1.1:
     task: diacritization
     scripts: [Hebr, Hebr]
