@@ -46,7 +46,7 @@ jobs:
             runner: ubuntu-latest
             extras: "export"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: Install deps
@@ -82,7 +82,7 @@ jobs:
     needs: [parse-tag, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install -e ".[dev,export]"
@@ -105,7 +105,7 @@ jobs:
     needs: [parse-tag, build, benchmark]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with: { path: artifacts }
       - name: Stage release assets
@@ -141,7 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     if: false  # enable once HF_TOKEN secret is set
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install -e ".[publish]"
