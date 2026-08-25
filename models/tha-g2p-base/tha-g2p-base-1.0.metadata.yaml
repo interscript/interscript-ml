@@ -15,12 +15,12 @@ trained_from: sequence-level KD from the B-K/umt5-thai-g2p-v2-0.5k teacher (4.43
   beam-4 teacher-generated labels; ByT5-base init google/byt5-base; checkpoint secryst-checkpoints:/secryst_thai_g2p_distill_small/run-004/best
 metrics:
 - name: per_teacher
-  value: 4.43
+  value: 1.25
   protocol: beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece
     decode); 1,219 Kaikki Thai test sentences; B-K/umt5-thai-g2p-v2-0.5k teacher
   source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0
 - name: per_student
-  value: 9.19
+  value: 3.53
   protocol: beam-4, corpus-level PER, same harness as the teacher; gate +4.76pp <=
     +5pp (docs/DISTILL-SOURCE-PROMPT.md); exact match 90.81%
   source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0

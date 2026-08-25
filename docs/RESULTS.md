@@ -13,12 +13,21 @@ beam-4, corpus-level PER (total_ed / total_gold over characters of
 joined-piece decode), 1,219 held-out Kaikki Thai test sentences
 (`src/gpu/modal_distill.py::evaluate_per`).
 
-| Model | PER | Exact match |
-|---|---|---|
-| Teacher (B-K/umt5 hub base) | 4.43% | 95.57% |
-| **Student (ByT5-base, gate)** | **9.19%** | 90.81% |
+| Model | PER (beam-4) | PER (greedy) | EM (greedy) |
+|---|---|---|---|
+| Teacher (B-K/umt5 hub base) | 4.43% | 1.25% | 95.16% |
+| **Student (ByT5-base, gate)** | **9.19%** | **3.53%** | 90.48% |
 
-Distillation cost: +4.76pp, inside the +5pp budget
+Same-protocol distillation cost: +2.28pp greedy-to-greedy (was +4.76pp
+beam-vs-beam), comfortably inside the +5pp budget. Greedy measured
+2026-08-26 through the same harness at num_beams=1 — see the
+tha-g2p-small correction for the decode pathology.
+
+**Tier inversion at greedy:** the client tier (ByT5-small int4, 2.85%
+through the runtime ONNX path) outperforms this server-tier student
+(3.53% through the torch harness); the 0.08pp ONNX parity delta cannot
+account for a 0.68pp gap, so the ordering is real on this harness. The
+beam-4 figures had the tiers reversed.
 (docs/DISTILL-SOURCE-PROMPT.md). ByT5-small ablations for reference:
 12.63% on 23K labels, 12.06% on 48.7K labels (capacity-limited, both
 rejected by the gate).

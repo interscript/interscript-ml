@@ -89,8 +89,8 @@ models:
     sha256: f341a5868867a9847d3f897d1fcc4d1d63b9a59b8913871bcf4ecab48f4fa895
     size: 2781174343
     metrics:
-      - {name: per_teacher, value: 4.43, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
-      - {name: per_student, value: 9.19, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
+      - {name: per_teacher, value: 1.25, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
+      - {name: per_student, value: 3.53, source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-base-1.0}
     parity: {samples: 1219, cer_delta: 0.0}
     license: BSD-3-Clause
   tha-g2p-small-1.0:

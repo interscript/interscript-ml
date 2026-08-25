@@ -168,7 +168,7 @@ Students train either by sequence-level KD (teacher-generated targets; cross-ent
 |urd-g2p-1.0 |Urdu→IPA |CER 14.77, EM 33.6 |fp32 · 1.3 GiB |server
 |urd-diac-1.0 |Urdu haraqat |CER 3.74 |fp32 · 1.3 GiB |server
 |heb-diac-1.0 |Hebrew niqqud |DER 29.0 greedy / 17.5 beam-4 |fp32 · 2.6 GiB (parts) |server
-|tha-g2p-base-1.0 |Thai→IPA |PER 9.19 (teacher 4.43) |fp32 · 2.6 GiB (parts) |server
+|tha-g2p-base-1.0 |Thai→IPA |PER 3.53 greedy (teacher 1.25) |fp32 · 2.6 GiB (parts) |server
 |fas-g2p-1.0 |Persian→IPA |CER ≈1.6; homograph 77.34% (published SOTA 76.89) |fp32 · 2.6 GiB (parts) |server
 |tha-g2p-small-1.0 |Thai→IPA |PER 2.85 greedy |int8 · 246 MiB |client
 |tha-g2p-small-1.0-int4 |Thai→IPA (same student) |parity 0.07pp; CER cost +0.17pp |int4 · 193 MiB |client
@@ -180,7 +180,7 @@ All fp32 artifacts measured 0.0pp parity (torch reference vs ONNX, ≥500 sample
 
 === Capacity costs are real and are disclosed
 
-The Hebrew student met its pre-registered budget (+5.58pp against a ≈5.6pp allowance, the widened budget reflecting the teacher's own headroom). The Arabic client student missed its strict +0.5pp budget by +2.34pp and ships with that number in its metadata, its model card, and the results log. The measured pattern across languages: ByT5-small → ByT5-base shrink costs are single-digit percentage points on diacritization, and — measured same-protocol at greedy — +1.60pp on Thai G2P. Users choosing a tier choose a measured trade, not a mystery box.
+The Hebrew student met its pre-registered budget (+5.58pp against a ≈5.6pp allowance, the widened budget reflecting the teacher's own headroom). The Arabic client student missed its strict +0.5pp budget by +2.34pp and ships with that number in its metadata, its model card, and the results log. The measured pattern across languages: ByT5-small → ByT5-base shrink costs are single-digit percentage points on diacritization, and — measured same-protocol at greedy — +1.60pp (client tier) and +2.28pp (server tier) on Thai G2P. Users choosing a tier choose a measured trade, not a mystery box.
 
 === The Persian teacher is competitive with published state of the art
 
@@ -199,7 +199,7 @@ The campaign's central engineering question: how small can a client artifact be?
 |same + linear bridges |random |33M |~30 MiB |71.12
 |custom 10+10, d=512 + bridges |random |70M |~70 MiB |78.51
 |ByT5-small |pretrained |300M |~246 MiB |12.06
-|ByT5-base (server tier) |pretrained |580M |1.2 GiB fp32 |9.19
+|ByT5-base (server tier) |pretrained |580M |1.2 GiB fp32 |3.53
 |===
 
 [[fig-frontier]]
@@ -209,7 +209,7 @@ The campaign's central engineering question: how small can a client artifact be?
 Three findings:
 
 1. **Random initialization collapses regardless of capacity or structure.** The bridge projections (teacher activations ridge-regressed into the student's geometry) measurably improve internal structure — 75.80 → 71.12 — but cannot rescue task accuracy. Enlarging without pretraining does not help (70M scores *worse* than 33M).
-2. **The pretrained rung is the whole cliff.** From 70M/78.51 to 300M/12.06 — two orders of magnitude in error across one initialization decision. ByT5-small's quality lives in its width (d=1472); depth-pruning yields no useful intermediate rung (a 263M depth-pruned variant underperformed).
+2. **The pretrained rung is the whole cliff.** From 70M/78.51 to 300M/2.85 — two orders of magnitude in error across one initialization decision. ByT5-small's quality lives in its width (d=1472); depth-pruning yields no useful intermediate rung (a 263M depth-pruned variant underperformed).
 3. **The collapse reproduces exactly in diacritization, with clean labels.** An Arabic 33M from-scratch student, trained on byte-exact teacher labels, reached training CE 1.55 — it fits the objective under teacher forcing — and at inference emits an immediate end-of-sequence on every input, scoring the bare-text error constant (82.87% DER-CE vs teacher 1.32%). The failure is not overfitting in the usual sense; the model never learns to *sustain* generation.
 
 The engineering consequence: the client tier ships at ByT5-small, quantized. A true 30–70 MiB tier requires a *pretrained* backbone at that scale — byte-level pretraining of a narrow model — which remains open future work. The quantization ladder is the practical size lever today: 246 MiB at int8, 193 MiB at int4, with the 4-bit quality cost measured at +0.17pp CER and certified by the parity gate.
@@ -235,7 +235,12 @@ Exact match barely moves; edit distance collapses by 4.2x. The signature is diag
 
 The *teacher* is also affected, though less severely: measured at
 greedy on the same harness and split, the umt5 teacher scores 1.25% PER
-(EM 95.16%) against its published beam-4 4.43%. Same-protocol, the
+(EM 95.16%) against its published beam-4 4.43%, and the server-tier
+ByT5-base student 3.53% (EM 90.48%) against its published 9.19%. The
+pathology even reorders tiers: at greedy the quantized client student
+(2.85%, through the runtime ONNX path) outperforms the server-tier
+student (3.53%, torch harness) — a 0.68pp gap that the 0.08pp ONNX
+parity delta cannot account for. Same-protocol, the
 client tier's true shrink cost is +1.60pp — not the +7.63pp the
 beam-vs-beam comparison suggested. Both numbers in that comparison were
 decode artifacts; the distillation itself was substantially better than

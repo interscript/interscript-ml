@@ -42,13 +42,13 @@ heb-diac-1.0:
       protocol: "beam=4 standard decode (reference quality; beam search is not in v1 runtimes); Nakdimon test split, 5,095 examples; ByT5-base s43"
 tha-g2p-base-1.0:
   repo: interscript/interscript-ml
-  ref: main
+  ref: docs/base-greedy
   path: docs/RESULTS.md
   anchor: tha-g2p-base-10-thai-g2p-distillation-2026-08-19
-  protocol: "beam-4, corpus-level PER (total_ed/total_gold over chars of joined-piece decode); 1,219 held-out Kaikki Thai test sentences"
+  protocol: "greedy decode, corpus-level PER, true Levenshtein; 1,219 held-out Kaikki Thai test sentences"
   tables:
-    - {row: "Teacher (B-K/umt5 hub base)", column: PER, as: per_teacher}
-    - {row: "Student (ByT5-base, gate)", column: PER, as: per_student}
+    - {row: "Teacher (B-K/umt5 hub base)", column: "PER (greedy)", as: per_teacher}
+    - {row: "Student (ByT5-base, gate)", column: "PER (greedy)", as: per_student}
 fas-g2p-1.0:
   repo: interscript/interscript-ml
   ref: release/fas-g2p-1.0
