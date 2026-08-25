@@ -183,3 +183,22 @@ models:
       - {name: der_beam4, value: 16.43, source: rababa/docs/RESULTS.md#hebrew-diacritization}
     parity: {samples: 500, cer_delta: 0.0}
     license: BSD-3-Clause
+  ara-diac-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp32
+    filename: ara-diac-1.0-fp32.zip
+    parts:
+      - url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-1.0/ara-diac-1.0-fp32.zip.part-00
+        sha256: 6282a9291fb45ac7fcc3abe79d33b5913e91f87dcff8b305bf1d57ed98a3ed0b
+        size: 1500000000
+      - url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-1.0/ara-diac-1.0-fp32.zip.part-01
+        sha256: 7e7254a89ec75493871f6f61a993315097dad1bb0ba63c4584453c309e8cb906
+        size: 1280311342
+    sha256: 9e6d9777fe2474b150450774aaa1c9e8a9051b502b184fde298b91636dcfdac6
+    size: 2780311342
+    metrics:
+      - {name: der_total_greedy, value: 2.5793, source: rababa/docs/RESULTS.md#r6-verdict-table-sadeeddiac-25-2026-08-21}
+      - {name: der_morph_greedy, value: 1.5317, source: rababa/docs/RESULTS.md#r6-verdict-table-sadeeddiac-25-2026-08-21}
+    parity: {samples: 500, cer_delta: 0.0}
+    license: BSD-3-Clause
