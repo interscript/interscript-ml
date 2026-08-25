@@ -69,7 +69,7 @@ heb-diac-small-1.0:
     - {row: "Student (ByT5-small, gate)", column: DER, as: der_student_greedy}
 tha-g2p-small-1.0:
   repo: interscript/interscript-ml
-  ref: docs/paper-ci
+  ref: main
   path: docs/RESULTS.md
   anchor: tha-g2p-small-10-thai-g2p-client-tier-2026-08-22
   protocol: "greedy decode via the Python runtime (the shipped ONNX KV path), corpus-level PER, true Levenshtein; 1,219 held-out Kaikki Thai test sentences"
