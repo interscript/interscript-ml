@@ -151,3 +151,22 @@ models:
       - {name: sb_homograph_ezafe_norm, value: 77.34, source: interscript/interscript-ml docs/RESULTS.md#fas-g2p-1.0}
     parity: {samples: 1000, cer_delta: 0.0}
     license: BSD-3-Clause
+  heb-diac-1.1:
+    task: diacritization
+    scripts: [Hebr, Hebr]
+    precision: fp32
+    filename: heb.zip
+    parts:
+      - url: https://github.com/interscript/interscript-ml/releases/download/heb-diac-1.1/heb.zip.part-00
+        sha256: 8dac0d62e9b0ac4b137412eaf3a542953f11575f12f66f76cb93d3f5d788fc1b
+        size: 1500000000
+      - url: https://github.com/interscript/interscript-ml/releases/download/heb-diac-1.1/heb.zip.part-01
+        sha256: 230c5ab731ea5f001f802d60b9e9a328c10b43bc311a19ef1974f114384313ed
+        size: 1280987905
+    sha256: f0022dde8d06e46e8f08cf0b2f7bbb887a05ed686b90f1d5aa82ca3ef690a0b0
+    size: 2780987905
+    metrics:
+      - {name: der_greedy, value: 16.44, source: rababa/docs/RESULTS.md#hebrew-diacritization}
+      - {name: der_beam4, value: 16.43, source: rababa/docs/RESULTS.md#hebrew-diacritization}
+    parity: {samples: 500, cer_delta: 0.0}
+    license: BSD-3-Clause
