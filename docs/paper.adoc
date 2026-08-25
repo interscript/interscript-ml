@@ -180,7 +180,7 @@ All fp32 artifacts measured 0.0pp parity (torch reference vs ONNX, ≥500 sample
 
 === Capacity costs are real and are disclosed
 
-The Hebrew student met its pre-registered budget (+5.58pp against a ≈5.6pp allowance, the widened budget reflecting the teacher's own headroom). The Arabic client student missed its strict +0.5pp budget by +2.34pp and ships with that number in its metadata, its model card, and the results log. The measured pattern across languages: ByT5-small → ByT5-base shrink costs are single-digit percentage points on diacritization but larger on G2P (Thai +7.63pp beam-4 / teacher-relative 2.85% greedy). Users choosing a tier choose a measured trade, not a mystery box.
+The Hebrew student met its pre-registered budget (+5.58pp against a ≈5.6pp allowance, the widened budget reflecting the teacher's own headroom). The Arabic client student missed its strict +0.5pp budget by +2.34pp and ships with that number in its metadata, its model card, and the results log. The measured pattern across languages: ByT5-small → ByT5-base shrink costs are single-digit percentage points on diacritization, and — measured same-protocol at greedy — +1.60pp on Thai G2P. Users choosing a tier choose a measured trade, not a mystery box.
 
 === The Persian teacher is competitive with published state of the art
 
@@ -232,6 +232,14 @@ Porting beam search into the runtimes forced an apples-to-apples measurement on 
 |===
 
 Exact match barely moves; edit distance collapses by 4.2x. The signature is diagnostic: beam decoding is mangling precisely the sentences the model did not get exactly right.
+
+The *teacher* is also affected, though less severely: measured at
+greedy on the same harness and split, the umt5 teacher scores 1.25% PER
+(EM 95.16%) against its published beam-4 4.43%. Same-protocol, the
+client tier's true shrink cost is +1.60pp — not the +7.63pp the
+beam-vs-beam comparison suggested. Both numbers in that comparison were
+decode artifacts; the distillation itself was substantially better than
+either published figure implied.
 
 [[fig-decode]]
 .(a) Top-1 log-probabilities at successive positions of a representative greedy decode against the uniform baseline; the argmax is barely distinguished from the field. (b) PER by decode on a 150-sentence subset: no normalization exponent recovers greedy quality.
