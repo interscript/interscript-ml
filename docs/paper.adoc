@@ -67,9 +67,24 @@ We apply two standard distillation regimes: *sequence-level* distillation, where
 
 Post-training weight quantization of transformer MatMuls (8-bit dynamic; 4-bit blockwise) is standard deployment practice for large language models. Two aspects are, to our knowledge, under-treated in the literature and addressed by our contract: (a) *parity gates must be precision-aware* — a flat torch-vs-ONNX error bound that passes at fp32 will spuriously fail quantized artifacts (we measure fp16 ≈ 0.43pp and int8 ≈ 0.84pp character-error deltas on an unquantized-verified model); and (b) quantized graphs may use operators unavailable to old consumer runtimes (our 4-bit artifacts require MatMulNBits, absent from the oldest Ruby consumer), so precision is a first-class, advertised property of each artifact rather than a silent implementation detail.
 
-=== Beam search and length normalization
+=== Beam search and its pathologies
 
-Length-normalized beam search is the conventional decode for seq2seq evaluation. Murray & Chiang and others have analyzed its length biases; our contribution is a concrete, deployment-scale demonstration that on *distilled byte-level students* — whose per-token distributions are far flatter than their teachers' — likelihood-ranked completion is pathological in both directions (length normalization prefers long garbage; raw cumulative scores prefer short ones), while greedy decoding rides the argmax margins to a 4.2x lower error rate. Published evaluations that decode such models with beams risk reporting the decode, not the model.
+Length-normalized beam search is the conventional decode for seq2seq
+evaluation, and its failure modes are well studied: Murray & Chiang
+(2018) analyze length biases and their corrections; Meister, Cotterell &
+Vieira (2020) show that beam search's errors are not merely scoring
+artifacts but reflect which completions the underlying model actually
+prefers. Our result sits at their intersection, on a model class they
+did not consider — *distilled byte-level students*, whose per-token
+distributions are far flatter than their teachers' — and at deployment
+scale: likelihood-ranked completion is pathological in both directions
+(length normalization prefers long garbage; raw cumulative scores prefer
+short ones), while greedy decoding rides the argmax margins to a 4.2x
+lower error rate. Published evaluations that decode such models with
+beams risk reporting the decode, not the model.
+
+image:paper-assets/architecture.png[The IMF v1 pipeline,width=580,align=center]
+.Caption: The phonological-layer pipeline. Teachers are frozen before any student trains; students pass pre-registered error budgets and a precision-aware parity gate before the artifact enters the index; three runtimes resolve the same checksummed zip and produce byte-identical output.
 
 == The artifact contract (IMF v1)
 [[section-imf]]
@@ -119,6 +134,21 @@ Every language defines one harness, used for teacher and student identically:
 * *Hebrew diacritization:* diacritization error rate over the Nakdimon test split.
 * *Arabic diacritization:* windowed DER-CE — inputs longer than 1,400 bytes split at word boundaries, decoded greedily per window, stitched, and the teacher's haraqat projected onto the input's letters through letter-level alignment, scored by the Misraj evaluator over SadeedDiac-25 paragraphs. The windowed protocol removes truncation losses on long hadith paragraphs.
 * *Persian G2P:* test-split CER plus a SentenceBench homograph accuracy (ezafe-normalized).
+
+=== Training configuration
+
+[%autowidth,cols="1,1"]
+|===
+|Setting |Value
+
+|Student init (client tier) |google/byt5-small (300M, d=1472, 12+4 layers)
+|Optimizer |AdamW, lr 1e-4, cosine schedule, grad-norm clip 1.0
+|Batching |token-budget batches (32 x max(200, seq_max)); 3 epochs
+|Truncation |per-language window (384 bytes Thai; 1,450 bytes Arabic)
+|Labeling |teacher greedy/beam-4 generation, resumable, ASCII-escaped transport
+|Checkpoints |every 500 steps, with labels-file digest for lineage-safe resume
+|Hardware |single A10G (24 GB) per training; exports and parity on CPU
+|===
 
 === Training regimes
 
@@ -171,6 +201,9 @@ The campaign's central engineering question: how small can a client artifact be?
 |ByT5-base (server tier) |pretrained |580M |1.2 GiB fp32 |9.19
 |===
 
+image:paper-assets/frontier.png[Client-tier size-quality frontier,width=580,align=center]
+.Caption: The client-tier frontier on Thai G2P (identical harness). Randomly initialized students collapse at every capacity tested; the pretrained rung (green) is the whole quality cliff. The hollow point marks the same ByT5-small student scored under the beam-4 evaluation convention — see <<section-decode>>.
+
 Three findings:
 
 1. **Random initialization collapses regardless of capacity or structure.** The bridge projections (teacher activations ridge-regressed into the student's geometry) measurably improve internal structure — 75.80 → 71.12 — but cannot rescue task accuracy. Enlarging without pretraining does not help (70M scores *worse* than 33M).
@@ -198,6 +231,9 @@ Porting beam search into the runtimes forced an apples-to-apples measurement on 
 
 Exact match barely moves; edit distance collapses by 4.2x. The signature is diagnostic: beam decoding is mangling precisely the sentences the model did not get exactly right.
 
+image:paper-assets/decode.png[Decode distributions and alpha sweep,width=620,align=center]
+.Caption: (a) Top-1 log-probabilities at successive positions of a representative greedy decode, against the uniform baseline ln(259); the argmax is barely distinguished from the field. (b) PER by decode on a 150-sentence subset; no normalization exponent recovers greedy quality.
+
 === The mechanism
 
 Distilled byte-level students have *flat* per-token distributions. On the measured artifact, the top-1 log-probability at a typical decoding position is ≈ −4.6 against a uniform baseline of ln(259) ≈ −5.6 — the argmax is barely distinguished from the field. Greedy decoding rides these tiny margins consistently and produces coherent output.
@@ -207,6 +243,17 @@ Beam search ranks *completions* by accumulated likelihood. On flat distributions
 * with length normalization (`score / len^α`), longer completions divide away their accumulated cost — a 30-token sequence at −0.40/token outranks the correct 15-token answer at −0.53/token, and generated text runs long;
 * with raw cumulative scores, short completions win — the maximum-likelihood complete hypothesis on this model genuinely is a truncation (`sa˨˩` for "สวัสดี");
 * an α sweep (0, 0.3, 0.6, 1.0) produced PERs of 69.8, 70.1, 70.4, and 45.9 on a 150-sentence subset where greedy scores 3.20 — *no* normalization exponent recovers greedy quality.
+
+A concrete example from the shipped artifact, input Thai for "hello":
+
+[%autowidth,cols="1,1"]
+|===
+|Decode |Output
+
+|greedy |`sa˨˩.wat̚˨˩.diː˧` (correct)
+|beam-4, α=1 |`sa˨˩.wat̚˨˩.sat̚˨˩.sa˨˩` (runs long)
+|beam-4, raw |`sa˨˩` (truncates)
+|===
 
 The published beam-4 figures were not wrong measurements; they were measurements of the decode. Under a protocol users never execute, they overstated error 4.2x.
 
@@ -251,6 +298,19 @@ The phonological layer ships: eleven models, four languages, two tiers, one arti
 * Every model resolves by id from the public index: `Model.load("tha-g2p-small-1.0")` in any crystal.
 
 == References
+
+* [%hardbreaks]
+  Yao, K., Zweig, G. _Sequence-to-sequence neural net models for grapheme-to-phoneme conversion._ INTERSPEECH 2015.
+  +
+* Rao, K., Peng, F., Sak, H., Beaufays, F. _Grapheme-to-phoneme conversion using long short-term memory recurrent neural networks._ ICASSP 2015.
+  +
+* Yolchuyeva, B., Németh, G., Gyires-Tóth, B. _Grapheme-to-phoneme conversion with deep learning._ Speech Communication 114 (2019).
+  +
+* Meister, I., Cotterell, R., Vieira, T. _If beam search is the answer, what was the question?_ EMNLP 2020.
+  +
+* Dettmers, T., Lewis, M., Shleifer, S., Zettlemoyer, L. _LLM.int8(): 8-bit matrix multiplication for transformers at scale._ NeurIPS 2022.
+  +
+* Frantar, E., Ashkboos, S., Hoefler, T., Alistarh, D. _GPTQ: Accurate post-training quantization for generative pre-trained transformers._ ICLR 2023.
 
 * [%hardbreaks]
   Open Geospatial Consortium. _Interoperable Script Conversion Systems_ (OGC Abstract Specification Topic).
