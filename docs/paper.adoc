@@ -241,7 +241,7 @@ Distilled byte-level students have *flat* per-token distributions. On the measur
 Beam search ranks *completions* by accumulated likelihood. On flat distributions this is pathological in both directions:
 
 * with length normalization (`score / len^α`), longer completions divide away their accumulated cost — a 30-token sequence at −0.40/token outranks the correct 15-token answer at −0.53/token, and generated text runs long;
-* with raw cumulative scores, short completions win — the maximum-likelihood complete hypothesis on this model genuinely is a truncation (`sa˨˩` for "สวัสดี");
+* with raw cumulative scores, short completions win — the maximum-likelihood complete hypothesis on this model genuinely is a truncation (`sa˨˩` for "สวัสดี"). Measured as a paired comparison on 300 sentences (10,000 bootstrap resamples): the raw-score beam implementation scores 72.6% PER at 0.7% exact match against greedy's 2.6% / 89.0% — a difference of 69.9pp, 95% CI [67.6, 72.1];
 * an α sweep (0, 0.3, 0.6, 1.0) produced PERs of 69.8, 70.1, 70.4, and 45.9 on a 150-sentence subset where greedy scores 3.20 — *no* normalization exponent recovers greedy quality.
 
 A concrete example from the shipped artifact, input Thai for "hello":
@@ -255,7 +255,7 @@ A concrete example from the shipped artifact, input Thai for "hello":
 |beam-4, raw |`sa˨˩` (truncates)
 |===
 
-The published beam-4 figures were not wrong measurements; they were measurements of the decode. Under a protocol users never execute, they overstated error 4.2x.
+The published beam-4 figures (the length-normalized harness convention: 12.06% PER) were not wrong measurements; they were measurements of the decode — and the two beam variants fail in opposite directions. Under a protocol users never execute, they overstated error 4.2x.
 
 === Implications
 
