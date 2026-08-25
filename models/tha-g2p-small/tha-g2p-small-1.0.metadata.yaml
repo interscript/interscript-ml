@@ -17,6 +17,12 @@ trained_from: 'sequence-level KD from the B-K/umt5-thai-g2p-v2-0.5k teacher (4.4
   this is the smallest rung that does not collapse (docs/RESULTS.md frontier table,
   ~300MB int8).'
 metrics:
+- name: per_teacher_greedy
+  value: 1.25
+  protocol: greedy decode (num_beams=1) through the same harness; 1,219 Kaikki Thai
+    test sentences; exact match 95.16%; measured 2026-08-25 — the published beam-4
+    teacher figure 4.43 was itself inflated by the decode pathology
+  source: interscript/interscript-ml docs/RESULTS.md#tha-g2p-small-1.0
 - name: per_student_beam4
   value: 12.06
   protocol: beam-4, corpus-level PER, same harness as the teacher (src/gpu/ modal_distill.py::evaluate_per,

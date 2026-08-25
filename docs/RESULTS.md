@@ -85,10 +85,15 @@ better than the beam-4 harness numbers.** Re-measured on the shipped
 int4 zip through the Python runtime (the exact ONNX KV decode users
 get), true Levenshtein, full 1,219-sentence set:
 
-| Decode | PER | Exact match |
-|---|---|---|
-| beam-4 (published, torch harness) | 12.06% | 87.94% |
-| **greedy (runtime protocol)** | **2.85%** | **88.93%** |
+| Decode | Teacher PER | Student PER | Student EM |
+|---|---|---|---|
+| beam-4 (published, torch harness) | 4.43% | 12.06% | 87.94% |
+| **greedy (runtime protocol)** | **1.25%** | **2.85%** | **88.93%** |
+
+The teacher is also affected by the beam pathology (4.43 beam-4 → 1.25
+greedy, measured 2026-08-25 through the same harness at num_beams=1):
+same-protocol, the client tier's true shrink cost is **+1.60pp**, not
+the +7.63pp the beam-vs-beam comparison suggested.
 
 The beam-4 numbers are inflated by length-normalized beam preferring
 long garbage on this model's flat per-token distributions (top-1
