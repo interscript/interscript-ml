@@ -8,21 +8,24 @@ opset: 14
 decoder: kv
 precision: fp32
 license: BSD-3-Clause
-trained_from: >-
-  rababa train_hebrew_s46.py — phonikud curriculum (1.5M knesset
-  weak-pretrain + 73.8K hewiki garnish, then gold FT); checkpoint
-  rababa-checkpoints:/rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best
+trained_from: rababa train_hebrew_s46.py — phonikud curriculum (1.5M knesset weak-pretrain
+  + 73.8K hewiki garnish, then gold FT); checkpoint rababa-checkpoints:/rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best
 metrics:
-  - name: der_greedy
-    value: 16.44
-    protocol: >-
-      greedy decode (the v1 runtime path); Nakdimon test split,
-      5,095 examples; ByT5-base s46
-    source: rababa/docs/RESULTS.md#hebrew-diacritization
-  - name: der_beam4
-    value: 16.43
-    protocol: >-
-      beam=4 standard decode (reference quality); Nakdimon test
-      split, 5,095 examples; ByT5-base s46. Greedy ≈ beam-4 for this
-      model — the runtime path loses nothing.
-    source: rababa/docs/RESULTS.md#hebrew-diacritization
+- name: der_greedy
+  value: 16.44
+  protocol: greedy decode (the v1 runtime path); Nakdimon test split, 5,095 examples;
+    ByT5-base s46
+  source: rababa/docs/RESULTS.md#hebrew-diacritization
+- name: der_beam4
+  value: 16.43
+  protocol: beam=4 standard decode (reference quality); Nakdimon test split, 5,095
+    examples; ByT5-base s46. Greedy ≈ beam-4 for this model — the runtime path loses
+    nothing.
+  source: rababa/docs/RESULTS.md#hebrew-diacritization
+parity:
+  samples: 500
+  cer_delta: 0.0
+sha256:
+  decoder-kv.onnx: f5c6d56fe4fcc7ad99a8fa9b0936f5554c9a8dd11c612e5a0eb9119b4c5d58bc
+  decoder.onnx: 6665ab15d65808d0ebd9ae569713457737cebb4c6ca39cc4953ecc7231f3b1c8
+  encoder.onnx: 09c3d1533a06e98efdf36b3dd3c23c68f0fc80f296431ffcbec919438e409708
