@@ -202,3 +202,16 @@ models:
       - {name: der_morph_greedy, value: 1.5317, source: rababa/docs/RESULTS.md#r6-verdict-table-sadeeddiac-25-2026-08-21}
     parity: {samples: 500, cer_delta: 0.0}
     license: BSD-3-Clause
+  ara-diac-small-1.0-int8:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: int8
+    filename: ara-diac-small-1.0-int8.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-1.0/ara-diac-small-1.0-int8.zip
+    sha256: af247d837bee7e755b5287102cfb715c48dc90c2cf41ec1c41e7238e1a72b678
+    size: 256959713
+    metrics:
+      - {name: der_teacher_greedy, value: 1.3205, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_student_greedy, value: 3.658, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+    parity: {samples: 800, cer_delta: 0.0}
+    license: BSD-3-Clause
