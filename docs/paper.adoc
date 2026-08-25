@@ -83,8 +83,9 @@ short ones), while greedy decoding rides the argmax margins to a 4.2x
 lower error rate. Published evaluations that decode such models with
 beams risk reporting the decode, not the model.
 
-image:paper-assets/architecture.png[The IMF v1 pipeline,width=580,align=center]
-.Caption: The phonological-layer pipeline. Teachers are frozen before any student trains; students pass pre-registered error budgets and a precision-aware parity gate before the artifact enters the index; three runtimes resolve the same checksummed zip and produce byte-identical output.
+[[fig-architecture]]
+.The phonological-layer pipeline: frozen teachers, gated students, one checksummed artifact, three runtimes, byte-identical output.
+[image::paper-assets/architecture.png[The IMF v1 pipeline]] Teachers are frozen before any student trains; students pass pre-registered error budgets and a precision-aware parity gate before the artifact enters the index; three runtimes resolve the same checksummed zip and produce byte-identical output.
 
 == The artifact contract (IMF v1)
 [[section-imf]]
@@ -201,8 +202,9 @@ The campaign's central engineering question: how small can a client artifact be?
 |ByT5-base (server tier) |pretrained |580M |1.2 GiB fp32 |9.19
 |===
 
-image:paper-assets/frontier.png[Client-tier size-quality frontier,width=580,align=center]
-.Caption: The client-tier frontier on Thai G2P (identical harness). Randomly initialized students collapse at every capacity tested; the pretrained rung (green) is the whole quality cliff. The hollow point marks the same ByT5-small student scored under the beam-4 evaluation convention — see <<section-decode>>.
+[[fig-frontier]]
+.The client-tier frontier on Thai G2P (identical harness): randomly initialized students collapse at every capacity tested; the pretrained rung is the whole quality cliff. The hollow point marks the same ByT5-small student scored under the beam-4 evaluation convention (<<section-decode>>).
+[image::paper-assets/frontier.png[Client-tier size-quality frontier]]
 
 Three findings:
 
@@ -231,8 +233,9 @@ Porting beam search into the runtimes forced an apples-to-apples measurement on 
 
 Exact match barely moves; edit distance collapses by 4.2x. The signature is diagnostic: beam decoding is mangling precisely the sentences the model did not get exactly right.
 
-image:paper-assets/decode.png[Decode distributions and alpha sweep,width=620,align=center]
-.Caption: (a) Top-1 log-probabilities at successive positions of a representative greedy decode, against the uniform baseline ln(259); the argmax is barely distinguished from the field. (b) PER by decode on a 150-sentence subset; no normalization exponent recovers greedy quality.
+[[fig-decode]]
+.(a) Top-1 log-probabilities at successive positions of a representative greedy decode against the uniform baseline; the argmax is barely distinguished from the field. (b) PER by decode on a 150-sentence subset: no normalization exponent recovers greedy quality.
+[image::paper-assets/decode.png[Decode distributions and alpha sweep]]
 
 === The mechanism
 
@@ -241,7 +244,7 @@ Distilled byte-level students have *flat* per-token distributions. On the measur
 Beam search ranks *completions* by accumulated likelihood. On flat distributions this is pathological in both directions:
 
 * with length normalization (`score / len^α`), longer completions divide away their accumulated cost — a 30-token sequence at −0.40/token outranks the correct 15-token answer at −0.53/token, and generated text runs long;
-* with raw cumulative scores, short completions win — the maximum-likelihood complete hypothesis on this model genuinely is a truncation (`sa˨˩` for "สวัสดี");
+* with raw cumulative scores, short completions win — the maximum-likelihood complete hypothesis on this model genuinely is a truncation (`sa˨˩` for "สวัสดี"). Measured as a paired comparison on 300 sentences (10,000 bootstrap resamples): the raw-score beam implementation scores 72.6% PER at 0.7% exact match against greedy's 2.6% / 89.0% — a difference of 69.9pp, 95% CI [67.6, 72.1];
 * an α sweep (0, 0.3, 0.6, 1.0) produced PERs of 69.8, 70.1, 70.4, and 45.9 on a 150-sentence subset where greedy scores 3.20 — *no* normalization exponent recovers greedy quality.
 
 A concrete example from the shipped artifact, input Thai for "hello":
@@ -255,7 +258,7 @@ A concrete example from the shipped artifact, input Thai for "hello":
 |beam-4, raw |`sa˨˩` (truncates)
 |===
 
-The published beam-4 figures were not wrong measurements; they were measurements of the decode. Under a protocol users never execute, they overstated error 4.2x.
+The published beam-4 figures (the length-normalized harness convention: 12.06% PER) were not wrong measurements; they were measurements of the decode — and the two beam variants fail in opposite directions. Under a protocol users never execute, they overstated error 4.2x.
 
 === Implications
 
@@ -290,6 +293,24 @@ The general lesson: when a file "reads corrupt remotely and clean locally," susp
 == Conclusion
 
 The phonological layer ships: eleven models, four languages, two tiers, one artifact contract, zero untraceable numbers. The deterministic guarantees of map-based transliteration — same bytes everywhere, verifiable artifacts, public protocols — carry over to learned conversion. The two negative results (no sub-100M rung without pretraining; beam decode counterproductive on distilled byte students) are released with the same rigor as the positive ones, because in an infrastructure whose value is trust, a measured failure is a deliverable.
+
+== Data and compute statement
+
+*Datasets.* Thai: Kaikki-derived Thai IPA pairs (train on the expanded
+corpus with epitran augmentation; 1,219 held-out test sentences).
+Hebrew: hebrew-v4 gold corpus with a phonikud weak-pretraining stage;
+Nakdimon test split. Arabic: r5-units domain and replay corpora of
+fully-voweled hadith text; SadeedDiac-25 evaluation paragraphs.
+Persian: the v1 g2p corpus (release-frozen); SentenceBench for homograph
+accuracy. No dataset contains personal data; all are derived from
+published textual corpora under their respective licenses.
+
+*Compute.* Students train on a single 24 GB A10G: 3-11 hours per
+student (Thai 4 h; Hebrew 3 h; Arabic 11 h including labeling; the
+Arabic client tier trained three times across the debugging saga).
+Teacher labeling is the dominant one-off cost per language (2-6 h).
+Exports, validation, and parity gates run on CPU. Total campaign GPU
+budget is on the order of 100 A10G-hours.
 
 == Availability and provenance
 
