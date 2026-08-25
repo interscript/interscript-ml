@@ -143,6 +143,10 @@ def main() -> None:
     parser.add_argument("model_id")
     parser.add_argument("--zip", type=Path, required=True)
     parser.add_argument("--repo", default=DEFAULT_REPO)
+    parser.add_argument(
+        "--key",
+        help="models.yaml key when publishing a precision variant of an "
+             "existing base id, e.g. --key <base>-int8 (default: model_id)")
     args = parser.parse_args()
 
     # git and gh must operate on this repo regardless of the caller's cwd
@@ -159,6 +163,7 @@ def main() -> None:
     meta = load_metadata(args.zip)
     if meta["id"] != args.model_id:
         raise SystemExit(f"metadata id {meta['id']!r} != requested {args.model_id!r}")
+    key = args.key or args.model_id
 
     whole_sha = sha256_file(args.zip)
     size = args.zip.stat().st_size
@@ -171,7 +176,7 @@ def main() -> None:
 
     tag = args.model_id
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
-        fh.write(release_notes(args.model_id, meta, args.zip.name, size, whole_sha, assets))
+        fh.write(release_notes(key, meta, args.zip.name, size, whole_sha, assets))
         notes_path = fh.name
 
     existing = subprocess.run(
@@ -206,8 +211,8 @@ def main() -> None:
     # Branch work happens in a dedicated worktree so the caller's tree is
     # never checked out (dirty files must not block publication, and
     # publication must not clobber in-progress edits).
-    branch = f"release/{args.model_id}"
-    worktree = REPO_ROOT.parent / f".wt-publish-{args.model_id}"
+    branch = f"release/{key}"
+    worktree = REPO_ROOT.parent / f".wt-publish-{key}"
     branches = run(["git", "branch", "--list", branch],
                    capture_output=True, text=True).stdout
     base = branch if branches else "origin/main"
@@ -217,22 +222,22 @@ def main() -> None:
         wt_models = worktree / "models.yaml"
         wt_repo = str(worktree)
         # models/<family>/<id>.metadata.yaml, e.g. models/heb-diac/heb-diac-1.0...
-        family = args.model_id.rsplit("-", 1)[0]
-        upsert_models_yaml(wt_models, args.model_id,
-                           entry_block(args.model_id, meta, args.zip.name, whole_sha,
+        family = key.rsplit("-", 1)[0]
+        upsert_models_yaml(wt_models, key,
+                           entry_block(key, meta, args.zip.name, whole_sha,
                                        size, assets, args.repo, tag))
         model_dir = worktree / "models" / family
         model_dir.mkdir(parents=True, exist_ok=True)
-        (model_dir / f"{args.model_id}.metadata.yaml").write_text(
+        (model_dir / f"{key}.metadata.yaml").write_text(
             yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
         def git_wt(*cmd: str):
             return run(["git", "-C", wt_repo, *cmd], capture_output=True, text=True)
 
-        git_wt("add", "models.yaml", f"models/{family}/{args.model_id}.metadata.yaml")
+        git_wt("add", "models.yaml", f"models/{family}/{key}.metadata.yaml")
         staged = git_wt("diff", "--cached", "--name-only").stdout.split()
         if staged:
-            git_wt("commit", "-m", f"release: {args.model_id} "
+            git_wt("commit", "-m", f"release: {key} "
                    f"({meta['precision']}, parity cer_delta {meta['parity']['cer_delta']}pp "
                    f"on {meta['parity']['samples']} samples)")
             git_wt("push", "-u", "origin", branch)
@@ -242,13 +247,13 @@ def main() -> None:
                   capture_output=True, text=True).stdout
         if not yaml.safe_load(prs):
             with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
-                fh.write(f"## Summary\n- publish {args.model_id} ({meta['precision']}): "
+                fh.write(f"## Summary\n- publish {key} ({meta['precision']}): "
                          f"GH Release `{tag}` + models.yaml entry"
                          f"{' (split parts, GitHub 2GiB cap)' if len(assets) > 1 else ''}\n"
                          f"- parity cer_delta {meta['parity']['cer_delta']}pp on "
                          f"{meta['parity']['samples']} samples; strict validator gate passed\n\n"
                          f"## Test plan\n- [ ] CI green\n- [ ] runtime fetch "
-                         f"`Model.load(\"{args.model_id}\")` resolves and verifies\n")
+                         f"`Model.load(\"{key}\")` resolves and verifies\n")
                 body_path = fh.name
             # the branch push propagates asynchronously; an immediate
             # pr create reliably fails with "head branch not found"
@@ -257,7 +262,7 @@ def main() -> None:
             for attempt in range(3):
                 proc = subprocess.run(
                     ["gh", "pr", "create", "-R", args.repo,
-                     "--head", branch, "--title", f"release: {args.model_id}",
+                     "--head", branch, "--title", f"release: {key}",
                      "--body-file", body_path],
                     capture_output=True, text=True,
                 )
@@ -269,7 +274,7 @@ def main() -> None:
                 raise SystemExit("gh pr create failed after retries")
     finally:
         run(["git", "worktree", "remove", "--force", str(worktree)])
-    print(f"published {args.model_id}: release {tag}, branch {branch}")
+    print(f"published {key}: release {tag}, branch {branch}")
 
 
 if __name__ == "__main__":
