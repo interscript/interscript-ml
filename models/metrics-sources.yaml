@@ -42,7 +42,7 @@ heb-diac-1.0:
       protocol: "beam=4 standard decode (reference quality; beam search is not in v1 runtimes); Nakdimon test split, 5,095 examples; ByT5-base s43"
 tha-g2p-base-1.0:
   repo: interscript/interscript-ml
-  ref: docs/base-greedy
+  ref: main
   path: docs/RESULTS.md
   anchor: tha-g2p-base-10-thai-g2p-distillation-2026-08-19
   protocol: "greedy decode, corpus-level PER, true Levenshtein; 1,219 held-out Kaikki Thai test sentences"
