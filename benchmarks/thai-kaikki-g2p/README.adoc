@@ -1,0 +1,49 @@
+= Thai Kaikki G2P benchmark v1.0
+
+1,219 held-out Thai sentence pairs (source text, IPA phonemic
+transcription) extracted from Kaikki.net's Thai Wiktionary data. This is
+the test set behind every Thai G2P number published by this repository
+(see `docs/RESULTS.md`).
+
+== Format
+
+One JSON object per line, UTF-8, tab-free:
+
+----
+{"src": "<Thai sentence>", "tgt": "<IPA transcription>"}
+----
+
+== Protocol (the one all published numbers use)
+
+* decode: greedy (`num_beams=1`) — beam search is counterproductive on
+  the distilled byte-level students; see the decode-protocol section of
+  `docs/paper.adoc`
+* metric: corpus-level phoneme error rate, PER = total Levenshtein
+  edits / total reference characters over the joined-piece decode
+* harness: `src/gpu/modal_distill.py::evaluate_per`
+
+== Reference points (same protocol, 2026-08)
+
+|===
+|Model |PER |Exact match
+
+|B-K/umt5-thai-g2p-v2-0.5k (teacher) |1.25% |95.16%
+|tha-g2p-base-1.0 (ByT5-base, server tier) |3.53% |90.48%
+|tha-g2p-small-1.0 (ByT5-small int8, client tier) |2.85% |88.93%
+|===
+
+== Provenance and license
+
+Derived from Kaikki.net's machine-readable extracts of Wiktionary
+Thai entries (kaikki.org), which are released under Creative Commons
+Attribution-ShareAlike; consult kaikki.org for the applicable version
+and attribution requirements. Pairs are used verbatim from the held-out
+split; no test sentence participates in any training corpus of the
+models measured above.
+
+== Why publish it
+
+No standard external benchmark exists for Thai grapheme-to-phoneme
+conversion; published systems evaluate on private or per-paper splits.
+This set ships so that future systems can be compared under one public
+protocol. If you use it, cite this repository and the results log.

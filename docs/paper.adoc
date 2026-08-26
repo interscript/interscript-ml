@@ -215,7 +215,7 @@ The teacher is the best dedicated (task-trained, runnable-locally) model measure
 
 *Hebrew.* No external leaderboard exists for the Nakdimon test domain (Biblical/Rabbinic). On that split our best teacher scores 16.58% DER — against DictaBERT-large, the reference production diacritizer, at 35.63% *on the same test, run by us*. Recent open systems (D-Nikud; visual-representation approaches, Elboher & Pinter 2025) report state of the art on *modern*-text benchmarks we do not evaluate. Hebrew remains the campaign's disclosed weak spot in absolute terms while being locally competitive; closing the domain gap is active work.
 
-*Thai.* No standard external G2P benchmark exists for Thai; published systems evaluate on private or per-paper splits. Our harness (1,219 held-out Kaikki sentences, corpus-level PER, released with the code) is publishable as a citable test set, and we claim nothing external until such a comparison is run.
+*Thai.* No standard external G2P benchmark exists for Thai; published systems evaluate on private or per-paper splits. This work therefore ships its harness as one: the 1,219-sentence Kaikki-derived test set and protocol are published at `benchmarks/thai-kaikki-g2p/` with reference points, and no external Thai claim is made until such a comparison is run on it.
 
 == The client-tier frontier
 [[section-frontier]]
@@ -335,7 +335,7 @@ The general lesson: when a file "reads corrupt remotely and clean locally," susp
 
 *Client tier.* 193 MiB is not 30 MiB. The quantization ladder is exhausted (int4 measured, lower precisions untested); further shrinkage is a pretraining problem, not a compression problem.
 
-*Benchmarks.* Cross-paper comparison in this space is unreliable by construction: protocols differ in evaluator, reference projection, skipped-example handling, and domain (SadeedDiac-25's own motivation). We therefore claim externally only where the full protocol is reproduced (<<section-leaderboard>>) and otherwise publish the harness itself — the Thai test set ships with this work as a citable benchmark candidate.
+*Benchmarks.* Cross-paper comparison in this space is unreliable by construction: protocols differ in evaluator, reference projection, skipped-example handling, and domain (SadeedDiac-25's own motivation). We therefore claim externally only where the full protocol is reproduced (<<section-leaderboard>>) and otherwise publish the harness itself — the Thai test set ships with this work as a citable benchmark (`benchmarks/thai-kaikki-g2p/`).
 
 *Determinism.* Byte-identical output across three runtimes is verified by golden sets generated from the reference implementation. Floating-point nondeterminism across ONNX runtime versions is not addressed beyond opset pinning; the parity gate bounds it at the artifact level.
 
