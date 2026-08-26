@@ -38,6 +38,11 @@ lm_head) and the volume's epitran augmentation corpus is tone-less;
 this release distills the best verified teacher available. A repaired
 2.32%-tier teacher re-enters this pipeline when secryst regenerates it.
 
+The 1,219-sentence test set is now published as a citable benchmark:
+`benchmarks/thai-kaikki-g2p/` (data, protocol, reference points). No
+external Thai comparison exists to date; systems evaluating on the
+published benchmark can be ranked against the reference points above.
+
 ## fas-g2p-1.0 — Persian G2P (2026-08-19)
 
 The v1 ByT5-small teacher shipped directly (byte-level, client-tier
