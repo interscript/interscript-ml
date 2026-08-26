@@ -52,7 +52,12 @@ representation line are closed negative; v1 is final).
 | SentenceBench homograph (ezafe-normalized) | 77.34% |
 
 Published reference: Homo-GE2PE homograph 76.89% — v1 is above the
-published SOTA on this benchmark.
+published best on this benchmark. Claim scope (2026-08-26): SentenceBench
+homograph accuracy only. Concurrent Persian G2P lines report on their own
+PER benchmarks — prompted LLMs with post-processing (arXiv 2409.08554,
+best 8.30% PER) and intermediate-language transliteration trained on
+LLM-generated data (arXiv 2505.06599) — none shares an evaluation set
+with SentenceBench, so no cross-paper ranking is claimed.
 
 ## heb-diac-small-1.0 — Hebrew student distillation (2026-08-20)
 
@@ -195,3 +200,13 @@ Training notes: this is the third training of run-002 — the first on
 mojibake labels (byt5 decode_joined bug), the second silently resumed
 from the poisoned lineage's checkpoints (now guarded by labels.sha
 digest matching), this one clean end-to-end. CE plateaued at ~0.016.
+
+Leaderboard context (SadeedDiac-25, Misraj evaluator, zero-skip,
+harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793 is the
+best dedicated model measured under this protocol — second only to
+Claude-3.7-Sonnet's published 1.3941, ahead of GLM-5.2 zero-skip (2.6911),
+Gemini-Flash-2.0 (3.1926), GPT-4 (3.8645), and Sadeed-1.5B (7.2915;
+source table in rababa docs/RESULTS.md). This student's 3.66% was
+measured on the 300-paragraph subset; the full-1,200-paragraph
+measurement is running (2026-08-26) and will replace the subset number
+when it lands.

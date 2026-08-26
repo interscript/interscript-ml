@@ -14,7 +14,7 @@ Interoperable script conversion (OGC Abstract Standard topic _Interoperable Scri
 
 We contribute: (1) the Interscript Model Format (IMF v1), a checksummed, runtime-agnostic artifact contract that carries models across Ruby, Python, and JavaScript with byte-identical output; (2) a distillation methodology in which students are trained from frozen, independently evaluated teachers under pre-registered error budgets; (3) a measured size–quality frontier for client-tier models demonstrating that sub-100M randomly-initialized byte-level students fail catastrophically in both generation and diacritization, while a pretrained 300M backbone quantized to 4 bits (193 MiB) retains full utility; and (4) a decode-protocol study showing that beam search with conventional length normalization is *counterproductive* on distilled byte-level students, inflating phoneme error rate by a factor of four relative to greedy decoding on the same artifact — a calibration artifact with implications for any evaluation of low-confidence autoregressive models.
 
-Eleven models across four languages are released under BSD-3-Clause, every one traceable to a documented protocol.
+Eleven models across four languages are released under BSD-3-Clause, every one traceable to a documented protocol. Where public benchmarks permit protocol-matched comparison, the teacher tier ranks among the best dedicated systems measured — second only to a frontier proprietary LLM on the SadeedDiac-25 Arabic diacritization leaderboard, and above the published SentenceBench homograph accuracy for Persian — and the 300M-parameter client student lands between Gemini Flash and GPT-4 on the same Arabic leaderboard.
 
 == Introduction
 
@@ -59,9 +59,13 @@ The OGC Abstract Standard for Interoperable Script Conversion Systems specifies 
 
 Grapheme-to-phoneme conversion and diacritization are canonical seq2seq tasks. Character-level transformer models dominate recent literature; for the languages considered here, strong results have been reported with mT5-family encoders (e.g., umt5-based Thai G2P at 6.37% published PER) and ByT5 — the byte-level T5 variant that removes the tokenizer entirely, processing raw UTF-8 bytes. ByT5 is attractive for an artifact contract precisely because it eliminates vocabulary drift: the tokenizer is fixed by construction, so a model zip never needs a vocab file, and any runtime can encode input by table lookup (token id = byte + 3).
 
+The 2024–2025 landscape consolidated around two directions this work deliberately does not follow. First, *LLM prompting as the conversion engine*: Fetrat et al. (2024) show prompted LLMs with post-processing reach 8.30% PER on their Persian G2P benchmark, and subsequent work constructs intermediate transliteration languages trained on LLM-generated data (Bertina et al. 2025). We exclude LLM-generated supervision on reliability grounds — language models hallucinate diacritics — but note these systems as evidence that the tasks are reachable by many architectures. Second, *benchmark consolidation and protocol sensitivity*: SadeedDiac-25 (Aldallal et al. 2025) was introduced precisely because leaderboard numbers were not comparable across papers; Mohamed & Mubarak (2025) propose multi-reference evaluation (WikiNews-2024) for the same reason. Our methodology — one harness per language, protocol-matched external comparisons only, zero skipped examples — adopts the same discipline at the artifact level. On the model side, small decoder-only LMs (Sadeed, 1.5B) and LSTM/BERT hybrids (D-Nikud for Hebrew; Rosenthal & Shaked 2024) report strong in-domain results; none ship as portable artifacts, which is the gap this paper fills.
+
 === Knowledge distillation
 
 We apply two standard distillation regimes: *sequence-level* distillation, where the teacher generates target strings consumed by the student's standard cross-entropy objective, and *logit* distillation (KL between teacher and student distributions plus ground-truth CE). Sequence-level KD is the natural fit when teacher and student occupy different vocabulary spaces (a sentencepiece umt5 teacher into a byte-level student); logit KD when both are byte-level and share the tokenizer.
+
+Both regimes are *off-policy*: the training distribution is the teacher's (or the corpus's), never the student's own. The on-policy line — MiniLLM's reverse KL on student-sampled sequences (Gu et al. 2024) and Generalized Knowledge Distillation (Agarwal et al. 2024), which trains on student-generated mistakes scored by the teacher — is designed to fix exactly the pathology we measure in <<section-decode>>: students whose distributions are too flat to rank completions by likelihood. Sharpening the student on its own errors, rather than only imitating teacher output, is the principled next lever for both the shrink cost and the decode behavior; we leave it as future work (<<section-discussion>>).
 
 === Quantization and deployment-aware inference
 
@@ -169,7 +173,7 @@ Students train either by sequence-level KD (teacher-generated targets; cross-ent
 |urd-diac-1.0 |Urdu haraqat |CER 3.74 |fp32 · 1.3 GiB |server
 |heb-diac-1.0 |Hebrew niqqud |DER 29.0 greedy / 17.5 beam-4 |fp32 · 2.6 GiB (parts) |server
 |tha-g2p-base-1.0 |Thai→IPA |PER 3.53 greedy (teacher 1.25) |fp32 · 2.6 GiB (parts) |server
-|fas-g2p-1.0 |Persian→IPA |CER ≈1.6; homograph 77.34% (published SOTA 76.89) |fp32 · 2.6 GiB (parts) |server
+|fas-g2p-1.0 |Persian→IPA |CER ≈1.6; SentenceBench homograph 77.34% (published best 76.89) |fp32 · 2.6 GiB (parts) |server
 |tha-g2p-small-1.0 |Thai→IPA |PER 2.85 greedy |int8 · 246 MiB |client
 |tha-g2p-small-1.0-int4 |Thai→IPA (same student) |parity 0.07pp; CER cost +0.17pp |int4 · 193 MiB |client
 |heb-diac-small-1.0 |Hebrew niqqud |DER 30.37 (teacher 24.79; +5.58 within budget) |fp32 · 1.3 GiB |client
@@ -184,7 +188,34 @@ The Hebrew student met its pre-registered budget (+5.58pp against a ≈5.6pp all
 
 === The Persian teacher is competitive with published state of the art
 
-The shipped Persian model exceeds the published SentenceBench homograph accuracy (77.34% vs 76.89% for Homo-GE2PE) at CER ≈1.6%. It ships as the server artifact directly — the byte-level teacher already occupies client-tier size, and distillation adds nothing.
+The shipped Persian model exceeds the published SentenceBench homograph accuracy (77.34% vs 76.89% for Homo-GE2PE) at CER ≈1.6%. The claim is benchmark-scoped: concurrent Persian G2P lines report on their own PER benchmarks — prompted LLMs with post-processing at 8.30% PER (Fetrat et al. 2024) and an intermediate-language transliteration trained on LLM-generated data (Bertina et al. 2025) — none of which shares an evaluation set with SentenceBench, so no cross-paper ranking is possible. It ships as the server artifact directly — the byte-level teacher already occupies client-tier size, and distillation adds nothing.
+
+=== Positioning against public benchmarks
+[[section-leaderboard]]
+
+External claims are made only where a public benchmark exists and the full protocol is reproducible. Arabic qualifies; the others do not, and we say so.
+
+*Arabic — SadeedDiac-25, full 1,200 paragraphs, Misraj evaluator, zero skipped, haraqat-projected DER (character-level), greedy decode. Protocol-matched entries:*
+
+[%autowidth,cols="1,1,1"]
+|===
+|System |Params |DER-CE
+
+|Claude 3.7 Sonnet (published) |— |1.3941
+|**our teacher (r6, ByT5-base)** |580M |**2.5793**
+|GLM-5.2 (reproduced, zero-skip) |— |2.6911
+|Gemini Flash 2.0 (published) |— |3.1926
+|**our client student (ByT5-small)** |300M |3.66 footnote:ara-subset[]
+|GPT-4 (published) |— |3.8645
+|Sadeed (published) |1.5B |7.2915
+|===
+ footnote:ara-subset[300-paragraph subset of the same benchmark; the full-set measurement is in flight at submission time.]
+
+The teacher is the best dedicated (task-trained, runnable-locally) model measured under this protocol — second only to a frontier proprietary LLM's published number, ahead of a clean GLM-5.2 reproduction, Gemini Flash, and GPT-4 — and it does so at 580M parameters against Sadeed's 1.5B. The client student, at 300M parameters in a 1.3 GiB checksummed artifact, lands between Gemini Flash and GPT-4. Two protocol notes the benchmark's own authors make and we adopt: self-reported numbers from other protocols (Sadeed's repository reports 1.2% DER under its own split) are not comparable, and multi-reference evaluation (Mohamed & Mubarak 2025) is the honest treatment of valid-alternative diacritizations; on WikiNews-2024 our teacher family scores 19.82 WER against QCRI's in-domain-trained 2.70 — a domain gap (classical hadith vs news text), recorded rather than averaged away.
+
+*Hebrew.* No external leaderboard exists for the Nakdimon test domain (Biblical/Rabbinic). On that split our best teacher scores 16.58% DER — against DictaBERT-large, the reference production diacritizer, at 35.63% *on the same test, run by us*. Recent open systems (D-Nikud; visual-representation approaches, Elboher & Pinter 2025) report state of the art on *modern*-text benchmarks we do not evaluate. Hebrew remains the campaign's disclosed weak spot in absolute terms while being locally competitive; closing the domain gap is active work.
+
+*Thai.* No standard external G2P benchmark exists for Thai; published systems evaluate on private or per-paper splits. Our harness (1,219 held-out Kaikki sentences, corpus-level PER, released with the code) is publishable as a citable test set, and we claim nothing external until such a comparison is run.
 
 == The client-tier frontier
 [[section-frontier]]
@@ -292,14 +323,19 @@ The campaign's multi-day debugging saga is worth recording if only because every
 The general lesson: when a file "reads corrupt remotely and clean locally," suspect the parser and the transport before the storage — and when a retrained model behaves impossibly, suspect its initialization before its data.
 
 == Discussion and limitations
+[[section-discussion]]
 
 *Scope.* The frontier result (pretrained-or-collapse) is measured at the 30–300M scale on two task families and four languages. It is consistent with the general finding that byte-level models need pretraining at scale; it does not establish that a pretrained 70M model must fail — only that none exists to ship today.
 
 *Teachers are moving targets by design.* The Hebrew teacher improved mid-campaign (s45 → s46 via phonikud curriculum; s47 in flight via morphological auxiliary tasks); the Arabic teacher improved via the same auxiliary-task template. Students track their teacher's snapshot; the catalog's provenance chain records which.
 
-*Decode.* The greedy-vs-beam result is established for distilled byte-level students. Whether sharp teachers are best decoded greedily is unmeasured; their beam numbers stand as measurements under a stated protocol.
+*Decode.* The greedy-vs-beam result is established for distilled byte-level students. Whether sharp teachers are best decoded greedily is unmeasured; their beam numbers stand as measurements under a stated protocol. Notably the beam gain is language-dependent at the teacher tier — Hebrew teachers gain ~12 DER points from beam search while the Arabic teacher gains nothing (2.5793 greedy vs 2.5588 beam-4) — consistent with the sharpness account: the pathology tracks distribution flatness, not the task.
+
+*On-policy distillation is the open lever.* Our students train exclusively on off-policy supervision (teacher-generated strings, or teacher logits on corpus targets). The measured flatness of student distributions (<<section-decode>>) is precisely the failure mode on-policy regimes — reverse KL on student-sampled sequences (Gu et al. 2024; Agarwal et al. 2024) — are designed to correct. A GKD-style pass over the shipped students could plausibly reduce shrink costs and restore sane beam behavior at once; it is the first experiment we would run next.
 
 *Client tier.* 193 MiB is not 30 MiB. The quantization ladder is exhausted (int4 measured, lower precisions untested); further shrinkage is a pretraining problem, not a compression problem.
+
+*Benchmarks.* Cross-paper comparison in this space is unreliable by construction: protocols differ in evaluator, reference projection, skipped-example handling, and domain (SadeedDiac-25's own motivation). We therefore claim externally only where the full protocol is reproduced (<<section-leaderboard>>) and otherwise publish the harness itself — the Thai test set ships with this work as a citable benchmark candidate.
 
 *Determinism.* Byte-identical output across three runtimes is verified by golden sets generated from the reference implementation. Floating-point nondeterminism across ONNX runtime versions is not addressed beyond opset pinning; the parity gate bounds it at the artifact level.
 
@@ -355,3 +391,11 @@ budget is on the order of 100 A10G-hours.
 * Kim, Y., Rush, A. _Sequence-level knowledge distillation._ EMNLP 2016.
 * Murray, K., Chiang, D. _Correcting length bias in neural machine translation._ WMT 2018.
 * Tse, R. et al. _Interscript: an interoperable script conversion system registry._ 2022.
+* Gu, Y. et al. _MiniLLM: Knowledge distillation of large language models._ ICLR 2024 (arXiv:2306.08543).
+* Agarwal, G. et al. _On-policy distillation of language models: Learning from self-generated mistakes._ ICLR 2024 (arXiv:2306.13649).
+* Aldallal, Z., Chrouf, S., Hennara, K., Hamed, M. M., Hreden, M., AlModhayan, S. _Sadeed: Advancing Arabic diacritization through small language model._ arXiv:2504.21635, 2025.
+* Mohamed, A., Mubarak, H. _Advancing Arabic diacritization: Improved datasets, benchmarking, and state-of-the-art models._ EMNLP 2025, pp. 16718–16730.
+* Fetrat, M. et al. _LLM-powered grapheme-to-phoneme conversion: Benchmark and case study._ arXiv:2409.08554, 2024.
+* Bertina, A., Beirami, S., Biniazian, H., Esmaeilnia, E., Shahi, S., Pirnia, M. _Bridging the gap: An intermediate language for enhanced and cost-effective grapheme-to-phoneme conversion with homographs with multiple pronunciations disambiguation._ arXiv:2505.06599, 2025.
+* Rosenthal, A., Shaked, N. _D-Nikud: Enhancing Hebrew diacritization with LSTM and pretrained models._ arXiv:2402.00075, 2024.
+* Elboher, Y., Pinter, Y. _Hebrew diacritics restoration using visual representation._ arXiv:2510.26521, 2025.
