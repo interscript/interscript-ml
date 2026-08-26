@@ -79,19 +79,23 @@ tha-g2p-small-1.0:
     - {row: "greedy (runtime protocol)", column: Student PER, as: per_student}
 ara-diac-small-1.0:
   repo: interscript/interscript-ml
-  ref: release/ara-diac-small-1.0
+  ref: docs/ara-fullset
   path: docs/RESULTS.md
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
-  protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300 SadeedDiac-25 paragraphs"
+  protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300-para subset and full 1,200-paragraph SadeedDiac-25"
   tables:
     - {row: "Teacher (r6)", column: "DER-CE (300-para subset)", as: der_teacher_greedy}
     - {row: "Student (ByT5-small, client rung)", column: "DER-CE (300-para subset)", as: der_student_greedy}
-ara-diac-small-1.0-fullset:
+    - {row: "Teacher (r6, full-set)", column: "DER-CE (full 1,200)", as: der_teacher_fullset}
+    - {row: "Student (ByT5-small, full-set)", column: "DER-CE (full 1,200)", as: der_student_fullset}
+ara-diac-small-1.0-int8:
   repo: interscript/interscript-ml
   ref: docs/ara-fullset
   path: docs/RESULTS.md
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
-  protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); full 1,200 SadeedDiac-25 paragraphs"
+  protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300-para subset and full 1,200-paragraph SadeedDiac-25"
   tables:
+    - {row: "Teacher (r6)", column: "DER-CE (300-para subset)", as: der_teacher_greedy}
+    - {row: "Student (ByT5-small, client rung)", column: "DER-CE (300-para subset)", as: der_student_greedy}
     - {row: "Teacher (r6, full-set)", column: "DER-CE (full 1,200)", as: der_teacher_fullset}
     - {row: "Student (ByT5-small, full-set)", column: "DER-CE (full 1,200)", as: der_student_fullset}
