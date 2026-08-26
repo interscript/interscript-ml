@@ -12,20 +12,32 @@ trained_from: 'sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006
   2.5793 windowed DER-CE on the full SadeedDiac-25 protocol): 29,322 greedy teacher-generated
   labels on the r5-units corpus (domain + replay, 1400-byte windows); ByT5-small init
   google/byt5-small; 3 epochs; checkpoint rababa-checkpoints:/rababa_arabic_distill_small/run-002/best.
-  Client tier: capacity-limited at +2.34pp over the teacher — the strict gate is met
-  by the teacher release (ara-diac-1.0); shipped as the Arabic client rung per the
-  documented Thai precedent.'
+  Client tier: capacity- and domain-limited at +5.68pp over the teacher on the full
+  1,200-paragraph benchmark (8.26 vs 2.58) — the strict gate is met by the teacher
+  release (ara-diac-1.0); shipped as the Arabic client rung with the miss disclosed.
+  The earlier 300-paragraph subset figure (3.66) was not representative: the subset
+  sits in the training-domain neighborhood (see RESULTS correction, 2026-08-26).'
 metrics:
 - name: der_teacher_greedy
   value: 1.3205
   protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy, haraqat-projected,
-    Misraj evaluator); 300 SadeedDiac-25 paragraphs; r6 teacher on the same harness
-    as the student
+    Misraj evaluator); 300 SadeedDiac-25 paragraphs — the first-300 subset, which
+    the full-set correction showed to be unrepresentative; superseded by der_teacher_fullset
   source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
 - name: der_student_greedy
   value: 3.658
-  protocol: same harness; +2.34pp client-tier shrink cost (strict gate was teacher
-    +0.5pp); shipped capacity-limited — see the RESULTS gate discussion
+  protocol: same subset harness; superseded by der_student_fullset — the subset overstated
+    quality by 4.6pp
+  source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
+- name: der_teacher_fullset
+  value: 2.5815
+  protocol: windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj
+    evaluator); full 1,200-paragraph SadeedDiac-25; reproduces the documented 2.5793
+  source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
+- name: der_student_fullset
+  value: 8.259
+  protocol: same full-set harness; +5.68pp client-tier cost against the strict teacher+0.5pp
+    gate — capacity plus domain generalization; see the RESULTS gate discussion
   source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0
 parity:
   samples: 800

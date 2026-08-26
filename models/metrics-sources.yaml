@@ -84,5 +84,14 @@ ara-diac-small-1.0:
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
   protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300 SadeedDiac-25 paragraphs"
   tables:
-    - {row: "Teacher (r6)", column: DER-CE, as: der_teacher_greedy}
-    - {row: "Student (ByT5-small, client rung)", column: DER-CE, as: der_student_greedy}
+    - {row: "Teacher (r6)", column: "DER-CE (300-para subset)", as: der_teacher_greedy}
+    - {row: "Student (ByT5-small, client rung)", column: "DER-CE (300-para subset)", as: der_student_greedy}
+ara-diac-small-1.0-fullset:
+  repo: interscript/interscript-ml
+  ref: docs/ara-fullset
+  path: docs/RESULTS.md
+  anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
+  protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); full 1,200 SadeedDiac-25 paragraphs"
+  tables:
+    - {row: "Teacher (r6, full-set)", column: "DER-CE (full 1,200)", as: der_teacher_fullset}
+    - {row: "Student (ByT5-small, full-set)", column: "DER-CE (full 1,200)", as: der_student_fullset}
