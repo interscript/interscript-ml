@@ -162,6 +162,8 @@ models:
     metrics:
       - {name: der_teacher_greedy, value: 1.3205, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
       - {name: der_student_greedy, value: 3.658, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_teacher_fullset, value: 2.5815, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_student_fullset, value: 8.259, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
     parity: {samples: 800, cer_delta: 0.0}
     license: BSD-3-Clause
   heb-diac-1.1:
@@ -213,5 +215,7 @@ models:
     metrics:
       - {name: der_teacher_greedy, value: 1.3205, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
       - {name: der_student_greedy, value: 3.658, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_teacher_fullset, value: 2.5815, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
+      - {name: der_student_fullset, value: 8.259, source: interscript/interscript-ml docs/RESULTS.md#ara-diac-small-1.0}
     parity: {samples: 800, cer_delta: 0.0}
     license: BSD-3-Clause

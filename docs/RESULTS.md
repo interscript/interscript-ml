@@ -185,21 +185,37 @@ Sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph,
 windowed harness as the ara-diac-tiny verdict (300 SadeedDiac-25
 paragraphs, Misraj evaluator, haraqat projection):
 
-| Model | DER-CE |
+| Model | DER-CE (300-para subset) |
 |---|---|
 | Teacher (r6) | 1.3205% |
 | **Student (ByT5-small, client rung)** | **3.6580%** |
 
-Gate discussion: the strict budget (teacher +0.5pp) is missed by
-+2.34pp — the measured capacity cost of ByT5-small on Arabic
-diacritization, consistent with the Thai client tier (+7.63pp beam-4 /
-2.85% greedy against a 4.43% teacher). Shipped as the Arabic client
-rung per that precedent: the student generates real, well-voweled
-Arabic at a fraction of the teacher's artifact (1.3 vs 2.6 GiB), the
-strict gate is met by the teacher release (ara-diac-1.0), and the miss
-is disclosed rather than averaged away. For comparison, this student's
-3.66% sits in the same league as the r3 production teacher's era
-(2.68% on the older full-set protocol).
+**Full-set correction (2026-08-26): the subset was not representative.**
+Re-measured on the full 1,200-paragraph SadeedDiac-25 benchmark (same
+harness; teacher reproduces its documented value at 2.5815 vs 2.5793,
+confirming protocol consistency):
+
+| Model | DER-CE (full 1,200) |
+|---|---|
+| Teacher (r6, full-set) | 2.5815% |
+| **Student (ByT5-small, full-set)** | **8.2590%** |
+
+The first 300 paragraphs sit in the student's training-domain
+neighborhood; the remaining 900 expose a domain-generalization gap the
+subset hid. The student's catalog number is the full-set 8.26; the
+300-para figures above stand as measurements of that subset only.
+
+Gate discussion: against the full set the strict budget (teacher
++0.5pp) is missed by +5.68pp — the capacity-plus-domain cost of
+ByT5-small trained on 29K r5-unit labels, consistent in direction with
+the Thai client tier. Shipped as the Arabic client rung with that
+number disclosed: the student generates real, well-voweled Arabic at a
+fraction of the teacher's artifact (1.3 vs 2.6 GiB) and the strict gate
+is met by the teacher release (ara-diac-1.0, 2.58 full-set). On the
+SadeedDiac-25 leaderboard the student at 8.26 sits just behind
+Sadeed-1.5B (7.2915 published) and ahead of nothing measured below it —
+the earlier "between Gemini-Flash and GPT-4" reading was an artifact of
+the unrepresentative subset and is withdrawn.
 
 Training notes: this is the third training of run-002 — the first on
 mojibake labels (byt5 decode_joined bug), the second silently resumed
@@ -207,11 +223,10 @@ from the poisoned lineage's checkpoints (now guarded by labels.sha
 digest matching), this one clean end-to-end. CE plateaued at ~0.016.
 
 Leaderboard context (SadeedDiac-25, Misraj evaluator, zero-skip,
-harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793 is the
-best dedicated model measured under this protocol — second only to
-Claude-3.7-Sonnet's published 1.3941, ahead of GLM-5.2 zero-skip (2.6911),
-Gemini-Flash-2.0 (3.1926), GPT-4 (3.8645), and Sadeed-1.5B (7.2915;
-source table in rababa docs/RESULTS.md). This student's 3.66% was
-measured on the 300-paragraph subset; the full-1,200-paragraph
-measurement is running (2026-08-26) and will replace the subset number
-when it lands.
+harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793
+(reproduced at 2.5815, 2026-08-26) is the best dedicated model measured
+under this protocol — second only to Claude-3.7-Sonnet's published
+1.3941, ahead of GLM-5.2 zero-skip (2.6911), Gemini-Flash-2.0 (3.1926),
+GPT-4 (3.8645), and Sadeed-1.5B (7.2915; source table in rababa
+docs/RESULTS.md). The client student's full-set 8.26 lands behind
+Sadeed-1.5B; see the correction above.
