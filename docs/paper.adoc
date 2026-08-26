@@ -205,11 +205,10 @@ External claims are made only where a public benchmark exists and the full proto
 |**our teacher (r6, ByT5-base)** |580M |**2.5793**
 |GLM-5.2 (reproduced, zero-skip) |— |2.6911
 |Gemini Flash 2.0 (published) |— |3.1926
-|**our client student (ByT5-small)** |300M |3.66 footnote:ara-subset[]
+|**our client student (ByT5-small)** |300M |3.66 footnote:ara-subset[Measured on a 300-paragraph subset of the same benchmark; the full-set measurement is in flight at submission time.]
 |GPT-4 (published) |— |3.8645
 |Sadeed (published) |1.5B |7.2915
 |===
- footnote:ara-subset[300-paragraph subset of the same benchmark; the full-set measurement is in flight at submission time.]
 
 The teacher is the best dedicated (task-trained, runnable-locally) model measured under this protocol — second only to a frontier proprietary LLM's published number, ahead of a clean GLM-5.2 reproduction, Gemini Flash, and GPT-4 — and it does so at 580M parameters against Sadeed's 1.5B. The client student, at 300M parameters in a 1.3 GiB checksummed artifact, lands between Gemini Flash and GPT-4. Two protocol notes the benchmark's own authors make and we adopt: self-reported numbers from other protocols (Sadeed's repository reports 1.2% DER under its own split) are not comparable, and multi-reference evaluation (Mohamed & Mubarak 2025) is the honest treatment of valid-alternative diacritizations; on WikiNews-2024 our teacher family scores 19.82 WER against QCRI's in-domain-trained 2.70 — a domain gap (classical hadith vs news text), recorded rather than averaged away.
 
