@@ -53,6 +53,24 @@ Ruby model cache      → ~/.cache/interscript/<task>/<version>/model.onnx
 
 Each channel serves a real audience. None is redundant.
 
+## Model index channel (SHIPPED 2026-08-27)
+
+`models.yaml` is published as a **GitHub Release asset** — never
+raw.githubusercontent.com, never a branch head:
+
+- Tag shape: `index-vN` (monotonic, immutable in practice; add a tag
+  protection rule for `index-v*`).
+- Assets per release: `models-index.yaml` + `models-index.yaml.sha256`.
+- Workflow: `release-index.yml` (fires on `index-v*` tag push or
+  workflow_dispatch).
+- Runtimes pin
+  `https://github.com/interscript/interscript-ml/releases/download/index-vN/models-index.yaml`
+  and MUST verify the `.sha256` sidecar before parsing (all four
+  crystals: interscript-ts 3.1.0, secryst-ts 0.2.0, secryst-py 0.1.2,
+  secryst gem 1.0.1 — sidecar good/bad/missing covered by tests).
+- Adding a model: WO03 gate → merge entry → cut `index-vN+1` →
+  runtimes pick it up on their next pin bump.
+
 ## File index
 
 - `00-overview.md` — this file
