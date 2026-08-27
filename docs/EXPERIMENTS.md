@@ -13,25 +13,53 @@ arXiv 2601.21204, LongCat-Flash-Lite — verified). Full working notes:
 
 ## E1 — Margin-aware parity gates
 
-- **Status:** implemented + validated on shipped artifacts; policy adopted.
-- **Hypothesis:** byte students have flat top-1 margins (median 0.12
-  logits on khm-latn), so quantization flips near-tie argmaxes at KLD
-  ~1e-5 — invisible to the CER-delta release gate.
+- **Status:** implemented + validated across every shipped artifact;
+  policy adopted.
+- **Hypothesis:** byte students have flat top-1 margins, so quantization
+  flips near-tie argmaxes at KLD ~1e-5 — invisible to the CER-delta
+  release gate.
 - **Protocol:** teacher-forced forward on both sides (torch decoder vs
-  ONNX zip graphs) over the parity probe pairs; per-position top1−top2
-  reference margins, argmax flip rate, KL(reference||zip), share of
-  flips below the corpus p10 margin. `imf.parity.run_margin_analysis`;
-  emitted by every `modal_export parity` gate and standalone via
-  `modal_export margins` (read-only for published zips).
-- **Measured (khm-latn-1.0, 300-pair probe, 2,869 positions):**
-  fp32 — 0 flips, KLD 0; fp16 — 84 flips (2.93%), KLD 6.28e-06,
-  77% of flips at near-tie margins; int8 — 71 flips (2.47%),
-  KLD 1.14e-05, 90% near-tie. CER parity gate passed all three.
+  ONNX zip graphs) over the parity probe pairs (first 300 test pairs per
+  model); per-position top1−top2 reference margins, argmax flip rate,
+  KL(reference||zip), share of flips below the corpus p10 margin.
+  `imf.parity.run_margin_analysis`; emitted by every `modal_export
+  parity` gate and standalone via `modal_export margins` (read-only for
+  published zips; JSONs on secryst-models:/imf/<model>/).
+- **Measured across the catalog (2026-08-27):**
+
+| Artifact | Precision | Flips | Rate | KLD | ref. margin p50 | near-tie share |
+|---|---|---|---|---|---|---|
+| fas-g2p-1.0 | fp32 | 0/15,103 | 0.00% | 0 | 0.200 | — |
+| tha-g2p-base-1.0 | fp32 | 0/6,932 | 0.00% | 0 | 0.421 | — |
+| heb-diac-1.1 | fp16 | 6/34,178 | 0.02% | ~0 | 0.205 | 1.00 |
+| urd-diac-1.0 | fp16 | 0/7,870 | 0.00% | 0 | 0.213 | — |
+| urd-g2p-1.0 | fp16 | 3/6,281 | 0.05% | ~0 | 0.169 | 1.00 |
+| khm-latn-1.0 | fp16 | 84/2,869 | 2.93% | 6.3e-06 | 0.121 | 0.77 |
+| **heb-diac-1.1** | **int8** | **3,193/34,178** | **9.34%** | 2.4e-05 | 0.205 | **0.20** |
+| urd-g2p-1.0 | int8 | 107/6,281 | 1.70% | 5.1e-06 | 0.169 | 0.97 |
+| khm-latn-1.0 | int8 | 71/2,869 | 2.47% | 1.1e-05 | 0.121 | 0.90 |
+| tha-g2p-small-1.0 | int8 | 63/6,932 | 0.91% | 1.2e-03 | 0.421 | 0.89 |
+| urd-diac-1.0 | int8 | 27/7,870 | 0.34% | 1.6e-05 | 0.213 | 1.00 |
+| tha-g2p-small-1.0 | int4 | 18/6,932 | 0.26% | 4.6e-04 | 0.421 | 1.00 |
+
+All rows passed the CER parity gate at release. Readings:
+- fp32 is exact everywhere (harness sanity); fp16 is benign (≤0.05%)
+  except khm-latn — the flattest margins in the catalog (p50 0.121),
+  2.93% flips, 77% near-tie.
+- **heb-diac-1.1 int8 is the outlier: 9.34% flip rate with only 20% of
+  flips at near-tie positions** — 80% of its argmax flips occur where
+  the reference was confident. That is the dangerous class the CER gate
+  cannot see. Open item: re-examine the Hebrew int8 artifact
+  (per-channel quantization of the ByT5-base graphs, or serve fp16)
+  and add a margin-gate threshold to the release policy.
+- The distilled students behave as the decode analysis predicts: flat
+  but consistent — tha-g2p-small's shipped int4 flips 0.26% of
+  positions, all near-tie.
 - **Policy (adopted):** embedding-like tensors — byte embeddings, tied
   lm_head, relative-attention bias, and any memory-layer lookup tables —
-  are a separate quantization class: they stay fp16 (≥ int8 floor) when
-  the body is quantized. Precision floors are keyed on access pattern,
-  not tensor size (the Qwen/Unsloth lesson).
+  are a separate quantization class: fp16 (≥ int8 floor) when the body
+  is quantized. Precision floors are keyed on access pattern, not
+  tensor size (the Qwen/Unsloth lesson).
 
 ## E2 — PKM memory-layer student (ara-diac-small run-003-pkm)
 

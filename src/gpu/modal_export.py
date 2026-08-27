@@ -320,6 +320,9 @@ def margin_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     reports: dict[str, str] = {}
     for precision in precisions:
         zip_path = out_dir / f"{mid}-{precision}.zip"
+        if not zip_path.exists():
+            reports[precision] = "zip not exported (skipped)"
+            continue
         report = run_margin_analysis(model, zip_path, pairs, max_len=128)
         write_margin_report(report, out_dir / f"{mid}-margins-{precision}.json")
         reports[precision] = (
