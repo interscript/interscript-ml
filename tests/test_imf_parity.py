@@ -22,7 +22,16 @@ from imf.export import (  # noqa: E402
     load_byte_seq2seq,
     make_fixture_checkpoint,
 )
-from imf.parity import ParityReport, run_parity, write_golden, write_parity  # noqa: E402
+from imf.parity import (  # noqa: E402
+    MarginReport,
+    ParityReport,
+    _margin_stats,
+    run_margin_analysis,
+    run_parity,
+    write_golden,
+    write_margin_report,
+    write_parity,
+)
 from imf.validator import validate_zip  # noqa: E402
 
 METADATA = {
@@ -116,3 +125,45 @@ def test_golden_jsonl_roundtrip(gated_zip: Path, tmp_path: Path) -> None:
     for row in rows:
         assert set(row) == {"input", "tokens", "output"}
         assert all(isinstance(t, int) for t in row["tokens"])
+
+
+@pytest.fixture(scope="module")
+def fixture_model(tmp_path_factory: pytest.TempPathFactory):
+    ckpt = make_fixture_checkpoint(tmp_path_factory.mktemp("ckpt-margin") / "fixture")
+    return load_byte_seq2seq(ckpt)
+
+
+def test_margin_stats_flags_flips_and_confidence() -> None:
+    import numpy as np
+
+    ref = np.array([[10.0, 9.0, 0.0], [10.0, 0.0, 0.0]])
+    got = np.vstack([np.array([[9.9, 10.0, 0.0]]), ref[1:]])
+    margins, flips, kld = _margin_stats(ref, got)
+    assert flips.tolist() == [True, False]
+    assert margins.tolist() == [1.0, 10.0]
+    assert kld[0] > 0.0
+    assert kld[1] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_margin_analysis_fp32_zip_is_clean(gated_zip: Path, fixture_model) -> None:
+    report = run_margin_analysis(fixture_model, gated_zip, PAIRS * 30, max_len=12)
+    assert report.precision == "fp32"
+    assert report.samples == 120
+    assert report.flipped_tokens == 0
+    assert report.flip_rate == 0.0
+    assert report.kld_mean < 1e-6
+    assert report.margin_p50 >= 0.0
+    assert report.tokens == report.samples * 6  # "xxxxx" + EOS, teacher-forced
+
+
+def test_margin_report_json_roundtrip(gated_zip: Path, fixture_model, tmp_path: Path) -> None:
+    report = run_margin_analysis(fixture_model, gated_zip, PAIRS, max_len=12)
+    out = write_margin_report(report, tmp_path / "fixture-1.0-margins-fp32.json")
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert set(data) == {
+        "samples", "tokens", "flipped_tokens", "flip_rate", "kld_mean",
+        "margin_p1", "margin_p10", "margin_p50", "flip_low_margin_share",
+        "precision",
+    }
+    assert data["samples"] == report.samples
+    assert data["flip_rate"] == report.flip_rate

@@ -248,7 +248,13 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     test_path = Path(spec["test_volume"]) / spec["test_data"]
 
     from imf.export import load_byte_seq2seq
-    from imf.parity import reference_decode, run_parity, write_parity
+    from imf.parity import (
+        reference_decode,
+        run_margin_analysis,
+        run_parity,
+        write_margin_report,
+        write_parity,
+    )
 
     model = load_byte_seq2seq(checkpoint)
     pairs = _load_pairs(test_path)
@@ -272,6 +278,57 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
         if not report.passed:
             raise RuntimeError(f"parity gate FAILED for {zip_path.name}")
         write_parity(zip_path, report)
+        margins = run_margin_analysis(model, zip_path, pairs, max_len=128)
+        write_margin_report(margins, out_dir / f"{mid}-margins-{precision}.json")
+        reports[precision] += (
+            f" | margin flips={margins.flip_rate:.4%} kld={margins.kld_mean:.2e} "
+            f"p10={margins.margin_p10} low-share={margins.flip_low_margin_share}"
+        )
+    MODELS_VOLUME.commit()
+    return reports
+
+
+@app.function(
+    cpu=8,
+    memory=32 * 1024,
+    timeout=5 * 3600,
+    volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
+)
+def margin_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[str, str]:
+    """Margin analysis alone over already-exported zips — read-only for the
+    zips (diagnostic JSON only); validates published artifacts without
+    touching their metadata."""
+    import sys
+
+    sys.path.insert(0, "/root/interscript-ml/src")
+
+    spec = MODELS[model_id]
+    checkpoint = Path(spec["volume"]) / spec["checkpoint"]
+    test_path = Path(spec["test_volume"]) / spec["test_data"]
+
+    from imf.export import load_byte_seq2seq
+    from imf.parity import run_margin_analysis, write_margin_report
+
+    model = load_byte_seq2seq(checkpoint)
+    pairs = _load_pairs(test_path)
+    if limit:
+        pairs = pairs[:limit]
+
+    out_dir = Path("/outputs/imf") / model_id
+    meta_path = Path("/root/interscript-ml", spec["metadata"])
+    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
+    reports: dict[str, str] = {}
+    for precision in precisions:
+        zip_path = out_dir / f"{mid}-{precision}.zip"
+        report = run_margin_analysis(model, zip_path, pairs, max_len=128)
+        write_margin_report(report, out_dir / f"{mid}-margins-{precision}.json")
+        reports[precision] = (
+            f"samples={report.samples} tokens={report.tokens} "
+            f"flips={report.flipped_tokens} ({report.flip_rate:.4%}) "
+            f"kld={report.kld_mean:.2e} margins p1/p10/p50="
+            f"{report.margin_p1}/{report.margin_p10}/{report.margin_p50} "
+            f"low-margin-flip-share={report.flip_low_margin_share}"
+        )
     MODELS_VOLUME.commit()
     return reports
 
@@ -286,5 +343,12 @@ def main(model: str, precisions: str = "fp32,fp16,int8") -> None:
 @app.local_entrypoint()
 def parity(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0) -> None:
     reports = parity_model.remote(model, precisions.split(","), limit)
+    for precision, status in reports.items():
+        print(f"{model} [{precision}] {status}")
+
+
+@app.local_entrypoint()
+def margins(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0) -> None:
+    reports = margin_model.remote(model, precisions.split(","), limit)
     for precision, status in reports.items():
         print(f"{model} [{precision}] {status}")

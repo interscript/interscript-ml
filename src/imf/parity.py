@@ -20,7 +20,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from framework.evaluator import char_error_rate
-from imf.export import BYTE_OFFSET, EOS_ID, PAD_ID, encode_bytes, onnx_greedy_kv
+from imf.export import (
+    BYTE_OFFSET,
+    EOS_ID,
+    PAD_ID,
+    _zero_pasts,
+    encode_bytes,
+    onnx_greedy_kv,
+)
 from imf.schema import ModelMetadata, Parity
 
 
@@ -39,6 +46,29 @@ class ParityReport:
             self.cer_delta <= Parity.max_cer_delta(self.precision)
             and self.samples >= Parity.MIN_SAMPLES
         )
+
+
+@dataclass(frozen=True)
+class MarginReport:
+    """Teacher-forced fragility analysis: what the CER gate cannot see.
+
+    Byte students have flat top-1 margins, so quantization noise can flip
+    near-tie argmaxes without moving CER on a golden set. This report
+    measures that directly: per-position top1−top2 margins of the torch
+    reference, argmax flip rate against the zip, KL divergence, and the
+    share of flips that land on near-tie positions (benign) versus
+    confident ones (dangerous)."""
+
+    samples: int
+    tokens: int
+    flipped_tokens: int
+    flip_rate: float  # fraction of teacher-forced positions with argmax disagreement
+    kld_mean: float  # mean KL(reference || zip) over positions
+    margin_p1: float  # reference top1−top2 margin quantiles, in logits
+    margin_p10: float
+    margin_p50: float
+    flip_low_margin_share: float  # flips at margin < p10 / all flips (1.0 = benign)
+    precision: str = "fp32"
 
 
 def _torch_greedy_tokens(model, text: str, max_len: int) -> list[int]:
@@ -136,6 +166,127 @@ def run_parity(
         token_mismatches=mismatches,
         precision=precision,
     )
+
+
+def _margin_stats(ref, got):
+    """Per-position stats for one sequence. ``ref``/``got`` are (T, V)
+    float64 teacher-forced logits from the torch reference and the zip."""
+    import numpy as np
+
+    top2 = np.partition(ref, -2, axis=-1)[:, -2:]
+    margins = top2[:, 1] - top2[:, 0]
+    flips = ref.argmax(axis=-1) != got.argmax(axis=-1)
+
+    ref_s = np.exp(ref - ref.max(axis=-1, keepdims=True))
+    ref_s = ref_s / ref_s.sum(axis=-1, keepdims=True)
+    got_s = np.exp(got - got.max(axis=-1, keepdims=True))
+    got_s = got_s / got_s.sum(axis=-1, keepdims=True)
+    kld = (ref_s * (np.log(ref_s + 1e-12) - np.log(got_s + 1e-12))).sum(axis=-1)
+    return margins, flips, kld
+
+
+def _torch_forced_logits(model, source: str, target_ids: list[int]):
+    """Teacher-forced decoder logits — the exact math ``_torch_greedy_tokens``
+    runs one step of, computed for every position at once."""
+    import torch
+
+    src = torch.tensor([encode_bytes(source)], dtype=torch.long)
+    if src.shape[1] == 1:
+        raise ValueError("source must be at least one byte")
+    dec_ids = torch.tensor([[PAD_ID] + target_ids[:-1]], dtype=torch.long)
+    enc = model.get_encoder()(input_ids=src)[0]
+    hidden = model.get_decoder()(input_ids=dec_ids, encoder_hidden_states=enc)[0]
+    return model.lm_head(hidden * (model.config.d_model**-0.5))[0]
+
+
+def _onnx_forced_logits(enc_sess, dec_sess, source: str, target_ids: list[int]):
+    """Teacher-forced logits from the zip's decoder graph. Works for both
+    the plain decoder (one full-sequence call) and the KV decoder (zero
+    pasts + full input_ids is the same computation)."""
+    import numpy as np
+
+    ids = np.array([encode_bytes(source)], dtype=np.int64)
+    hidden = enc_sess.run(None, {"input_ids": ids})[0]
+    dec_ids = np.array([[PAD_ID] + target_ids[:-1]], dtype=np.int64)
+    inputs = {i.name for i in dec_sess.get_inputs()}
+    if "encoder_hidden_states" in inputs and not any(
+        name.startswith("past_") for name in inputs
+    ):
+        return dec_sess.run(
+            None, {"input_ids": dec_ids, "encoder_hidden_states": hidden}
+        )[0][0]
+    out_names = [o.name for o in dec_sess.get_outputs()]
+    out = dec_sess.run(
+        None,
+        {"input_ids": dec_ids, "encoder_hidden_states": hidden, **_zero_pasts(dec_sess)},
+    )
+    return dict(zip(out_names, out, strict=True))["logits"][0]
+
+
+def run_margin_analysis(model, zip_path, pairs, max_len: int = 256) -> MarginReport:
+    """pairs: iterable of (source_text, gold_target) — the same probe set
+    the CER parity gate uses. Teacher-forces both sides and measures the
+    argmax flip rate, reference top1−top2 margin quantiles, and KL
+    divergence. Complements ``run_parity``: CER measures what already
+    broke, margins measure how close the rest is to breaking."""
+    import numpy as np
+    import yaml
+
+    zip_path = Path(zip_path)
+    enc, dec = _sessions_from_zip(zip_path)
+    with zipfile.ZipFile(zip_path) as zf:
+        precision = yaml.safe_load(zf.read("metadata.yaml"))["precision"]
+
+    samples = 0
+    kld_sum = 0.0
+    margin_chunks: list = []
+    flip_chunks: list = []
+    for source, target in pairs:
+        target_ids = encode_bytes(target)[:max_len]  # trailing EOS included
+        if len(target_ids) < 2:
+            continue
+        samples += 1
+        ref = _torch_forced_logits(model, source, target_ids)
+        ref = ref.detach().numpy().astype("float64")
+        got = np.asarray(_onnx_forced_logits(enc, dec, source, target_ids), dtype="float64")
+        margins, flips, kld = _margin_stats(ref, got)
+        margin_chunks.append(margins)
+        flip_chunks.append(flips)
+        kld_sum += float(kld.sum())
+
+    margins = np.concatenate(margin_chunks)
+    flips = np.concatenate(flip_chunks)
+    p1, p10, p50 = (float(np.quantile(margins, q)) for q in (0.01, 0.10, 0.50))
+    n_flips = int(flips.sum())
+    return MarginReport(
+        samples=samples,
+        tokens=int(margins.size),
+        flipped_tokens=n_flips,
+        flip_rate=round(n_flips / max(margins.size, 1), 6),
+        kld_mean=round(kld_sum / max(margins.size, 1), 8),
+        margin_p1=round(p1, 4),
+        margin_p10=round(p10, 4),
+        margin_p50=round(p50, 4),
+        flip_low_margin_share=round(
+            float((margins[flips] < p10).mean()) if n_flips else 0.0, 4
+        ),
+        precision=precision,
+    )
+
+
+def write_margin_report(report: MarginReport, out_path: Path | str) -> Path:
+    """Emit the margin analysis as JSON next to a release zip (diagnostic
+    artifact; the release gate remains the CER parity block)."""
+    from dataclasses import asdict
+
+    import json
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(
+        json.dumps(asdict(report), indent=2) + "\n", encoding="utf-8"
+    )
+    return out_path
 
 
 def write_parity(zip_path: Path | str, report: ParityReport) -> Path:

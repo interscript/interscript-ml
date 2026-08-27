@@ -55,6 +55,25 @@ IMAGE = (
 )
 
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")
+
+
+def _ensure_src_path() -> None:
+    # Modal copies the entry file to /root/<name>.py while the repo image
+    # sits at /root/interscript-ml — cover both layouts before importing
+    # sibling modules (gpu.pkm, gpu.muon).
+    import sys
+    from pathlib import Path
+
+    for cand in (
+        Path(__file__).resolve().parent.parent,
+        Path.cwd() / "src",
+        Path("/root/interscript-ml/src"),
+    ):
+        if (cand / "gpu" / "pkm.py").exists():
+            if str(cand) not in sys.path:
+                sys.path.insert(0, str(cand))
+            return
+    raise RuntimeError("src/gpu/pkm.py not found on any known layout")
 DATASETS = modal.Volume.from_name("rababa-datasets")
 SECRYST_CHECKPOINTS = modal.Volume.from_name("secryst-checkpoints")
 SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
@@ -121,6 +140,50 @@ SPECS: dict[str, dict[str, str]] = {
         "labels_file": "teacher_labels_v2.jsonl",
         "mode": "sequence",
         "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
+    },
+    "ara-diac-small-pkm": {
+        # TODO.qwen-next/02 — the LongCat/Qwen capacity axis: keep the
+        # ByT5-small compute, add product-key lookup memory (+~25M
+        # params). Everything else identical to run-002 (teacher, corpus,
+        # labels, seed) so the comparison is single-variable.
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        # byt5-small has only 4 decoder blocks (depth lives in the
+        # encoder) — all but the first carry memory
+        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-003-pkm",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "PKM memory student; gate <= 3.07 windowed DER-CE; "
+                "verdict vs run-002's 8.259 full-set (closes >= 1.0pp?)",
+    },
+    "ara-diac-small-pkm-muon": {
+        # TODO.qwen-next/03 — identical to ara-diac-small-pkm except the
+        # optimizer (Muon + AdamW groups). The A/B pair is run-003-pkm
+        # (AdamW) vs run-004-pkm-muon.
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
+        "optimizer": "muon",
+        "muon_lr": "0.01",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-004-pkm-muon",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "Muon A/B arm; same gate and verdict rule as run-003-pkm",
     },
     "ara-diac-tiny": {
         "teacher": "rababa_arabic_byt5/run-006-morph/best",
@@ -691,6 +754,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         print(f"[{spec_id}] tiny student: {n_params:.1f}M params", flush=True)
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    if spec.get("pkm"):
+        _ensure_src_path()
+        from gpu.pkm import inject_pkm
+
+        inject_pkm(student, **spec["pkm"])
     student.train()
 
     class Pairs(Dataset):
@@ -988,7 +1056,23 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         drop_last=True,
     )
     total_steps = len(train_loader) * epochs
-    optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
+    if spec.get("optimizer") == "muon":
+        _ensure_src_path()
+        from gpu.muon import Muon, split_parameters
+
+        muon_params, adamw_params = split_parameters(student.named_parameters())
+        optimizer = Muon(
+            muon_params, lr=float(spec.get("muon_lr", 0.01)),
+            momentum=0.95, weight_decay=0.01,
+        )
+        optimizer.add_adamw_group(adamw_params, lr=1e-4, weight_decay=0.0)
+        print(
+            f"[{spec_id}] muon: {len(muon_params)} matrix / "
+            f"{len(adamw_params)} embedding-like params",
+            flush=True,
+        )
+    else:
+        optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
     scheduler = get_cosine_schedule_with_warmup(
         optimizer, total_steps // 20, total_steps
     )
@@ -1114,7 +1198,13 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
-    student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+    if spec.get("pkm"):
+        _ensure_src_path()
+        from gpu.pkm import load_student_with_pkm
+
+        student = load_student_with_pkm(student_path, spec["pkm"]).to("cuda").eval()
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
     # custom students carry T5's default max_length=20; windowed inputs
     # run to 1400 bytes, clamping max_new_tokens to zero
     for m in (teacher, student):
