@@ -64,7 +64,8 @@ All rows passed the CER parity gate at release. Readings:
 ## E2 — PKM memory-layer student (ara-diac-small run-003-pkm)
 
 - **Status:** in flight (launched 2026-08-27, A10G, labels reused from
-  run-002; single-variable design vs run-002).
+  run-002; single-variable design vs run-002). Survived one mid-run
+  eviction: resumed from step-2000 via the checkpoint guard.
 - **Hypothesis:** the 5.68pp teacher→student gap (r6 2.5815 → ByT5-small
   8.259 full-set) is partly a *capacity* gap that lookup memory closes
   at near-zero compute — parameters and compute are separable (arXiv
@@ -85,7 +86,10 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E3 — Muon optimizer A/B (run-004-pkm-muon)
 
-- **Status:** queued behind E2 (same A10G slot, serialized).
+- **Status:** queued behind E2 (same A10G slot, serialized; the
+  server-side `qwen_next_chain` orchestrator sequences both arms from
+  durable volume markers — best/config.json, final_eval.json,
+  chain_log.jsonl — with 20-min stall detection and respawn).
 - **Hypothesis:** orthogonalized-momentum updates (Newton–Schulz; the
   optimizer Qwen3.8-Flash-Next / LongCat report) help even in
   knowledge-limited distillation fine-tunes — unmeasured territory for

@@ -1287,6 +1287,18 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     result = {"teacher": der_ce(teacher), "student": der_ce(student)}
     result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
     result["gate_pass"] = result["gate_delta"] <= 0.5
+    # durable verdict marker: the run dir is the provenance record (also
+    # what r7-style _init_choice probes read)
+    import json
+
+    out_root = Path(
+        vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))]
+    ) / spec["out"]
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "final_eval.json").write_text(
+        json.dumps(result, indent=2), encoding="utf-8"
+    )
+    CHECKPOINTS.commit()
     return result
 
 
@@ -1602,3 +1614,81 @@ def probe_pkm_gates(spec_id: str = "ara-diac-small-pkm") -> dict:
 @app.local_entrypoint()
 def pkm_gates(spec: str = "ara-diac-small-pkm") -> None:
     print(probe_pkm_gates.remote(spec))
+
+
+@app.function(
+    cpu=1,
+    memory=1024,
+    timeout=24 * 3600,
+    volumes={"/checkpoints": CHECKPOINTS, "/secryst-checkpoints": SECRYST_CHECKPOINTS},
+)
+def qwen_next_chain() -> dict:
+    """Server-side orchestrator for the qwen-next experiments (E2/E3):
+    workstation-independent, self-healing, idempotent — the replacement
+    for local shell chains that die with the workstation or break when
+    the repo's checked-out branch changes.
+
+    State machine per arm, driven by durable volume markers only:
+      best/config.json absent  -> watch step-* checkpoints; respawn
+                                   training if no progress for 20 min
+                                   (distill_sequence resumes from the
+                                   latest checkpoint; a redundant spawn
+                                   is benign — a finished run saves
+                                   best again and exits)
+      best present, final_eval.json absent -> evaluate_der (which now
+                                   writes final_eval.json itself)
+      final_eval.json present  -> arm done
+
+    Audit trail: chain_log.jsonl in each run dir. If this function times
+    out (24h) or is evicted, relaunching continues from the markers:
+
+        modal run --detach src/gpu/modal_distill.py::qwen_chain
+    """
+    import json
+    import time
+    from pathlib import Path
+
+    ARMS = [
+        ("ara-diac-small-pkm", "rababa_arabic_distill_small/run-003-pkm"),
+        ("ara-diac-small-pkm-muon", "rababa_arabic_distill_small/run-004-pkm-muon"),
+    ]
+    ROOT = Path("/checkpoints")
+
+    def log(run: str, event: str) -> None:
+        with (ROOT / run / "chain_log.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"t": round(time.time()), "event": event}) + "\n")
+        CHECKPOINTS.commit()
+
+    def latest_step(run: str) -> int:
+        steps = [int(p.name.split("-")[1]) for p in (ROOT / run).glob("step-*")]
+        return max(steps) if steps else -1
+
+    status = {}
+    for spec_id, run in ARMS:
+        while not (ROOT / run / "best" / "config.json").exists():
+            CHECKPOINTS.reload()
+            before = latest_step(run)
+            log(run, f"watch step={before}")
+            time.sleep(1200)
+            CHECKPOINTS.reload()
+            after = latest_step(run)
+            if after == before and not (ROOT / run / "best" / "config.json").exists():
+                log(run, f"stalled at step={after}; respawning {spec_id}")
+                distill_sequence.spawn(spec_id, epochs=3)
+        log(run, "training complete (best present)")
+        if not (ROOT / run / "final_eval.json").exists():
+            log(run, "evaluating")
+            evaluate_der.remote(spec_id=spec_id)
+            log(run, "eval done")
+        status[run] = "complete"
+    return status
+
+
+@app.local_entrypoint()
+def qwen_chain() -> None:
+    handle = qwen_next_chain.spawn()
+    print(
+        f"spawned {handle.object_id}; durable markers: chain_log.jsonl, "
+        f"final_eval.json in each run dir; relaunch is idempotent",
+        flush=True,
+    )
