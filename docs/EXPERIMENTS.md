@@ -49,9 +49,18 @@ All rows passed the CER parity gate at release. Readings:
 - **heb-diac-1.1 int8 is the outlier: 9.34% flip rate with only 20% of
   flips at near-tie positions** — 80% of its argmax flips occur where
   the reference was confident. That is the dangerous class the CER gate
-  cannot see. Open item: re-examine the Hebrew int8 artifact
-  (per-channel quantization of the ByT5-base graphs, or serve fp16)
-  and add a margin-gate threshold to the release policy.
+  cannot see.
+- **Root cause found and fixed at the export default (2026-08-27,
+  controlled probes on the same 300 pairs):** the culprit is the
+  quantized *head*. Per-channel weights alone: 8.50% flips, 78% still
+  confident-position, +25% artifact size — rejected. Keeping
+  `/lm_head/MatMul` in fp32 (body int8): **0.26% flips (36x fewer),
+  KLD 47x lower, 100% of remaining flips near-tie, +0.4% size**;
+  head-fp32 + per-channel adds nothing. Quantizing the node that
+  computes argmax moves the decision boundary directly.
+  `export_zips` now excludes the head MatMul from int8 by default
+  (`imf.export.head_matmul_names` + `nodes_to_exclude`). Shipped int8
+  zips predate this; re-exporting them is a release decision.
 - The distilled students behave as the decode analysis predicts: flat
   but consistent — tha-g2p-small's shipped int4 flips 0.26% of
   positions, all near-tie.
