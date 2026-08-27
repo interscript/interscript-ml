@@ -284,6 +284,17 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
             f" | margin flips={margins.flip_rate:.4%} kld={margins.kld_mean:.2e} "
             f"p10={margins.margin_p10} low-share={margins.flip_low_margin_share}"
         )
+        # margin release policy (E1): near-tie flips are inherent to flat
+        # byte models, but confident-position flips mean the artifact's
+        # decision surface moved. Pre-fix heb-diac int8 measured 7.5%
+        # confident flips; every head-fp32 artifact measures < 0.7%.
+        confident_flip_rate = margins.flip_rate * (1 - margins.flip_low_margin_share)
+        if confident_flip_rate > 0.01:
+            raise RuntimeError(
+                f"margin gate FAILED for {zip_path.name}: "
+                f"{confident_flip_rate:.2%} of positions flip argmax at "
+                f"confident margins (budget: 1%)"
+            )
     MODELS_VOLUME.commit()
     return reports
 

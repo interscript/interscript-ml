@@ -293,7 +293,10 @@ def head_matmul_names(graph_path: Path | str) -> list[str]:
     tied lm_head, which stays fp32 in int8 exports (see quantize_int8)."""
     import onnx
 
-    graph = onnx.load(str(graph_path)).graph
+    return _head_matmul_names(onnx.load(str(graph_path)).graph)
+
+
+def _head_matmul_names(graph) -> list[str]:
     out_names = {o.name for o in graph.output}
     producers = {}
     for node in graph.node:

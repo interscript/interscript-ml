@@ -134,3 +134,24 @@ def test_fp16_smaller_than_fp32(zips: dict[str, Path]) -> None:
     assert zips["fixture-1.0-fp16.zip"].stat().st_size < zips[
         "fixture-1.0-fp32.zip"
     ].stat().st_size
+
+
+def test_int8_keeps_head_matmul_in_fp32(zips: dict[str, Path]) -> None:
+    """The logits-producing MatMul (the tied head) must survive int8
+    quantization unconverted — quantizing it moves argmax directly
+    (heb-diac-1.1: 9.34% confident-position flips; head-fp32 fixes it,
+    E1 in docs/EXPERIMENTS.md)."""
+    import onnx
+
+    from imf.export import _head_matmul_names
+
+    for graph_name in ("decoder.onnx", "decoder-kv.onnx"):
+        with zipfile.ZipFile(zips["fixture-1.0-fp32.zip"]) as zf:
+            heads = _head_matmul_names(onnx.load(zf.open(graph_name)).graph)
+        assert heads, f"head MatMul not found in fp32 {graph_name}"
+        with zipfile.ZipFile(zips["fixture-1.0-int8.zip"]) as zf:
+            nodes = {n.name: n for n in onnx.load(zf.open(graph_name)).graph.node}
+        for head in heads:
+            assert head in nodes, (graph_name, head)
+            # converted heads become MatMulInteger with the same name
+            assert nodes[head].op_type == "MatMul", (graph_name, head)
