@@ -1550,3 +1550,55 @@ def mk(spec: str = "tha-g2p-tiny-mk", epochs: int = 3) -> None:
 @app.local_entrypoint()
 def eval_der(spec: str = "ara-diac-small", limit: int = 0) -> None:
     print(evaluate_der.remote(spec, limit=limit))
+
+
+@app.function(
+    cpu=4,
+    memory=16 * 1024,
+    timeout=30 * 60,
+    volumes={"/checkpoints": CHECKPOINTS, "/secryst-checkpoints": SECRYST_CHECKPOINTS},
+)
+def probe_pkm_gates(spec_id: str = "ara-diac-small-pkm") -> dict:
+    """E2 engagement probe (r8's IPA-probe analogue): gate values and
+    memory-table statistics from the latest step checkpoint. Gates moving
+    off zero = the memory branch is being used, not bypassed."""
+    from pathlib import Path
+
+    import torch
+    from transformers import AutoModelForSeq2SeqLM
+
+    spec = SPECS[spec_id]
+    out_root = Path("/checkpoints") / spec["out"]
+    ckpts = sorted(
+        out_root.glob("step-*"), key=lambda p: int(p.name.split("-")[1])
+    )
+    if not ckpts:
+        raise RuntimeError(f"no step checkpoints under {out_root}")
+
+    _ensure_src_path()
+    from gpu.pkm import ProductKeyMemory, inject_pkm
+
+    student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    inject_pkm(student, **spec["pkm"])
+    sd = torch.load(ckpts[-1] / "student.pt", map_location="cpu", weights_only=True)
+    student.load_state_dict(sd)
+
+    report: dict = {"checkpoint": ckpts[-1].name, "gates": {}, "tables": {}}
+    for i, block in enumerate(student.decoder.block):
+        wrapped = block.layer[1]
+        if not hasattr(wrapped, "memory"):
+            continue
+        report["gates"][f"dec-{i}"] = round(float(wrapped.gate), 4)
+        v = wrapped.memory.values
+        report["tables"][f"dec-{i}"] = {
+            "rows": int(v.shape[0]),
+            "row_norm_mean": round(float(v.norm(dim=-1).mean()), 4),
+            "row_norm_p99": round(float(v.norm(dim=-1).quantile(0.99)), 4),
+            "key_drift_q1": round(float(wrapped.memory.k1.abs().mean()), 4),
+        }
+    return report
+
+
+@app.local_entrypoint()
+def pkm_gates(spec: str = "ara-diac-small-pkm") -> None:
+    print(probe_pkm_gates.remote(spec))
