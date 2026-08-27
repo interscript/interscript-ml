@@ -85,7 +85,9 @@ All rows passed the CER parity gate at release. Readings:
   coverage (the subset lesson from run-002). Reported exactly as
   measured — no threshold-moving.
 - Engagement was verified independent of outcome: gates moved off zero
-  by step-500 (0.0008-0.0028), CE 2.07 → 0.02 over 10,995 steps.
+  by step-500 (0.0008-0.0028) and settled at 0.034-0.053 by step-10,500
+  (15-20x) — the memory branch contributed measurably but modestly,
+  matching the 0.70pp outcome. CE 2.07 → 0.02 over 10,995 steps.
 - Launched 2026-08-27, A10G, labels reused from run-002 (single-variable
   design). Survived one mid-run eviction: resumed from step-2000.
 - **Hypothesis:** the 5.68pp teacher→student gap (r6 2.5815 → ByT5-small
