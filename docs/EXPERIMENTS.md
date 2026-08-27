@@ -72,9 +72,22 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E2 — PKM memory-layer student (ara-diac-small run-003-pkm)
 
-- **Status:** in flight (launched 2026-08-27, A10G, labels reused from
-  run-002; single-variable design vs run-002). Survived one mid-run
-  eviction: resumed from step-2000 via the checkpoint guard.
+- **Status:** COMPLETE (2026-08-28). **Outcome: positive but below the
+  pre-registered win bar.**
+- **Measured (full 1,200 paragraphs, windowed zero-skip, greedy):**
+  PKM student **7.5553** DER-CE vs run-002 vanilla ByT5-small **8.259**
+  (teacher reproduces 2.5815) — 0.704pp of the 5.677pp teacher-student
+  gap closed (12.4% relative) at +85.9M lookup params and near-zero
+  added compute (gathers, not matmuls).
+- **Verdict per the pre-agreed rule (≥1.0pp = win): NOT met.** The
+  capacity axis is real but not the dominant term of the gap; the rest
+  is modeling/optimization (E3 tests the optimization half) and domain
+  coverage (the subset lesson from run-002). Reported exactly as
+  measured — no threshold-moving.
+- Engagement was verified independent of outcome: gates moved off zero
+  by step-500 (0.0008-0.0028), CE 2.07 → 0.02 over 10,995 steps.
+- Launched 2026-08-27, A10G, labels reused from run-002 (single-variable
+  design). Survived one mid-run eviction: resumed from step-2000.
 - **Hypothesis:** the 5.68pp teacher→student gap (r6 2.5815 → ByT5-small
   8.259 full-set) is partly a *capacity* gap that lookup memory closes
   at near-zero compute — parameters and compute are separable (arXiv
