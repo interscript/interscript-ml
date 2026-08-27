@@ -1,20 +1,31 @@
-# interscript-ml model index — the stable URL every runtime resolves
-# model ids against (Ruby / TypeScript / Python implement the same
-# algorithm; this file is the contract).
+# interscript-ml model index — the contract every runtime resolves model
+# ids against (Ruby / TypeScript / Python implement the same algorithm).
+#
+# DISTRIBUTION: this file is published as a GitHub Release asset, never
+# via raw.githubusercontent.com. Tag shape: index-vN. Assets per release:
+#   models-index.yaml
+#   models-index.yaml.sha256
+# URL shape runtimes pin:
+#   https://github.com/interscript/interscript-ml/releases/download/index-vN/models-index.yaml
+# Cut a new index-vN tag (or dispatch release-index.yml) whenever the
+# index content changes in a way production consumers must see.
 #
 # Resolution algorithm (identical in all runtimes):
-#   1. resolve `id` in models.models
-#   2. prefer an installed cache copy at <cache_dir>/<id>/<filename>
+#   1. fetch the pinned index URL + its .sha256 sidecar; verify the body
+#   2. resolve `id` in models.models
+#   3. prefer an installed cache copy at <cache_dir>/<id>/<filename>
 #      whose whole-file sha256 matches `sha256`
-#   3. else download `url` to a temp file in the same directory,
+#   4. else download `url` (or assemble `parts`) to a temp file,
 #      verify sha256, atomically rename into place
-#   4. load the zip (IMF v1: member sha256 verification on load)
+#   5. load the zip (IMF v1: member sha256 verification on load)
 #
-# Overrides: SECRYST_INDEX (URL or path to an index like this one),
-# SECRYST_CACHE (cache directory; default ~/.cache/secryst).
+# Overrides: SECRYST_INDEX (URL or path to an index like this one —
+# HTTP sources must ship a sibling .sha256), SECRYST_CACHE (cache
+# directory; default ~/.cache/secryst or ~/.cache/interscript).
 #
 # Adding a model: it must have passed the WO03 gate (strict validation,
-# parity written into the zip) before an entry ships here.
+# parity written into the zip) before an entry ships here. Then cut a
+# new index-vN so runtimes pick it up on their next pin bump.
 version: 1
 models:
   khm-latn-1.0:

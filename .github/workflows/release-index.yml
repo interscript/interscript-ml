@@ -1,0 +1,59 @@
+name: release-index
+
+# Publishes models.yaml as a GitHub Release asset (models-index.yaml +
+# .sha256 sidecar). Runtimes pin DEFAULT_INDEX_URL to a specific index-v*
+# tag — never raw.githubusercontent.com, never main.
+#
+# Trigger: push of an index-v* tag, or workflow_dispatch with a tag name.
+on:
+  push:
+    tags:
+      - "index-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. index-v1). Created if missing."
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Stage index assets
+        run: |
+          test -f models.yaml
+          cp models.yaml models-index.yaml
+          shasum -a 256 models-index.yaml | awk '{print $1 "  models-index.yaml"}' > models-index.yaml.sha256
+          echo "--- models-index.yaml.sha256 ---"
+          cat models-index.yaml.sha256
+          echo "--- head models-index.yaml ---"
+          head -20 models-index.yaml
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          case "$tag" in
+            index-v*) ;;
+            *) echo "tag must match index-v*: got '$tag'" >&2; exit 1 ;;
+          esac
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --title "$tag" \
+              --notes "Interscript ML model index ($tag). Runtimes resolve DEFAULT_INDEX_URL against this release asset + sha256 sidecar." \
+              --target "$GITHUB_SHA"
+          fi
+          gh release upload "$tag" models-index.yaml models-index.yaml.sha256 --clobber
+          echo "published $tag"
+          gh release view "$tag" --json assets --jq '.assets[].name'
