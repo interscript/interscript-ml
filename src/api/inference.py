@@ -38,11 +38,16 @@ def _zip_path(model_id: str) -> Path:
     # the server's own volume listing; the user value is used solely in
     # an equality comparison, never in path construction (CWE-22)
     import glob
+    import os
+    import sys
 
-    wanted = f"{model_id}-fp32.zip"
-    for z in glob.glob("/v/imf/*/*-fp32.zip"):
-        if z.rsplit("/", 1)[1] == wanted:
-            return Path(z)
+    sys.path.insert(0, "/root/interscript-ml")
+    from src.api.model_resolution import load_index, resolve_zip_filename
+
+    volume_files = [os.path.basename(z) for z in glob.glob("/v/imf/*/*.zip")]
+    filename = resolve_zip_filename(model_id, load_index("models.yaml"), volume_files)
+    for z in glob.glob(f"/v/imf/*/{filename}"):
+        return Path(z)
     raise KeyError(model_id)
 
 
@@ -124,9 +129,15 @@ def make_api():
     @api.get("/health")
     def health() -> dict:
         import glob
+        import os
 
         models_volume.reload()
-        return {"ok": True, "models": len(glob.glob("/v/imf/*/*-fp32.zip"))}
+        zips = glob.glob("/v/imf/*/*.zip")
+        return {
+            "ok": True,
+            "zips": len(zips),
+            "model_dirs": len({os.path.dirname(z).rsplit("/", 1)[1] for z in zips}),
+        }
 
     return api
 
