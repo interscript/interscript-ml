@@ -74,3 +74,30 @@ def test_normal_generation_unaffected():
 
     out = onnx_greedy_kv(_FakeEncoder(), _StopKV(), "x", max_len=256)
     assert out == [20, 21, 22, 23, 24]
+
+
+def test_varying_separator_loop_is_cut():
+    """Phrase + rotating punctuation never repeats a verbatim token
+    window — the live int8 failure mode. The decoded-text guard cuts it."""
+
+    class _RotateKV(_FakeKV):
+        seps = ['"', " ", "\n", ":"]
+
+        def run(self, _, feeds):
+            import numpy as np
+
+            logits = np.full((1, 1, 260), -1e9)
+            if self.step == 0:
+                logits[0, -1, 100] = 1e9  # phrase token
+            else:
+                mod = self.step % 4
+                if mod == 0:
+                    logits[0, -1, 100] = 1e9  # phrase again
+                else:
+                    # rotating separator tokens 200..203
+                    logits[0, -1, 200 + ((self.step // 4) % 4)] = 1e9
+            self.step += 1
+            return [logits, np.zeros((1,)), np.zeros((1,))]
+
+    out = onnx_greedy_kv(_FakeEncoder(), _RotateKV(), "x", max_len=4096)
+    assert len(out) < 300

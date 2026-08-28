@@ -38,6 +38,13 @@ PAD_ID = 0
 EOS_ID = 1
 
 
+def decode_tokens(tokens: list[int]) -> str:
+    """Inverse of encode_bytes (byte-3 offsets, EOS-terminated)."""
+    return bytes((t - BYTE_OFFSET) % 256 for t in tokens if t >= BYTE_OFFSET).decode(
+        "utf-8", "replace"
+    )
+
+
 def encode_bytes(text: str) -> list[int]:
     """Canonical byte-level tokenization: byte ids + trailing EOS."""
     return [b + BYTE_OFFSET for b in text.encode("utf-8")] + [EOS_ID]
@@ -418,6 +425,13 @@ def onnx_greedy_kv(encoder_sess, kv_sess, text: str, max_len: int = 256) -> list
                 break
         else:
             joined = ",".join(str(t) for t in generated)
+        # Decoded-text guard: loops with varying punctuation never repeat
+        # a verbatim token window — catch the phrase itself echoing.
+        if len(generated) % 8 == 0:
+            text = decode_tokens(generated)
+            suffix = text[-16:]
+            if len(suffix) == 16 and text.count(suffix) >= 3:
+                break
     return generated
 
 
