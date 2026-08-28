@@ -185,6 +185,26 @@ SPECS: dict[str, dict[str, str]] = {
         "mode": "sequence",
         "note": "Muon A/B arm; same gate and verdict rule as run-003-pkm",
     },
+    "ara-diac-small-muon": {
+        # factorial completion (EXPERIMENTS.md E3 caveat): the A/B was
+        # PKM+Muon vs PKM+AdamW; this cell measures Muon WITHOUT memory
+        # so the 2x2 {vanilla, pkm} x {adamw, muon} closes cleanly
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "optimizer": "muon",
+        "muon_lr": "0.01",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-005-muon",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "vanilla ByT5-small + Muon (factorial cell 4)",
+    },
     "ara-diac-tiny": {
         "teacher": "rababa_arabic_byt5/run-006-morph/best",
         "teacher_volume": "rababa",
@@ -1651,6 +1671,7 @@ def qwen_next_chain() -> dict:
     ARMS = [
         ("ara-diac-small-pkm", "rababa_arabic_distill_small/run-003-pkm"),
         ("ara-diac-small-pkm-muon", "rababa_arabic_distill_small/run-004-pkm-muon"),
+        ("ara-diac-small-muon", "rababa_arabic_distill_small/run-005-muon"),
     ]
     ROOT = Path("/checkpoints")
 

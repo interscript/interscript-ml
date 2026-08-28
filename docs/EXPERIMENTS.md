@@ -110,10 +110,25 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E3 — Muon optimizer A/B (run-004-pkm-muon)
 
-- **Status:** queued behind E2 (same A10G slot, serialized; the
-  server-side `qwen_next_chain` orchestrator sequences both arms from
-  durable volume markers — best/config.json, final_eval.json,
-  chain_log.jsonl — with 20-min stall detection and respawn).
+- **Status:** COMPLETE (2026-08-28). **Outcome: ADOPTED — the gate is
+  exceeded 9x.**
+- **Measured (full 1,200, windowed zero-skip, greedy):** Muon arm
+  **4.8287** DER-CE vs the single-variable AdamW arm (run-003-pkm)
+  7.555 — **−2.727pp from the optimizer alone** (adopt gate ≥0.3pp).
+  Against the shipped vanilla student (8.259): 3.430pp of the 5.677pp
+  canonical gap closed (60.4%). Teacher reproduced at 2.5997 in this
+  container (range across eval containers 2.5793–2.5997, bf16
+  autocast; protocol consistent).
+- Training-side corroboration: CE ~0.007 vs the AdamW arm's ~0.02 at
+  equal steps; step time ~1.2s vs ~3.4s (the <15% overhead gate met
+  with margin — Newton–Schulz is cheap next to 1450-byte windows); no
+  stability events.
+- **Combined with E2, the gap decomposition at the ByT5-small rung:**
+  capacity ~0.70pp (PKM) + optimization ~2.73pp (Muon, on the PKM
+  architecture) + residual ~2.25pp (domain coverage — the subset
+  lesson). Caveat carried: the A/B isolates the optimizer ON the
+  memory architecture; the vanilla+Muon cell (run-005-muon) is queued
+  to complete the 2x2 factorial.
 - **Hypothesis:** orthogonalized-momentum updates (Newton–Schulz; the
   optimizer Qwen3.8-Flash-Next / LongCat report) help even in
   knowledge-limited distillation fine-tunes — unmeasured territory for
