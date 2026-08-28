@@ -1617,7 +1617,7 @@ def probe_pkm_gates(spec_id: str = "ara-diac-small-pkm") -> dict:
         raise RuntimeError(f"no step checkpoints under {out_root}")
 
     _ensure_src_path()
-    from gpu.pkm import ProductKeyMemory, inject_pkm
+    from gpu.pkm import inject_pkm
 
     student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
     inject_pkm(student, **spec["pkm"])

@@ -41,16 +41,27 @@ class Muon(torch.optim.Optimizer):
                  weight_decay: float = 0.0) -> None:
         super().__init__(
             list(params),
-            dict(lr=lr, momentum=momentum, nesterov=nesterov,
-                 ns_steps=ns_steps, weight_decay=weight_decay, adamw=False),
+            {
+                "lr": lr,
+                "momentum": momentum,
+                "nesterov": nesterov,
+                "ns_steps": ns_steps,
+                "weight_decay": weight_decay,
+                "adamw": False,
+            },
         )
 
     def add_adamw_group(self, params, lr: float = 1e-4, betas=(0.9, 0.999),
                         weight_decay: float = 0.0) -> None:
         """Embedding-like parameters: standard AdamW math, shared
         scheduler (the cosine scales every group's lr)."""
-        self.add_param_group(dict(params=list(params), lr=lr, betas=tuple(betas),
-                                  weight_decay=weight_decay, adamw=True))
+        self.add_param_group({
+            "params": list(params),
+            "lr": lr,
+            "betas": tuple(betas),
+            "weight_decay": weight_decay,
+            "adamw": True,
+        })
 
     @torch.no_grad()
     def step(self, closure=None):  # noqa: ARG002

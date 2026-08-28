@@ -22,24 +22,24 @@ class _FakeKV:
         self.step = 0
 
     def get_outputs(self):
-        class O:
+        class Out:
             def __init__(self, name):
                 self.name = name
 
-        return [O("logits"), O("present_k"), O("present_v")]
+        return [Out("logits"), Out("present_k"), Out("present_v")]
 
     def get_inputs(self):
-        class I:
+        class In:
             def __init__(self, name, shape, typ="tensor(float)"):
                 self.name = name
                 self.shape = shape
                 self.type = typ
 
         return [
-            I("input_ids", [1, "seq"]),
-            I("encoder_hidden_states", [1, "seq", 4]),
-            I("past_k", [1, 4, "past", 8]),
-            I("past_v", [1, 4, "past", 8]),
+            In("input_ids", [1, "seq"]),
+            In("encoder_hidden_states", [1, "seq", 4]),
+            In("past_k", [1, 4, "past", 8]),
+            In("past_v", [1, 4, "past", 8]),
         ]
 
     def run(self, _, feeds):
