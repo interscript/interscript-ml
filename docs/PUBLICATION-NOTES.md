@@ -81,7 +81,7 @@ ByT5-small rung: ≈0.70pp capacity + 2.73pp optimization + 2.25pp
 residual (domain coverage). The strongest training-methods result in
 the paper — first controlled Muon measurement on byte-level seq2seq
 distillation. Paper: frontier section. EXPERIMENTS.md E3, RESULTS.md
-run-004. Factorial cell 4 (vanilla+Muon, run-005) queued.
+run-004. **Factorial cell 4 (vanilla+Muon, run-005): 5.2945 — the 2×2 closes cleanly** (optimizer alone −2.96pp, memory alone −0.70pp, combined −3.43pp, roughly additive). Paper carries the full table.
 
 ### 10. Arabic news-domain adaptation (r7) — COMPLETE 2026-08-28, NEW CANONICAL TEACHER
 **ID 2.2864/1.3343 (−0.29pp over r6) AND OOD WikiNews-2024 multi-ref
