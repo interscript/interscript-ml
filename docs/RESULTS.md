@@ -260,6 +260,21 @@ gap at this rung decomposes: ~0.70pp capacity + ~2.73pp optimization
 + ~2.25pp residual (domain coverage). The vanilla+Muon factorial cell
 (run-005-muon) completes the decomposition.
 
+### run-005-muon — factorial cell 4: vanilla + Muon (2026-08-28)
+
+| Model | DER-CE (full 1,200) |
+|---|---|
+| ByT5-small + Muon (run-005) | 5.2945% |
+| ByT5-small + PKM + Muon (run-004) | 4.8287% |
+| ByT5-small + PKM + AdamW (run-003) | 7.5553% |
+| ByT5-small vanilla + AdamW (run-002) | 8.2590% |
+
+The 2x2 closes cleanly: optimizer alone −2.96pp; memory alone −0.70pp
+(−0.47 under Muon); combined −3.43pp (60.4% of the 5.677pp canonical
+gap) — roughly additive, slightly sub-additive on memory. Residual
+~2.2pp is domain coverage. Optimization is the dominant recoverable
+term of the distillation gap at the ByT5-small rung.
+
 Leaderboard context (SadeedDiac-25, Misraj evaluator, zero-skip,
 harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793
 (reproduced at 2.5815, 2026-08-26) is the best dedicated model measured
