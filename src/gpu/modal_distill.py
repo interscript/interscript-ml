@@ -1710,7 +1710,11 @@ def qwen_next_chain() -> dict:
     ROOT = Path("/checkpoints")
 
     def log(run: str, event: str) -> None:
-        with (ROOT / run / "chain_log.jsonl").open("a", encoding="utf-8") as fh:
+        # mkdir: a fresh arm's run dir does not exist until its training
+        # creates it — the first watch line must not crash on that
+        run_dir = ROOT / run
+        run_dir.mkdir(parents=True, exist_ok=True)
+        with (run_dir / "chain_log.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(json.dumps({"t": round(time.time()), "event": event}) + "\n")
         CHECKPOINTS.commit()
 
