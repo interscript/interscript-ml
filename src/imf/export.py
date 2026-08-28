@@ -393,6 +393,12 @@ def onnx_greedy_kv(encoder_sess, kv_sess, text: str, max_len: int = 256) -> list
     pasts = _zero_pasts(kv_sess)
     cur = np.array([[0]], dtype=np.int64)
     generated: list[int] = []
+    # Flat-byte students can loop on short inputs (greedy KV without
+    # sampling): cut generation when the recent token window repeats
+    # verbatim — the live failure was diacritization echoing the same
+    # phrase until max_len.
+    window = 24
+    joined = ""
     for _ in range(max_len):
         out = kv_sess.run(None, {"input_ids": cur, "encoder_hidden_states": hidden, **pasts})
         results = dict(zip(out_names, out, strict=True))
@@ -405,6 +411,13 @@ def onnx_greedy_kv(encoder_sess, kv_sess, text: str, max_len: int = 256) -> list
             for name in pasts
         }
         cur = np.array([[nxt]], dtype=np.int64)
+        if len(generated) >= 2 * window:
+            joined += f",{nxt}"
+            needle = ",".join(str(t) for t in generated[-window:])
+            if joined.find(needle) < len(joined) - len(needle):
+                break
+        else:
+            joined = ",".join(str(t) for t in generated)
     return generated
 
 
