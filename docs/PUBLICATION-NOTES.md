@@ -82,11 +82,14 @@ steps, ~1.2s/step vs ~3.4s — DER eval in flight; adopt gate ≥0.3pp.
 Lands: run-004-pkm-muon/final_eval.json → EXPERIMENTS.md E3 → paper
 training-methods note.
 
-### 10. Arabic news-domain repair (r7)
-Teacher-tier domain adaptation (init r6, news mix). ID verdict
-(EVAL_DONE-gated) + OOD verdict (WikiNews-2024 multi-ref, gate: beat
-r6's 19.82/12.46) land automatically. → rababa RESULTS.md → paper
-leaderboard/OOD note if it moves the numbers.
+### 10. Arabic news-domain adaptation (r7) — ID LANDED 2026-08-28
+**2.2864 / 1.3343 full-set windowed zero-skip — new best dedicated
+model, −0.29pp over r6** (the news mix improved in-domain, not just
+OOD; behind only Claude-3.7-Sonnet's published 1.3941). OOD half
+(WikiNews-2024 multi-ref, gate: beat r6's 19.82/12.46) running via the
+auto-launched actor. → rababa RESULTS.md (recorded) → paper leaderboard
+table + OOD note once OOD confirms; canonical-teacher promotion
+pending that check.
 
 ## Venue fit (working notes)
 
