@@ -18,15 +18,16 @@ models_volume = modal.Volume.from_name("secryst-models")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
+# add_local_* must come last (no build steps after them)
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("onnxruntime==1.23.2", "pyyaml>=6.0", "fastapi>=0.115")
+    .workdir("/root/interscript-ml")
+    .env({"IMAGE_REV": "6"})
     .add_local_dir(str(Path(__file__).resolve().parent.parent), "/root/interscript-ml", copy=True)
     # deterministic mounts for the index-driven resolver + the index itself
     .add_local_file(str(Path(__file__).resolve().parent / "model_resolution.py"), "/root/model_resolution.py")
     .add_local_file(str(_REPO_ROOT / "models.yaml"), "/root/models.yaml")
-    .workdir("/root/interscript-ml")
-    .env({"IMAGE_REV": "6"})
 )
 
 app = modal.App("interscript-inference", image=image)
