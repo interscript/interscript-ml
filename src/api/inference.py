@@ -16,12 +16,17 @@ import modal
 
 models_volume = modal.Volume.from_name("secryst-models")
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("onnxruntime==1.23.2", "pyyaml>=6.0", "fastapi>=0.115")
     .add_local_dir(str(Path(__file__).resolve().parent.parent), "/root/interscript-ml", copy=True)
+    # deterministic mounts for the index-driven resolver + the index itself
+    .add_local_file(str(Path(__file__).resolve().parent / "model_resolution.py"), "/root/model_resolution.py")
+    .add_local_file(str(_REPO_ROOT / "models.yaml"), "/root/models.yaml")
     .workdir("/root/interscript-ml")
-    .env({"IMAGE_REV": "5"})
+    .env({"IMAGE_REV": "6"})
 )
 
 app = modal.App("interscript-inference", image=image)
@@ -41,11 +46,11 @@ def _zip_path(model_id: str) -> Path:
     import os
     import sys
 
-    sys.path.insert(0, "/root/interscript-ml")
-    from src.api.model_resolution import load_index, resolve_zip_filename
+    sys.path.insert(0, "/root")
+    from model_resolution import load_index, resolve_zip_filename
 
     volume_files = [os.path.basename(z) for z in glob.glob("/v/imf/*/*.zip")]
-    filename = resolve_zip_filename(model_id, load_index("models.yaml"), volume_files)
+    filename = resolve_zip_filename(model_id, load_index("/root/models.yaml"), volume_files)
     for z in glob.glob(f"/v/imf/*/{filename}"):
         return Path(z)
     raise KeyError(model_id)
