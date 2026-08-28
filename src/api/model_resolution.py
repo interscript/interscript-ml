@@ -13,8 +13,9 @@ construction (CWE-22).
 
 from __future__ import annotations
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 
 def load_index(path: str | Path = "models.yaml") -> dict:

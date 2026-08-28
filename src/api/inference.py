@@ -26,7 +26,10 @@ image = (
     .env({"IMAGE_REV": "6"})
     .add_local_dir(str(Path(__file__).resolve().parent.parent), "/root/interscript-ml", copy=True)
     # deterministic mounts for the index-driven resolver + the index itself
-    .add_local_file(str(Path(__file__).resolve().parent / "model_resolution.py"), "/root/model_resolution.py")
+    .add_local_file(
+        str(Path(__file__).resolve().parent / "model_resolution.py"),
+        "/root/model_resolution.py",
+    )
     .add_local_file(str(_REPO_ROOT / "models.yaml"), "/root/models.yaml")
 )
 

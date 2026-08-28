@@ -23,7 +23,6 @@ from imf.export import (  # noqa: E402
     make_fixture_checkpoint,
 )
 from imf.parity import (  # noqa: E402
-    MarginReport,
     ParityReport,
     _margin_stats,
     run_margin_analysis,

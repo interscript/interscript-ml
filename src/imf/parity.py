@@ -277,9 +277,8 @@ def run_margin_analysis(model, zip_path, pairs, max_len: int = 256) -> MarginRep
 def write_margin_report(report: MarginReport, out_path: Path | str) -> Path:
     """Emit the margin analysis as JSON next to a release zip (diagnostic
     artifact; the release gate remains the CER parity block)."""
-    from dataclasses import asdict
-
     import json
+    from dataclasses import asdict
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
