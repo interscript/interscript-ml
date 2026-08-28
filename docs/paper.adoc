@@ -254,16 +254,18 @@ The engineering consequence: the client tier ships at ByT5-small, quantized. A t
 
 A fourth question completes the frontier analysis: at the shipped rung, is the residual teacher–student gap a *parameter-capacity* gap? Recent sparse-memory architectures (product-key memory, Lample et al. 2019; embedding scaling, Liu et al. 2026) argue parameters and compute are separable — lookup capacity at near-zero FLOPs. We tested this directly on the Arabic client tier with a single-variable design: identical teacher, corpus, teacher-labels, seed, and schedule as the shipped student, plus three product-key memory layers (+85.9M parameters, 16,384 slots each, top-32 reads) injected behind zero-initialized gates on the decoder FFNs (the pretrained function is preserved exactly at step 0, and the gates are verified to engage — settling at 0.03–0.05).
 
-[%autowidth,cols="1,1,1"]
+[%autowidth,cols="1,1,1,1"]
 |===
-|Student (Arabic, identical conditions) |Params |DER-CE (full 1,200)
+|Student (Arabic, identical teacher/corpus/labels/seed) |Optimizer |Params |DER-CE (full 1,200)
 
-|ByT5-small (shipped) |300M |8.259
-|**+ 3 PKM memory layers** |386M |**7.555**
-|r6 teacher |580M |2.582
+|ByT5-small (shipped) |AdamW |300M |8.259
+|ByT5-small |Muon |300M |5.295
+|+ 3 PKM memory layers |AdamW |386M |7.555
+|**+ 3 PKM memory layers** |**Muon** |386M |**4.829**
+|r6 teacher |— |580M |2.582
 |===
 
-Memory closes 0.70pp of the 5.68pp teacher–student gap — a real, controlled improvement at near-zero added compute, but below the pre-registered 1.0pp bar under which we would have called the capacity axis *the* fix. The same pre-registration discipline then isolated the *optimization* term: an identical arm differing only in optimizer — Muon (orthogonalized momentum via Newton–Schulz) on the hidden matrices, AdamW for embedding-like parameters — scored **4.829**, a further −2.73pp. The gap at this rung decomposes into ≈0.7pp capacity + ≈2.7pp optimization + ≈2.2pp residual (domain coverage; the full-benchmark subset lesson of <<section-leaderboard>> measures exactly this exposure). Two practical notes travel with the number: Muon's training CE was ~3× lower at equal steps *and* ~2.8× faster per step on this workload (1450-byte windows dominate; Newton–Schulz is cheap next to them), and the adopt gate (≥0.3pp, set before training) was exceeded nine-fold. Optimization — not parameter count — is the dominant recoverable term of the distillation gap at this rung; capacity is a modest second lever, now measured. (This speaks to the *distillation* gap on a pretrained backbone; it does not reopen the from-scratch collapse of finding 1, which is an initialization effect.)
+The 2×2 closes cleanly: the optimizer alone recovers −2.96pp, memory alone −0.70pp (−0.47 under Muon), both together −3.43pp — roughly additive, slightly sub-additive on the memory term. The gap at this rung decomposes into ≈3.0pp optimization + ≈0.6pp capacity + ≈2.2pp residual (domain coverage; the full-benchmark subset lesson of <<section-leaderboard>> measures exactly this exposure). Two practical notes travel with the numbers: Muon's training CE was ~3× lower at equal steps *and* ~2.8× faster per step on this workload (1450-byte windows dominate; Newton–Schulz is cheap next to them), and the optimizer adopt gate (≥0.3pp, set before training) was exceeded nine-fold — while the capacity arm, measured under the same discipline, stayed below its 1.0pp bar. Optimization — not parameter count — is the dominant recoverable term of the distillation gap at this rung. (This speaks to the *distillation* gap on a pretrained backbone; it does not reopen the from-scratch collapse of finding 1, which is an initialization effect.)
 
 == The decode protocol is part of the measurement
 [[section-decode]]

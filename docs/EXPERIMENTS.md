@@ -123,12 +123,19 @@ All rows passed the CER parity gate at release. Readings:
   equal steps; step time ~1.2s vs ~3.4s (the <15% overhead gate met
   with margin — Newton–Schulz is cheap next to 1450-byte windows); no
   stability events.
-- **Combined with E2, the gap decomposition at the ByT5-small rung:**
-  capacity ~0.70pp (PKM) + optimization ~2.73pp (Muon, on the PKM
-  architecture) + residual ~2.25pp (domain coverage — the subset
-  lesson). Caveat carried: the A/B isolates the optimizer ON the
-  memory architecture; the vanilla+Muon cell (run-005-muon) is queued
-  to complete the 2x2 factorial.
+- **Factorial cell 4 (run-005-muon, vanilla + Muon, 2026-08-28):
+  5.2945.** The 2x2 closes cleanly:
+
+  | Full-set DER | AdamW | Muon |
+  |---|---|---|
+  | vanilla ByT5-small | 8.259 | 5.295 |
+  | + PKM memory | 7.555 | **4.829** |
+
+  Decomposition (teacher ~2.6): optimizer alone −2.96pp; memory alone
+  −0.70pp (−0.47 under Muon); combined −3.43pp — roughly additive,
+  slightly sub-additive on the memory term. Optimization is the
+  dominant recoverable term at this rung; capacity is second; residual
+  ~2.2pp is domain coverage (the subset lesson).
 - **Hypothesis:** orthogonalized-momentum updates (Newton–Schulz; the
   optimizer Qwen3.8-Flash-Next / LongCat report) help even in
   knowledge-limited distillation fine-tunes — unmeasured territory for
