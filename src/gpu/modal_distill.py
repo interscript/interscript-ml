@@ -205,6 +205,25 @@ SPECS: dict[str, dict[str, str]] = {
         "mode": "sequence",
         "note": "vanilla ByT5-small + Muon (factorial cell 4)",
     },
+    "ara-diac-small-2": {
+        # ara-diac-small-2.0 candidate: the r7 canonical teacher + the
+        # E3-adopted Muon optimizer. Fresh labels from r7 (the v2 labels
+        # are r6-teacher). EXPERIMENTS.md E4.
+        "teacher": "rababa_arabic_byt5/run-007-news/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "optimizer": "muon",
+        "muon_lr": "0.01",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-006-r7-muon",
+        "labels_file": "teacher_labels_r7.jsonl",
+        "mode": "sequence",
+        "note": "r7 teacher + Muon; E4 gate: beat the shipped 8.259 by >= 2pp",
+    },
     "ara-diac-tiny": {
         "teacher": "rababa_arabic_byt5/run-006-morph/best",
         "teacher_volume": "rababa",
@@ -1672,6 +1691,7 @@ def qwen_next_chain() -> dict:
         ("ara-diac-small-pkm", "rababa_arabic_distill_small/run-003-pkm"),
         ("ara-diac-small-pkm-muon", "rababa_arabic_distill_small/run-004-pkm-muon"),
         ("ara-diac-small-muon", "rababa_arabic_distill_small/run-005-muon"),
+        ("ara-diac-small-2", "rababa_arabic_distill_small/run-006-r7-muon"),
     ]
     ROOT = Path("/checkpoints")
 
