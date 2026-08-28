@@ -103,3 +103,16 @@ stack. The frontier law (pretrained-or-collapse) and the controlled
 capacity/aux/optimizer experiments give it empirical heft. Package as
 one paper (current paper.adoc); the margin/head finding alone is also
 a strong short workshop paper if a split is ever wanted.
+
+## ara-diac-tiny: the "clean-label re-run" wasn't (2026-08-29)
+
+Narrative caution for the paper: the Aug-24 retraction flagged that the
+83.08 tiny-collapse number was measured on mojibake labels. The
+attempted clean re-run (run-004) silently reused the same Aug-23
+snapshot via a baked-in `labels_file` path — and reproduced 83.0797
+exactly, which is itself the tell: identical-to-4-decimals means same
+data, not same capacity law. Two lessons for the experiments section:
+(1) label-provenance must be content-hashed into the run record, not
+inferred from filenames; (2) a reproduced number is only evidence of
+reproducibility when the input pipeline is versioned. run-005
+(regenerating labels live from the r6 teacher) is the honest test.

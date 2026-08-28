@@ -177,6 +177,24 @@ conclusion for Arabic is UNPROVEN pending a clean-label re-run. The
 Thai tiny verdict is unaffected (umt5/sentencepiece labels were
 byte-exact); the pretrained-backbone law rests on Thai evidence.
 
+## ara-diac-tiny run-004 — the retracted verdict reproduced, on poisoned data (2026-08-29)
+
+The spec intended to rerun the tiny tier on clean labels silently
+consumed the Aug-23 label snapshot (pre `decode_joined` fix). Evidence
+chain:
+
+- run-004/best decodes `كتاب` as `ÙÙØ§ØªÙØ¨` — UTF-8-as-Latin1 mojibake,
+  the exact label corruption the retraction describes
+- the 300-paragraph windowed gate (n=300, teacher reproduces its
+  documented 1.3205) scores the student **83.0797** vs the retracted
+  **83.08** — identical to four decimals: the poisoned-data constant,
+  not a capacity result
+- `final_eval.json` in the run dir is the durable provenance
+
+Verdict: run-004 says nothing about from-scratch capacity; the
+retraction stands. **run-005** (fresh teacher labels, no snapshot,
+2026-08-29) is the actual clean-label falsification test — in flight.
+
 ## ara-diac-small-1.0 — Arabic client tier (2026-08-24)
 
 Sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph,
