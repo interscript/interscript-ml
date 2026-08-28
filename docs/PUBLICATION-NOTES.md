@@ -83,14 +83,16 @@ the paper — first controlled Muon measurement on byte-level seq2seq
 distillation. Paper: frontier section. EXPERIMENTS.md E3, RESULTS.md
 run-004. Factorial cell 4 (vanilla+Muon, run-005) queued.
 
-### 10. Arabic news-domain adaptation (r7) — ID LANDED 2026-08-28
-**2.2864 / 1.3343 full-set windowed zero-skip — new best dedicated
-model, −0.29pp over r6** (the news mix improved in-domain, not just
-OOD; behind only Claude-3.7-Sonnet's published 1.3941). OOD half
-(WikiNews-2024 multi-ref, gate: beat r6's 19.82/12.46) running via the
-auto-launched actor. → rababa RESULTS.md (recorded) → paper leaderboard
-table + OOD note once OOD confirms; canonical-teacher promotion
-pending that check.
+### 10. Arabic news-domain adaptation (r7) — COMPLETE 2026-08-28, NEW CANONICAL TEACHER
+**ID 2.2864/1.3343 (−0.29pp over r6) AND OOD WikiNews-2024 multi-ref
+17.38/11.83 (vs r6's 19.82/12.46)** — r7 sweeps both surfaces; the
+teacher-lineage domain trade-off is gone. Best dedicated model under
+the protocol, behind only Claude-3.7-Sonnet's published 1.3941, now
+well clear of GLM-5.2 (2.6911). r7 replaces r6 as the canonical
+Arabic teacher for future distillations. Paper leaderboard table
+updated; rababa RESULTS.md carries both tables. Follow-on (user
+decision): ara-diac-2.0 teacher release; students re-distilled from
+r7 with Muon (E3) are the natural ara-diac-small-2.0.
 
 ## Venue fit (working notes)
 
