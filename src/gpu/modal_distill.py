@@ -141,6 +141,40 @@ SPECS: dict[str, dict[str, str]] = {
         "mode": "sequence",
         "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
     },
+    "ara-diac-tiny": {
+        # the browser/Worker tier: ~45M params -> ~45MB int8 zip. Same
+        # teacher (r6), corpus, and frozen labels as run-002 — the ONLY
+        # variable is student capacity. From-scratch risk is real (Thai
+        # ablation: scratch byt5-small plateaued ~13% PER) but this is
+        # dense CE on 30k paragraph units, not RL; gate: does not
+        # collapse (finite output, DER bounded well below scratch) and
+        # <= 5.0 windowed DER-CE would make it shippable.
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_config": {
+            "vocab_size": 384,
+            "d_model": 384,
+            "d_ff": 1024,
+            "d_kv": 64,
+            "num_layers": 6,
+            "num_decoder_layers": 2,
+            "feed_forward_proj": "relu",
+            "decoder_start_token_id": 0,
+            "eos_token_id": 1,
+            "pad_token_id": 0,
+        },
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_tiny/run-001",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "tiny-tier probe: r6 teacher, run-002 corpus/labels, "
+                "~45M student; collapse check + DER gate <= 5.0",
+    },
     "ara-diac-small-pkm": {
         # TODO.qwen-next/02 — the LongCat/Qwen capacity axis: keep the
         # ByT5-small compute, add product-key lookup memory (+~25M
@@ -367,7 +401,16 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
     for p in teacher.parameters():
         p.requires_grad_(False)
 
-    student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"]).to(device)
+    if "student_config" in spec:
+        # tiny tier: no pretrained backbone at this width — random init
+        # from an explicit config (dense teacher-label supervision, see
+        # the spec note on collapse risk)
+        from transformers import T5Config, T5ForConditionalGeneration
+
+        cfg = T5Config(**spec["student_config"])
+        student = T5ForConditionalGeneration(cfg).to(device)
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"]).to(device)
     student.train()
 
     class Pairs(Dataset):
