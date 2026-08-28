@@ -251,6 +251,19 @@ Three findings:
 
 The engineering consequence: the client tier ships at ByT5-small, quantized. A true 30–70 MiB tier requires a *pretrained* backbone at that scale — byte-level pretraining of a narrow model — which remains open future work. The quantization ladder is the practical size lever today: 246 MiB at int8, 193 MiB at int4, with the 4-bit quality cost measured at +0.17pp CER and certified by the parity gate.
 
+A fourth question completes the frontier analysis: at the shipped rung, is the residual teacher–student gap a *parameter-capacity* gap? Recent sparse-memory architectures (product-key memory, Lample et al. 2019; embedding scaling, Liu et al. 2026) argue parameters and compute are separable — lookup capacity at near-zero FLOPs. We tested this directly on the Arabic client tier with a single-variable design: identical teacher, corpus, teacher-labels, seed, and schedule as the shipped student, plus three product-key memory layers (+85.9M parameters, 16,384 slots each, top-32 reads) injected behind zero-initialized gates on the decoder FFNs (the pretrained function is preserved exactly at step 0, and the gates are verified to engage — settling at 0.03–0.05).
+
+[%autowidth,cols="1,1,1"]
+|===
+|Student (Arabic, identical conditions) |Params |DER-CE (full 1,200)
+
+|ByT5-small (shipped) |300M |8.259
+|**+ 3 PKM memory layers** |386M |**7.555**
+|r6 teacher |580M |2.582
+|===
+
+Memory closes 0.70pp of the 5.68pp teacher–student gap — a real, controlled improvement at near-zero added compute, but below the pre-registered 1.0pp bar under which we would have called the capacity axis *the* fix. The honest conclusion: the distillation gap at this rung is dominated not by parameter capacity but by optimization and domain coverage (the student's training labels span one corpus's domain; the full-benchmark subset lesson of <<section-leaderboard>> measures exactly this exposure). Capacity is a lever on this frontier — a modest one, now measured.
+
 == The decode protocol is part of the measurement
 [[section-decode]]
 
@@ -405,3 +418,5 @@ budget is on the order of 100 A10G-hours.
 * Bertina, A., Beirami, S., Biniazian, H., Esmaeilnia, E., Shahi, S., Pirnia, M. _Bridging the gap: An intermediate language for enhanced and cost-effective grapheme-to-phoneme conversion with homographs with multiple pronunciations disambiguation._ arXiv:2505.06599, 2025.
 * Rosenthal, A., Shaked, N. _D-Nikud: Enhancing Hebrew diacritization with LSTM and pretrained models._ arXiv:2402.00075, 2024.
 * Elboher, Y., Pinter, Y. _Hebrew diacritics restoration using visual representation._ arXiv:2510.26521, 2025.
+* Lample, G., Sablayrolles, A., Ranzato, M., Denoyer, L., Jégou, H. _Large memory layers with product keys._ NeurIPS 2019 (arXiv:1907.05242).
+* Liu, H. et al. _Scaling embeddings outperforms scaling experts in language models._ arXiv:2601.21204, 2026.
