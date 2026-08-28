@@ -55,6 +55,25 @@ IMAGE = (
 )
 
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")
+
+
+def _ensure_src_path() -> None:
+    # Modal copies the entry file to /root/<name>.py while the repo image
+    # sits at /root/interscript-ml — cover both layouts before importing
+    # sibling modules (gpu.pkm, gpu.muon).
+    import sys
+    from pathlib import Path
+
+    for cand in (
+        Path(__file__).resolve().parent.parent,
+        Path.cwd() / "src",
+        Path("/root/interscript-ml/src"),
+    ):
+        if (cand / "gpu" / "pkm.py").exists():
+            if str(cand) not in sys.path:
+                sys.path.insert(0, str(cand))
+            return
+    raise RuntimeError("src/gpu/pkm.py not found on any known layout")
 DATASETS = modal.Volume.from_name("rababa-datasets")
 SECRYST_CHECKPOINTS = modal.Volume.from_name("secryst-checkpoints")
 SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
@@ -121,6 +140,70 @@ SPECS: dict[str, dict[str, str]] = {
         "labels_file": "teacher_labels_v2.jsonl",
         "mode": "sequence",
         "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
+    },
+    "ara-diac-small-pkm": {
+        # TODO.qwen-next/02 — the LongCat/Qwen capacity axis: keep the
+        # ByT5-small compute, add product-key lookup memory (+~25M
+        # params). Everything else identical to run-002 (teacher, corpus,
+        # labels, seed) so the comparison is single-variable.
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        # byt5-small has only 4 decoder blocks (depth lives in the
+        # encoder) — all but the first carry memory
+        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-003-pkm",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "PKM memory student; gate <= 3.07 windowed DER-CE; "
+                "verdict vs run-002's 8.259 full-set (closes >= 1.0pp?)",
+    },
+    "ara-diac-small-pkm-muon": {
+        # TODO.qwen-next/03 — identical to ara-diac-small-pkm except the
+        # optimizer (Muon + AdamW groups). The A/B pair is run-003-pkm
+        # (AdamW) vs run-004-pkm-muon.
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
+        "optimizer": "muon",
+        "muon_lr": "0.01",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-004-pkm-muon",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "Muon A/B arm; same gate and verdict rule as run-003-pkm",
+    },
+    "ara-diac-small-muon": {
+        # factorial completion (EXPERIMENTS.md E3 caveat): the A/B was
+        # PKM+Muon vs PKM+AdamW; this cell measures Muon WITHOUT memory
+        # so the 2x2 {vanilla, pkm} x {adamw, muon} closes cleanly
+        "teacher": "rababa_arabic_byt5/run-006-morph/best",
+        "teacher_volume": "rababa",
+        "student_init": "google/byt5-small",
+        "optimizer": "muon",
+        "muon_lr": "0.01",
+        "train": "r5-units/domain.txt",
+        "train_extra": ["r5-units/replay.txt"],
+        "unit_limits": [24000, 6000],
+        "max_len": 1450,
+        "label_beams": "1",
+        "out": "rababa_arabic_distill_small/run-005-muon",
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
+        "mode": "sequence",
+        "note": "vanilla ByT5-small + Muon (factorial cell 4)",
     },
     "ara-diac-tiny": {
         "teacher": "rababa_arabic_byt5/run-006-morph/best",
@@ -691,6 +774,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         print(f"[{spec_id}] tiny student: {n_params:.1f}M params", flush=True)
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    if spec.get("pkm"):
+        _ensure_src_path()
+        from gpu.pkm import inject_pkm
+
+        inject_pkm(student, **spec["pkm"])
     student.train()
 
     class Pairs(Dataset):
@@ -988,7 +1076,23 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         drop_last=True,
     )
     total_steps = len(train_loader) * epochs
-    optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
+    if spec.get("optimizer") == "muon":
+        _ensure_src_path()
+        from gpu.muon import Muon, split_parameters
+
+        muon_params, adamw_params = split_parameters(student.named_parameters())
+        optimizer = Muon(
+            muon_params, lr=float(spec.get("muon_lr", 0.01)),
+            momentum=0.95, weight_decay=0.01,
+        )
+        optimizer.add_adamw_group(adamw_params, lr=1e-4, weight_decay=0.0)
+        print(
+            f"[{spec_id}] muon: {len(muon_params)} matrix / "
+            f"{len(adamw_params)} embedding-like params",
+            flush=True,
+        )
+    else:
+        optimizer = torch.optim.AdamW(student.parameters(), lr=1e-4)
     scheduler = get_cosine_schedule_with_warmup(
         optimizer, total_steps // 20, total_steps
     )
@@ -1114,7 +1218,13 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
-    student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+    if spec.get("pkm"):
+        _ensure_src_path()
+        from gpu.pkm import load_student_with_pkm
+
+        student = load_student_with_pkm(student_path, spec["pkm"]).to("cuda").eval()
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
     # custom students carry T5's default max_length=20; windowed inputs
     # run to 1400 bytes, clamping max_new_tokens to zero
     for m in (teacher, student):
@@ -1197,6 +1307,18 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     result = {"teacher": der_ce(teacher), "student": der_ce(student)}
     result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
     result["gate_pass"] = result["gate_delta"] <= 0.5
+    # durable verdict marker: the run dir is the provenance record (also
+    # what r7-style _init_choice probes read)
+    import json
+
+    out_root = Path(
+        vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))]
+    ) / spec["out"]
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "final_eval.json").write_text(
+        json.dumps(result, indent=2), encoding="utf-8"
+    )
+    CHECKPOINTS.commit()
     return result
 
 
@@ -1460,3 +1582,134 @@ def mk(spec: str = "tha-g2p-tiny-mk", epochs: int = 3) -> None:
 @app.local_entrypoint()
 def eval_der(spec: str = "ara-diac-small", limit: int = 0) -> None:
     print(evaluate_der.remote(spec, limit=limit))
+
+
+@app.function(
+    cpu=4,
+    memory=16 * 1024,
+    timeout=30 * 60,
+    volumes={"/checkpoints": CHECKPOINTS, "/secryst-checkpoints": SECRYST_CHECKPOINTS},
+)
+def probe_pkm_gates(spec_id: str = "ara-diac-small-pkm") -> dict:
+    """E2 engagement probe (r8's IPA-probe analogue): gate values and
+    memory-table statistics from the latest step checkpoint. Gates moving
+    off zero = the memory branch is being used, not bypassed."""
+    from pathlib import Path
+
+    import torch
+    from transformers import AutoModelForSeq2SeqLM
+
+    spec = SPECS[spec_id]
+    out_root = Path("/checkpoints") / spec["out"]
+    ckpts = sorted(
+        out_root.glob("step-*"), key=lambda p: int(p.name.split("-")[1])
+    )
+    if not ckpts:
+        raise RuntimeError(f"no step checkpoints under {out_root}")
+
+    _ensure_src_path()
+    from gpu.pkm import ProductKeyMemory, inject_pkm
+
+    student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    inject_pkm(student, **spec["pkm"])
+    sd = torch.load(ckpts[-1] / "student.pt", map_location="cpu", weights_only=True)
+    student.load_state_dict(sd)
+
+    report: dict = {"checkpoint": ckpts[-1].name, "gates": {}, "tables": {}}
+    for i, block in enumerate(student.decoder.block):
+        wrapped = block.layer[1]
+        if not hasattr(wrapped, "memory"):
+            continue
+        report["gates"][f"dec-{i}"] = round(float(wrapped.gate), 4)
+        v = wrapped.memory.values
+        report["tables"][f"dec-{i}"] = {
+            "rows": int(v.shape[0]),
+            "row_norm_mean": round(float(v.norm(dim=-1).mean()), 4),
+            "row_norm_p99": round(float(v.norm(dim=-1).quantile(0.99)), 4),
+            "key_drift_q1": round(float(wrapped.memory.k1.abs().mean()), 4),
+        }
+    return report
+
+
+@app.local_entrypoint()
+def pkm_gates(spec: str = "ara-diac-small-pkm") -> None:
+    print(probe_pkm_gates.remote(spec))
+
+
+@app.function(
+    cpu=1,
+    memory=1024,
+    timeout=24 * 3600,
+    volumes={"/checkpoints": CHECKPOINTS, "/secryst-checkpoints": SECRYST_CHECKPOINTS},
+)
+def qwen_next_chain() -> dict:
+    """Server-side orchestrator for the qwen-next experiments (E2/E3):
+    workstation-independent, self-healing, idempotent — the replacement
+    for local shell chains that die with the workstation or break when
+    the repo's checked-out branch changes.
+
+    State machine per arm, driven by durable volume markers only:
+      best/config.json absent  -> watch step-* checkpoints; respawn
+                                   training if no progress for 20 min
+                                   (distill_sequence resumes from the
+                                   latest checkpoint; a redundant spawn
+                                   is benign — a finished run saves
+                                   best again and exits)
+      best present, final_eval.json absent -> evaluate_der (which now
+                                   writes final_eval.json itself)
+      final_eval.json present  -> arm done
+
+    Audit trail: chain_log.jsonl in each run dir. If this function times
+    out (24h) or is evicted, relaunching continues from the markers:
+
+        modal run --detach src/gpu/modal_distill.py::qwen_chain
+    """
+    import json
+    import time
+    from pathlib import Path
+
+    ARMS = [
+        ("ara-diac-small-pkm", "rababa_arabic_distill_small/run-003-pkm"),
+        ("ara-diac-small-pkm-muon", "rababa_arabic_distill_small/run-004-pkm-muon"),
+        ("ara-diac-small-muon", "rababa_arabic_distill_small/run-005-muon"),
+    ]
+    ROOT = Path("/checkpoints")
+
+    def log(run: str, event: str) -> None:
+        with (ROOT / run / "chain_log.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"t": round(time.time()), "event": event}) + "\n")
+        CHECKPOINTS.commit()
+
+    def latest_step(run: str) -> int:
+        steps = [int(p.name.split("-")[1]) for p in (ROOT / run).glob("step-*")]
+        return max(steps) if steps else -1
+
+    status = {}
+    for spec_id, run in ARMS:
+        while not (ROOT / run / "best" / "config.json").exists():
+            CHECKPOINTS.reload()
+            before = latest_step(run)
+            log(run, f"watch step={before}")
+            time.sleep(1200)
+            CHECKPOINTS.reload()
+            after = latest_step(run)
+            if after == before and not (ROOT / run / "best" / "config.json").exists():
+                log(run, f"stalled at step={after}; respawning {spec_id}")
+                distill_sequence.spawn(spec_id, epochs=3)
+        log(run, "training complete (best present)")
+        if not (ROOT / run / "final_eval.json").exists():
+            log(run, "evaluating")
+            evaluate_der.remote(spec_id=spec_id)
+            log(run, "eval done")
+        status[run] = "complete"
+    return status
+
+
+@app.local_entrypoint()
+def qwen_chain() -> None:
+    handle = qwen_next_chain.spawn()
+    print(
+        f"spawned {handle.object_id}; durable markers: chain_log.jsonl, "
+        f"final_eval.json in each run dir; relaunch is idempotent",
+        flush=True,
+    )

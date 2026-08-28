@@ -256,13 +256,24 @@ def convert_fp16(model):
     return copy.deepcopy(model).half()
 
 
-def quantize_int8(src: Path | str, dst: Path | str) -> Path:
+def quantize_int8(
+    src: Path | str, dst: Path | str, per_channel: bool = False,
+    nodes_to_exclude: list[str] | None = None,
+) -> Path:
     """fp32 -> dynamically quantized int8 (MatMul weights QInt8).
 
     MatMul-only: quantizing other ops inserts precision casts that break
     ORT's session-time SimplifiedLayerNormFusion, and preprocessing the
     graph (quant_pre_process) pins concrete example shapes into
     DynamicQuantizeLinear buffers.
+
+    nodes_to_exclude keeps the logits-producing MatMul (the tied head) in
+    fp32 — measured on heb-diac-1.1 (E1, docs/EXPERIMENTS.md): quantizing
+    the node that computes argmax moves the decision boundary directly —
+    9.34% of positions flip (80% at confident margins); keeping the head
+    fp32 cuts that to 0.26%, all near-tie, at +0.4% artifact size.
+    per_channel=True is rejected: no additional benefit once the head is
+    excluded, and +25% size.
     """
     from onnxruntime.quantization import QuantType, quantize_dynamic
 
@@ -271,8 +282,40 @@ def quantize_int8(src: Path | str, dst: Path | str) -> Path:
         str(dst),
         weight_type=QuantType.QInt8,
         op_types_to_quantize=["MatMul"],
+        per_channel=per_channel,
+        nodes_to_exclude=nodes_to_exclude or [],
     )
     return Path(dst)
+
+
+def head_matmul_names(graph_path: Path | str) -> list[str]:
+    """Names of the MatMul node(s) producing the logits output — the
+    tied lm_head, which stays fp32 in int8 exports (see quantize_int8)."""
+    import onnx
+
+    return _head_matmul_names(onnx.load(str(graph_path)).graph)
+
+
+def _head_matmul_names(graph) -> list[str]:
+    out_names = {o.name for o in graph.output}
+    producers = {}
+    for node in graph.node:
+        for o in node.output:
+            producers[o] = node
+
+    heads = [
+        n.name for n in graph.node
+        if n.op_type == "MatMul" and set(n.output) & out_names
+    ]
+    if not heads:
+        # logits may sit behind an Identity/Transpose/Reshape producer
+        for name in out_names:
+            node = producers.get(name)
+            for inp in node.input if node else []:
+                p = producers.get(inp)
+                if p is not None and p.op_type == "MatMul":
+                    heads.append(p.name)
+    return sorted(set(heads))
 
 
 def quantize_int4(src: Path | str, dst: Path | str, block_size: int = 64) -> Path:
@@ -401,7 +444,10 @@ def export_zips(
                 if precision == "fp32" or precision == "fp16":
                     dst.write_bytes(src.read_bytes())
                 elif precision == "int8":
-                    quantize_int8(graphs[name], dst)
+                    # the tied head stays fp32 (see quantize_int8) —
+                    # decoder graphs only; the encoder has no head
+                    exclude = head_matmul_names(src) if "decoder" in name else []
+                    quantize_int8(src, dst, nodes_to_exclude=exclude)
                 elif precision == "int4":
                     quantize_int4(graphs[name], dst)
                 else:

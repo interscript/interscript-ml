@@ -222,6 +222,44 @@ mojibake labels (byt5 decode_joined bug), the second silently resumed
 from the poisoned lineage's checkpoints (now guarded by labels.sha
 digest matching), this one clean end-to-end. CE plateaued at ~0.016.
 
+### run-003-pkm — memory-layer student (2026-08-28, research run)
+
+The qwen-next capacity experiment (EXPERIMENTS.md E2): identical to
+run-002 except three product-key memory layers (+85.9M lookup params,
+zero-init gates) on the ByT5-small decoder — single-variable.
+
+| Model | DER-CE (full 1,200) |
+|---|---|
+| Teacher (r6, full-set) | 2.5815% |
+| **Student + PKM memory (run-003-pkm)** | **7.5553%** |
+| Student vanilla (run-002) | 8.2590% |
+
+0.704pp of the 5.677pp teacher-student gap closed (12.4% relative) at
+near-zero added compute — below the pre-registered ≥1.0pp win bar, so
+the memory axis is real but not the dominant term of the gap. Gates
+verified engaged (0.034-0.053 at completion). Not shipped; the vanilla
+client rung stands.
+
+### run-004-pkm-muon — optimizer A/B on the memory student (2026-08-28)
+
+Identical to run-003-pkm except the optimizer (Muon on 2D hidden
+matrices, AdamW group for embedding-like params; EXPERIMENTS.md E3):
+
+| Model | DER-CE (full 1,200) |
+|---|---|
+| Teacher (r6, this container) | 2.5997% |
+| **ByT5-small + PKM + Muon (run-004)** | **4.8287%** |
+| ByT5-small + PKM + AdamW (run-003) | 7.5553% |
+| ByT5-small vanilla + AdamW (run-002) | 8.2590% |
+
+**−2.727pp from the optimizer alone** — the adopt gate (≥0.3pp)
+exceeded 9x; 3.430pp of the 5.677pp canonical gap closed (60.4%)
+combining memory + optimizer. Training CE ~0.007 vs ~0.02 at equal
+steps; ~1.2s/step vs ~3.4s; no stability events. The teacher-student
+gap at this rung decomposes: ~0.70pp capacity + ~2.73pp optimization
++ ~2.25pp residual (domain coverage). The vanilla+Muon factorial cell
+(run-005-muon) completes the decomposition.
+
 Leaderboard context (SadeedDiac-25, Misraj evaluator, zero-skip,
 harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793
 (reproduced at 2.5815, 2026-08-26) is the best dedicated model measured
