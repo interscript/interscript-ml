@@ -1,0 +1,33 @@
+format: imf-v1
+id: ara-diac-2.0
+task: diacritization
+source_script: Arab
+target: Arab
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: fp32
+license: BSD-3-Clause
+trained_from: 'rababa train_arabic_r7.py run-007-news (news-domain adaptation of the r6
+  morphological-aux teacher: r5-units anchor + 13,986 teacher-labeled news units at
+  0.85% mix + 400 gold WikiNews-2014 lines, init from run-006-morph); checkpoint
+  rababa-checkpoints:/rababa_arabic_byt5/run-007-news/best'
+metrics:
+- name: der_total_greedy
+  value: 2.2864
+  protocol: greedy decode (the v1 runtime path); SadeedDiac-25, windowed zero-skip
+    at 1400 bytes, full 1,200 paragraphs; ByT5-base r7
+  source: rababa/docs/RESULTS.md#r7-verdict-table-sadeeddiac-25-2026-08-28
+- name: der_morph_greedy
+  value: 1.3343
+  protocol: same harness; Morphological DER (word-final case endings only)
+  source: rababa/docs/RESULTS.md#r7-verdict-table-sadeeddiac-25-2026-08-28
+- name: wer_wikinews_multiref
+  value: 17.3794
+  protocol: WikiNews-2024 multi-reference, QCRI EvalDiac protocol (full mode), 356
+    texts / 10,616 words
+  source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28
+- name: der_wikinews_multiref
+  value: 11.8273
+  protocol: same harness
+  source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28

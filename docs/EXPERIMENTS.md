@@ -143,6 +143,22 @@ All rows passed the CER parity gate at release. Readings:
 - **Report:** either direction goes to the paper's training-methods
   appendix.
 
+## E4 — ara-diac-small-2.0 candidate (run-006-r7-muon)
+
+- **Status:** queued (registered 2026-08-28 before launch).
+- **Hypothesis:** the two measured wins compound — the r7 canonical
+  teacher (better labels; ID 2.2864 vs 2.5793) plus the E3-adopted
+  Muon optimizer (−2.727pp on r6 labels) — moving the client rung far
+  below the shipped 8.259.
+- **Design:** identical corpus/limits/schedule to run-002/003/004/005;
+  teacher = run-007-news/best (fresh greedy labels, teacher_labels_r7);
+  optimizer = Muon (embedding-like group on AdamW); vanilla ByT5-small
+  (the shipped architecture — the 2.0 ships what was measured).
+- **Pre-agreed gate:** beats the shipped student by ≥2.0pp full-set
+  windowed DER (i.e. ≤ 6.26) to justify the 2.0 release; the strict
+  teacher+0.5pp budget remains the disclosed north star.
+- **Prediction (registered):** 4.3–5.0, by E3's 4.829 on weaker labels.
+
 ## Parked
 
 - **Speculative decoding** (LongCat converts sparsity→speed): revisit

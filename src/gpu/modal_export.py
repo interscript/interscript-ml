@@ -87,6 +87,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "nakdimon/test-imf.jsonl",
         "probe": "שלום",
     },
+    "ara-diac2": {
+        "volume": "/volumes/rababa-checkpoints",
+        "checkpoint": "rababa_arabic_byt5/run-007-news/best",
+        "metadata": "models/ara-diac/ara-diac-2.0.metadata.yaml",
+        "readme": "models/ara-diac/ara-diac-2.0.README.md",
+        "test_volume": "/datasets/rababa",
+        "test_data": "arabic-sadeed-imf/test.jsonl",
+        "probe": "مكتبة",
+    },
     "ara-diac": {
         "volume": "/volumes/rababa-checkpoints",
         "checkpoint": "rababa_arabic_byt5/run-006-morph/best",
