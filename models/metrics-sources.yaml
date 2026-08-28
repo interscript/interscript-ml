@@ -79,7 +79,7 @@ tha-g2p-small-1.0:
     - {row: "greedy (runtime protocol)", column: Student PER, as: per_student}
 ara-diac-small-1.0:
   repo: interscript/interscript-ml
-  ref: docs/ara-fullset
+  ref: main
   path: docs/RESULTS.md
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
   protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300-para subset and full 1,200-paragraph SadeedDiac-25"
@@ -90,7 +90,7 @@ ara-diac-small-1.0:
     - {row: "Student (ByT5-small, full-set)", column: "DER-CE (full 1,200)", as: der_student_fullset}
 ara-diac-small-1.0-int8:
   repo: interscript/interscript-ml
-  ref: docs/ara-fullset
+  ref: main
   path: docs/RESULTS.md
   anchor: ara-diac-small-10-arabic-client-tier-2026-08-24
   protocol: "windowed DER-CE (1400-byte windows, greedy, haraqat-projected, Misraj evaluator); 300-para subset and full 1,200-paragraph SadeedDiac-25"
