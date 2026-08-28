@@ -72,15 +72,16 @@ structure but not accuracy; teacher beam-search unnecessary for
 Arabic; per-channel int8 rejected on measurement; the 30 MiB tier
 closed as infeasible without pretraining.
 
-## In flight — slots reserved, no claims yet
-
-### 9. Muon optimizer A/B on the memory student (E3)
-Same architecture/data/seed as E2, optimizer swapped (Newton–Schulz
-orthogonalized momentum; embedding-like params on AdamW per the E1
-access-pattern policy). Training CE ~0.007 vs AdamW's ~0.02 at equal
-steps, ~1.2s/step vs ~3.4s — DER eval in flight; adopt gate ≥0.3pp.
-Lands: run-004-pkm-muon/final_eval.json → EXPERIMENTS.md E3 → paper
-training-methods note.
+### 9. Muon optimizer A/B on the memory student (E3) — LANDED 2026-08-28
+**4.8287 vs 7.5553 full-set (−2.727pp from the optimizer alone); adopt
+gate (≥0.3pp) exceeded 9×. ADOPTED.** Training CE ~0.007 vs ~0.02 at
+equal steps, ~1.2s/step vs ~3.4s, no stability events. With E2 this
+completes a controlled decomposition of the distillation gap at the
+ByT5-small rung: ≈0.70pp capacity + 2.73pp optimization + 2.25pp
+residual (domain coverage). The strongest training-methods result in
+the paper — first controlled Muon measurement on byte-level seq2seq
+distillation. Paper: frontier section. EXPERIMENTS.md E3, RESULTS.md
+run-004. Factorial cell 4 (vanilla+Muon, run-005) queued.
 
 ### 10. Arabic news-domain adaptation (r7) — ID LANDED 2026-08-28
 **2.2864 / 1.3343 full-set windowed zero-skip — new best dedicated
