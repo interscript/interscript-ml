@@ -216,10 +216,15 @@ SPECS: dict[str, dict[str, str]] = {
         "unit_limits": [8000, 4000],
         "max_len": 1450,
         "label_beams": "1",
-        "out": "rababa_arabic_distill_tiny/run-004",
-        "labels_file": "/root/interscript-ml/data/ara-tiny-labels-snapshot.jsonl.gz.b64",
+        "out": "rababa_arabic_distill_tiny/run-005",
+        # run-004 used the Aug-23 snapshot = PRE decode_joined fix: every
+        # label mojibake (verified: its best/ decodes as UTF-8-as-Latin1,
+        # and its final_eval.json reproduces the retracted 83.08 exactly).
+        # run-005 is the actual clean-label re-run the retraction calls for.
+        "labels_file": "teacher_labels_v2.jsonl",
+        "labels_complete": "true",
         "mode": "sequence",
-        "note": "client tier (~30MB int8); r6 teacher (2.5793 DER); gate <= 3.07",
+        "note": "clean-label tiny re-run; r6 teacher (2.5793 DER); gate <= 3.07",
     },
     "tha-g2p-tiny": {
         "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
