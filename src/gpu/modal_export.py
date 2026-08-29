@@ -294,7 +294,12 @@ def parity_model(
         MODELS_VOLUME.commit()
 
     stage(f"start model={model_id} pairs={len(pairs)}")
-    reference = reference_decode(model, [src for src, _ in pairs], max_len=128)
+    reference = reference_decode(
+        model,
+        [src for src, _ in pairs],
+        max_len=128,
+        resume_path=Path("/outputs/imf") / model_id / "reference_progress.jsonl",
+    )
     stage("reference-decode done")
 
     out_dir = Path("/outputs/imf") / model_id
