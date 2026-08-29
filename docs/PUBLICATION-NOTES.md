@@ -94,15 +94,42 @@ updated; rababa RESULTS.md carries both tables. Follow-on (user
 decision): ara-diac-2.0 teacher release; students re-distilled from
 r7 with Muon (E3) are the natural ara-diac-small-2.0.
 
-## Venue fit (working notes)
+## Venue decision (2026-08-29): TWO papers + a benchmark-backed third
 
-The spine is systems-with-measurements: an artifact contract +
-distillation discipline + three calibration/measurement corrections
-(decode, subset, quantization-margins) that generalize beyond our
-stack. The frontier law (pretrained-or-collapse) and the controlled
-capacity/aux/optimizer experiments give it empirical heft. Package as
-one paper (current paper.adoc); the margin/head finding alone is also
-a strong short workshop paper if a split is ever wanted.
+The material outgrew one paper. Split by **teacher vs student**, not
+training vs distillation — the 2x2 factorial gap decomposition is a
+distillation-training result and must stay with the student paper.
+
+**Paper A — teacher** (facts 1, 2, 8): "Morphological supervision,
+not phonemic: controlled evidence and a dual-surface teacher for
+Arabic diacritization." r8 single-variable aux ablation (morph
+2.5793 < IPA 2.6588 < none 2.6775 - the strong form of "phonemes
+help" fails), r7 dual-surface domain adaptation (ID 2.2864 / OOD
+17.38-11.83, trade-off gone), protocol-matched leaderboard with the
+full-set-only rule. 100% measured, writable now. ACL/EMNLP main or
+SEMITIC.
+
+**Paper B — student** (facts 3-7, 9-11, 13-14): "Closing the
+teacher-student gap for browser-tier byte-level seq2seq." Spine: the
+2x2 factorial (optimizer -2.96pp, memory -0.70pp, combined -3.43pp,
+~additive, residual 2.25pp = domain). Pretrained-or-collapse law in
+two languages with the label-provenance forensics arc (83.08 ->
+83.0797 -> 74.68) as the reproducibility section; decode-protocol
+correction (beam inflates 4.2x) and margins/head-fp32 (36x flip
+reduction at +0.4% size) as calibration sections; the SVD-stitch
+rung as the browser-budget ending (if it fails, the shipped
+ByT5-small int8 tiers end the paper instead). IMF v1 as the artifact
+appendix. Efficient-NLP/distillation venue with artifact badge.
+
+**Paper C — systems** (fact 11 + the runtime stack): gated on a real
+evaluation axis. Benchmarks to build (benchmarks/imf-runtime):
+decode latency x tier x runtime backend (onnxruntime-node, Modal
+4-vCPU serving shape, browser WASM/WebGPU), cold load vs cache-hit,
+zip+member verification overhead, session-create cost, peak memory,
+index-resolution latency. Without these it stays an appendix.
+
+Fact allocation table (14 facts -> papers): A: 1, 2, 8. B: 3, 4, 5,
+6, 7, 9, 10, 13, 14. C: 11, 12 + new benchmark results.
 
 ## ara-diac-tiny: the "clean-label re-run" wasn't (2026-08-29)
 
