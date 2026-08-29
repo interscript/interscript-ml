@@ -342,3 +342,21 @@ under this protocol — second only to Claude-3.7-Sonnet's published
 GPT-4 (3.8645), and Sadeed-1.5B (7.2915; source table in rababa
 docs/RESULTS.md). The client student's full-set 8.26 lands behind
 Sadeed-1.5B; see the correction above.
+
+## IMF runtime benchmarks — E1 node tier (2026-08-29)
+
+Paper-C evaluation axis (benchmarks/imf-runtime; SPEC.md defines
+tiers x environments x metrics). First measurements, node tier
+(Apple Silicon, node 24, interscript@4.1.0, production Release path):
+
+| tier | cold resolve+fetch+verify | warm cache-hit | sha256 tax | session create | decode (short/long) | peak RSS |
+|---|---|---|---|---|---|---|
+| ara-diac-small-1.0-int8 (257MB) | 25.0s (network) | 528ms | 110ms | 13.1s | 994ms / 2.76s | 953MB |
+| tha-g2p-small-1.0 (int8, 202MB) | — | 397ms | 114ms | 12.1s | 85ms / 3.18s | 983MB |
+| tha-g2p-small-1.0-int4 (202MB) | — | 369ms | 87ms | 7.3s | 213ms / 6.48s | 711MB |
+
+Headline: **the integrity discipline is free** — whole-file sha256 is
+~0.1s against 7-13s session creation; the verified-index + cache-hit
+path is ~0.4s. int4 halves load time but decodes ~2.5x slower than
+int8; int8 is the client default. E2 (Modal 4-vCPU serving shape) and
+E3 (browser WASM/WebGPU) pending.
