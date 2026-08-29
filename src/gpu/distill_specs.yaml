@@ -142,6 +142,7 @@ ara-diac-small-layerdrop:
   layer_drop: 'true'
   student_config:
     d_model: 1472
+    d_kv: 64
     d_ff: 3584
     num_heads: 6
     enc_layers: 6
