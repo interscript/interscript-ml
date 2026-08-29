@@ -478,7 +478,12 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
                 else:
                     dst.writestr(name, src.read(name))
 
-    reference = reference_decode(model, [s for s, _ in pairs], max_len=128)
+    reference = reference_decode(
+        model,
+        [s for s, _ in pairs],
+        max_len=128,
+        resume_path=Path("/outputs/imf") / model_id / "reference_progress.jsonl",
+    )
     report = run_parity(model, new_zip, pairs, max_len=128, reference=reference)
     if not report.passed:
         raise RuntimeError(f"parity gate FAILED for {new_zip.name}: {report}")
