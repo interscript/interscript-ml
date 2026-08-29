@@ -8,25 +8,26 @@ opset: 14
 decoder: kv
 precision: fp32
 license: BSD-3-Clause
-trained_from: 'sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph/best,
-  2.5793 windowed DER-CE full protocol): the same 29,322 greedy teacher labels as
-  ara-diac-small-1.0, with the Muon optimizer (E3 factorial, vanilla student arm).
-  Checkpoint rababa-checkpoints:/rababa_arabic_distill_small/run-005-muon/best. The
-  optimizer alone closes 2.96pp of the 5.68pp teacher-student gap measured for the
-  1.0 (AdamW) release: 8.259 -> 5.2945 full-set windowed DER-CE (teacher reproduces
-  2.5997 in-run). Still misses the strict teacher+0.5pp gate — the residual decomposes
-  as ~0.70pp capacity + ~2.25pp domain coverage per the E2/E3 factorial; miss disclosed.
-  An r7-teacher re-distillation is in flight and expected to supersede as a later rung.'
+trained_from: 'sequence-level KD from the r7 canonical teacher (rababa_arabic_byt5/run-007-news/best,
+  2.2864 windowed DER-CE full protocol): fresh greedy r7 labels on the same r5-units
+  corpus/limits as ara-diac-small-1.0, Muon optimizer (E3-adopted), vanilla ByT5-small
+  (E4, pre-registered gate <= 6.26). Checkpoint
+  rababa-checkpoints:/rababa_arabic_distill_small/run-006-r7-muon/best. The two
+  measured wins compound: 8.259 -> 4.8218 full-set windowed DER-CE (teacher reproduces
+  2.289 in-run vs documented 2.2864) — a 42% error reduction on the 1.0 release at the
+  same architecture and artifact size. Still misses the strict teacher+0.5pp gate
+  (+2.53pp; miss disclosed); the E2/E3 factorial attributes the residual to domain
+  coverage.'
 metrics:
 - name: der_teacher_fullset
-  value: 2.5997
+  value: 2.289
   protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy,
     haraqat-projected, Misraj evaluator); full 1,200-paragraph SadeedDiac-25;
-    in-run reproduction of the documented 2.5815/2.5793
-  source: interscript/interscript-ml docs/RESULTS.md#run-005-muon
+    in-run reproduction of the documented 2.2864 (r7 canonical teacher)
+  source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon
 - name: der_student_fullset
-  value: 5.2945
-  protocol: same full-set harness; +2.69pp over the in-run teacher — the Muon
-    arm of the E3 2x2 factorial (vanilla student, optimizer as the only variable
-    vs the 8.259 AdamW release)
-  source: interscript/interscript-ml docs/RESULTS.md#run-005-muon
+  value: 4.8218
+  protocol: same full-set harness; E4 (r7 teacher labels + Muon, vanilla
+    ByT5-small) vs the 8.259 AdamW/r6-labels 1.0 release — a 42% error
+    reduction at identical architecture and artifact size
+  source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon

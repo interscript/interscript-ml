@@ -152,7 +152,11 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E4 — ara-diac-small-2.0 candidate (run-006-r7-muon)
 
-- **Status:** queued (registered 2026-08-28 before launch).
+- **Status:** COMPLETE (2026-08-29). **PASSED — 4.8218** full-set
+  windowed DER (gate ≤ 6.26; registered prediction 4.3–5.0; teacher r7
+  reproduces 2.289 vs documented 2.2864). −3.44pp / 42% relative vs the
+  shipped 1.0 at identical architecture and size; matches the PKM arm's
+  4.829 without memory layers. Released as ara-diac-small-2.0.
 - **Hypothesis:** the two measured wins compound — the r7 canonical
   teacher (better labels; ID 2.2864 vs 2.5793) plus the E3-adopted
   Muon optimizer (−2.727pp on r6 labels) — moving the client rung far
