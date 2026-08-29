@@ -195,6 +195,28 @@ Verdict: run-004 says nothing about from-scratch capacity; the
 retraction stands. **run-005** (fresh teacher labels, no snapshot,
 2026-08-29) is the actual clean-label falsification test — in flight.
 
+## ara-diac-tiny run-005 — clean-label verdict: from-scratch collapses (2026-08-29)
+
+The falsification test the Aug-24 retraction called for: same 33M
+from-scratch student (d384, 8+8), labels regenerated live from the r6
+teacher (11,793 units, no snapshot), 4,422 steps / 3 epochs, final CE
+~0.9. Windowed gate, 300 SadeedDiac-25 paragraphs, teacher reproduces
+1.3205:
+
+| Model | DER-CE (300) |
+|---|---|
+| Teacher (r6) | 1.3205% |
+| Tiny, mojibake labels (run-004) | 83.08% |
+| **Tiny, clean labels (run-005)** | **74.68% — REJECTED** |
+
+Clean labels recover ~8pp of the collapse — the student learns real
+signal — but remains two orders off the <= 3.07 gate. **The
+pretrained-backbone law now rests on Arabic evidence as well as
+Thai**: from-scratch byte-level students at this width do not work.
+The viable path to a sub-100MB browser tier is width reduction FROM a
+pretrained ByT5-small (closed-form stitch across widths, microkimi
+protocol), not from-scratch training.
+
 ## ara-diac-small-1.0 — Arabic client tier (2026-08-24)
 
 Sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph,
