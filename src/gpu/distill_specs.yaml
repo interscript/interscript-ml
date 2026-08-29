@@ -134,6 +134,33 @@ ara-diac-small-2:
   labels_file: teacher_labels_r7.jsonl
   mode: sequence
   note: 'r7 teacher + Muon; E4 gate: beat the shipped 8.259 by >= 2pp'
+ara-diac-tiny-stitched:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  out_volume: secryst
+  student_init: google/byt5-small
+  student_config:
+    d_model: 384
+    d_ff: 928
+    num_heads: 6
+    enc_layers: 12
+    dec_layers: 4
+    feed_forward_proj: gated-gelu
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 8000
+  - 4000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_tiny/run-006-stitched
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: init-variable rung - same d384 width as the collapsed run-005
+    (scratch, 74.68 DER) but SVD-stitched from pretrained ByT5-small;
+    gate <= 3.07 windowed DER-CE
 ara-diac-tiny:
   teacher: rababa_arabic_byt5/run-006-morph/best
   teacher_volume: rababa

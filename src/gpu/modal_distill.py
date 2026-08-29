@@ -88,6 +88,56 @@ def resolve_spec(spec: dict) -> dict:
         "best": str(Path(out_root) / "best"),
     }
 
+
+def svd_stitch_state(wide: dict, narrow: dict) -> dict:
+    """Closed-form width bridge: project pretrained wide weights into a
+    narrow state dict, preserving the top singular subspace per tensor
+    (microkimi protocol). 2-D: W' = U_o^T W V_i over leading singular
+    directions; 1-D: leading slice; N-D (head-count tensors):
+    leading-dimension slices."""
+    import torch
+
+    out = {}
+    for name, tgt in narrow.items():
+        src = wide.get(name)
+        if src is None or tuple(src.shape) == tuple(tgt.shape):
+            out[name] = (src if src is not None else tgt).clone()
+            continue
+        if src.dim() == 2:
+            o, i = src.shape
+            o2, i2 = tgt.shape
+            w = src.float()
+            u, _, vh = torch.linalg.svd(w, full_matrices=False)
+            if o2 < o:
+                w = u[:, :o2].T @ w
+            if i2 < i:
+                w = w @ vh[:i2, :].T
+            if o2 > o or i2 > i:
+                padded = torch.zeros((o2, i2), dtype=w.dtype)
+                padded[: min(o, o2), : min(i, i2)] = w[: min(o, o2), : min(i, i2)]
+                w = padded
+            out[name] = w.to(tgt.dtype)
+        elif src.dim() == 1:
+            out[name] = src[: tgt.shape[0]].clone().to(tgt.dtype)
+        else:
+            out[name] = src[tuple(slice(0, s) for s in tgt.shape)].clone().to(tgt.dtype)
+    return out
+
+
+def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
+    """When a custom-width student also names a pretrained init, bridge
+    the pretrained weights down instead of random init (the capacity
+    law says init is the variable that matters — ara-diac-tiny run-005)."""
+    if not spec.get("student_init"):
+        return
+    from transformers import AutoModelForSeq2SeqLM
+
+    pretrained = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
+    print(f"[{spec_id}] svd-stitching from {spec['student_init']}", flush=True)
+    student.load_state_dict(svd_stitch_state(pretrained.state_dict(), student.state_dict()))
+    del pretrained
+
+
 def _ensure_src_path() -> None:
     # Modal copies the entry file to /root/<name>.py while the repo image
     # sits at /root/interscript-ml — cover both layouts before importing
@@ -568,11 +618,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             num_decoder_layers=cfg.get("dec_layers", 8),
             num_heads=cfg.get("num_heads", 6),
             dropout_rate=0.1,
-            feed_forward_proj="relu",
+            feed_forward_proj=cfg.get("feed_forward_proj", "relu"),
             decoder_start_token_id=0,
             relative_attention_max_distance=128,
         )
         student = T5ForConditionalGeneration(config)
+        _maybe_stitch(spec_id, spec, student)
         n_params = sum(q.numel() for q in student.parameters()) / 1e6
         print(f"[{spec_id}] tiny student: {n_params:.1f}M params", flush=True)
     else:
@@ -1125,11 +1176,12 @@ def distill_microkimi(spec_id: str, epochs: int = 3, calib_batches: int = 64,
             num_decoder_layers=cfg.get("dec_layers", 8),
             num_heads=cfg.get("num_heads", 6),
             dropout_rate=0.1,
-            feed_forward_proj="relu",
+            feed_forward_proj=cfg.get("feed_forward_proj", "relu"),
             decoder_start_token_id=0,
             relative_attention_max_distance=128,
         )
         student = T5ForConditionalGeneration(config)
+        _maybe_stitch(spec_id, spec, student)
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
     student.to("cuda").train()

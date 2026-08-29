@@ -71,6 +71,19 @@ raw.githubusercontent.com, never a branch head:
 - Adding a model: WO03 gate → merge entry → cut `index-vN+1` →
   runtimes pick it up on their next pin bump.
 
+## Browser-tier capacity law (evidence record, 2026-08-29)
+
+From-scratch byte-level students collapse; pretrained init is the
+variable that matters. The full arc in RESULTS.md: tiny 33M from-scratch
+scored 83.08 DER (mojibake labels), retracted, the "clean rerun" silently
+reused the poisoned snapshot (83.0797 - identical to 4 decimals), and the
+true clean rerun (run-005, labels regenerated live) scored 74.68 vs the
+3.07 gate. Label quality explains 8pp; capacity/init explains the rest.
+Path to a sub-100MB browser artifact: SVD width-stitch DOWN from
+pretrained ByT5-small (run-006-stitched, ~27M params = ~27MB int8), not
+from-scratch training. Client stack already ships download-once Cache
+API persistence (interscript@4.1.0).
+
 ## File index
 
 - `00-overview.md` — this file
