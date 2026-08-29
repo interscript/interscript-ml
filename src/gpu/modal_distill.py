@@ -57,6 +57,37 @@ IMAGE = (
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")
 
 
+
+VOLUME_MOUNTS = {
+    "rababa": "/checkpoints",
+    "secryst": "/secryst-checkpoints",
+    "persian": "/persian-checkpoints",
+}
+DATA_MOUNTS = {
+    "secryst": "/secryst-datasets",
+    "persian": "/persian-datasets",
+}
+
+
+def resolve_spec(spec: dict) -> dict:
+    """Volume-relative paths for a spec — the single owner of "which
+    volume does this teacher/student/dataset live on" (previously four
+    pasted vol_map blocks)."""
+    teacher_vol = spec.get("teacher_volume", "rababa")
+    data_root = spec.get("data_volume", DATA_MOUNTS.get(teacher_vol, "/datasets"))
+    teacher = (
+        spec["teacher"] if spec.get("teacher_is_hub")
+        else str(Path(VOLUME_MOUNTS[teacher_vol]) / spec["teacher"])
+    )
+    out_root = str(Path(VOLUME_MOUNTS[spec.get("out_volume", teacher_vol)]) / spec["out"])
+    return {
+        "teacher_vol": teacher_vol,
+        "data_root": data_root,
+        "teacher": teacher,
+        "out_root": out_root,
+        "best": str(Path(out_root) / "best"),
+    }
+
 def _ensure_src_path() -> None:
     # Modal copies the entry file to /root/<name>.py while the repo image
     # sits at /root/interscript-ml — cover both layouts before importing
@@ -398,19 +429,10 @@ def evaluate_per(spec_id: str, limit: int = 0) -> dict:
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
     spec = SPECS[spec_id]
-    teacher_vol = spec.get("teacher_volume", "rababa")
-    vol_map = {
-        "rababa": "/checkpoints",
-        "secryst": "/secryst-checkpoints",
-        "persian": "/persian-checkpoints",
-    }
-    data_vol = {"secryst": "/secryst-datasets",
-                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
-    data_vol = spec.get("data_volume", data_vol)
-    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
-                    else str(Path(vol_map[teacher_vol]) / spec["teacher"]))
-    student_vol = vol_map[spec.get("out_volume", teacher_vol)]
-    student_path = Path(student_vol) / spec["out"] / "best"
+    paths = resolve_spec(spec)
+    data_vol = paths["data_root"]
+    teacher_path = paths["teacher"]
+    student_path = Path(paths["best"])
     test_rel = spec.get("eval_test") or spec.get("test")
     if not test_rel:
         raise RuntimeError(f"{spec_id}: no test path")
@@ -510,20 +532,9 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     spec = SPECS[spec_id]
     teacher_vol = spec.get("teacher_volume", "rababa")
 
-    vol_map = {
-        "rababa": "/checkpoints",
-        "secryst": "/secryst-checkpoints",
-        "persian": "/persian-checkpoints",
-    }
-    teacher_root = vol_map[teacher_vol]
-    out_root_vol = vol_map[spec.get("out_volume", teacher_vol)]
-    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
-                    else str(Path(teacher_root) / spec["teacher"]))
-
-    data_vol = {"secryst": "/secryst-datasets",
-                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
-    data_vol = spec.get("data_volume", data_vol)
-    train_path = Path(data_vol) / spec["train"]
+    paths = resolve_spec(spec)
+    teacher_path = paths["teacher"]
+    train_path = Path(paths["data_root"]) / spec["train"]
 
     # Teacher: use its OWN tokenizer (sentencepiece for umt5)
     teacher_tok = AutoTokenizer.from_pretrained(str(teacher_path))
@@ -644,7 +655,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     train_files = [(train_path, unit_limits[0] if unit_limits else 0)]
     for i, p in enumerate(spec.get("train_extra", [])):
         lim = unit_limits[i + 1] if i + 1 < len(unit_limits) else 0
-        train_files.append((Path(data_vol) / p, lim))
+        train_files.append((Path(paths["data_root"]) / p, lim))
     train_ds = Pairs(train_files)
     print(f"[{spec_id}] train pairs: {len(train_ds)} from {len(train_files)} files", flush=True)
     label_beams = int(spec.get("label_beams", 4))
@@ -652,7 +663,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # Step 1: teacher generates labels (beam-4) for the full corpus.
     # Resumable: evictions mid-labeling are routine on long jobs —
     # already-labeled srcs are skipped, the rest are appended.
-    out_root = Path(out_root_vol) / spec["out"]
+    out_root = Path(paths["out_root"])
     out_root.mkdir(parents=True, exist_ok=True)
     labels_file = spec.get("labels_file", "teacher_labels.jsonl")
     if labels_file.endswith(".b64"):
@@ -999,17 +1010,9 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     )
 
     spec = SPECS[spec_id]
-    vol_map = {
-        "rababa": "/checkpoints",
-        "secryst": "/secryst-checkpoints",
-        "persian": "/persian-checkpoints",
-    }
-    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
-                    else str(Path(vol_map[spec.get("teacher_volume", "rababa")]) / spec["teacher"]))
-    student_path = (
-        Path(vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))])
-        / spec["out"] / "best"
-    )
+    paths = resolve_spec(spec)
+    teacher_path = paths["teacher"]
+    student_path = Path(paths["best"])
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
@@ -1051,9 +1054,7 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     # what r7-style _init_choice probes read)
     import json
 
-    out_root = Path(
-        vol_map[spec.get("out_volume", spec.get("teacher_volume", "rababa"))]
-    ) / spec["out"]
+    out_root = Path(paths["out_root"])
     out_root.mkdir(parents=True, exist_ok=True)
     (out_root / "final_eval.json").write_text(
         json.dumps(result, indent=2), encoding="utf-8"
@@ -1103,20 +1104,10 @@ def distill_microkimi(spec_id: str, epochs: int = 3, calib_batches: int = 64,
     )
 
     spec = SPECS[spec_id]
-    teacher_vol = spec.get("teacher_volume", "rababa")
-    vol_map = {
-        "rababa": "/checkpoints",
-        "secryst": "/secryst-checkpoints",
-        "persian": "/persian-checkpoints",
-    }
-    data_vol = {"secryst": "/secryst-datasets",
-                "persian": "/persian-datasets"}.get(teacher_vol, "/datasets")
-    data_vol = spec.get("data_volume", data_vol)
-    out_root_vol = vol_map[spec.get("out_volume", teacher_vol)]
-    teacher_path = (spec["teacher"] if spec.get("teacher_is_hub")
-                    else str(Path(vol_map[teacher_vol]) / spec["teacher"]))
-    out_root = Path(out_root_vol) / spec["out"]
+    paths = resolve_spec(spec)
+    out_root = Path(paths["out_root"])
     out_root.mkdir(parents=True, exist_ok=True)
+    teacher_path = paths["teacher"]
 
     student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
@@ -1404,7 +1395,6 @@ def qwen_next_chain() -> dict:
 
         modal run --detach src/gpu/modal_distill.py::qwen_chain
     """
-    import json
     import time
     from pathlib import Path
 
@@ -1414,38 +1404,29 @@ def qwen_next_chain() -> dict:
         ("ara-diac-small-muon", "rababa_arabic_distill_small/run-005-muon"),
         ("ara-diac-small-2", "rababa_arabic_distill_small/run-006-r7-muon"),
     ]
-    ROOT = Path("/checkpoints")
 
-    def log(run: str, event: str) -> None:
-        # mkdir: a fresh arm's run dir does not exist until its training
-        # creates it — the first watch line must not crash on that
-        run_dir = ROOT / run
-        run_dir.mkdir(parents=True, exist_ok=True)
-        with (run_dir / "chain_log.jsonl").open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps({"t": round(time.time()), "event": event}) + "\n")
-        CHECKPOINTS.commit()
-
-    def latest_step(run: str) -> int:
-        steps = [int(p.name.split("-")[1]) for p in (ROOT / run).glob("step-*")]
-        return max(steps) if steps else -1
+    _ensure_src_path()
+    from gpu.runstate import RunState
 
     status = {}
     for spec_id, run in ARMS:
-        while not (ROOT / run / "best" / "config.json").exists():
+        state = RunState(Path("/checkpoints") / run)
+        while not state.training_done():
             CHECKPOINTS.reload()
-            before = latest_step(run)
-            log(run, f"watch step={before}")
+            before = state.latest_step()
+            state.log(f"watch step={before}", commit=CHECKPOINTS.commit)
             time.sleep(1200)
             CHECKPOINTS.reload()
-            after = latest_step(run)
-            if after == before and not (ROOT / run / "best" / "config.json").exists():
-                log(run, f"stalled at step={after}; respawning {spec_id}")
+            after = state.latest_step()
+            if after == before and not state.training_done():
+                state.log(f"stalled at step={after}; respawning {spec_id}",
+                          commit=CHECKPOINTS.commit)
                 distill_sequence.spawn(spec_id, epochs=3)
-        log(run, "training complete (best present)")
-        if not (ROOT / run / "final_eval.json").exists():
-            log(run, "evaluating")
+        state.log("training complete (best present)", commit=CHECKPOINTS.commit)
+        if not state.eval_done():
+            state.log("evaluating", commit=CHECKPOINTS.commit)
             evaluate_der.remote(spec_id=spec_id)
-            log(run, "eval done")
+            state.log("eval done", commit=CHECKPOINTS.commit)
         status[run] = "complete"
     return status
 
