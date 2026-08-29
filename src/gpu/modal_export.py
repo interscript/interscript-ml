@@ -114,6 +114,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "arabic-sadeed-imf/test.jsonl",
         "probe": "قوله",
     },
+    "ara-diac-small-2": {
+        "volume": "/volumes/rababa-checkpoints",
+        "checkpoint": "rababa_arabic_distill_small/run-005-muon/best",
+        "metadata": "models/ara-diac-small/ara-diac-small-2.0.metadata.yaml",
+        "readme": "models/ara-diac-small/ara-diac-small-2.0.README.md",
+        "test_volume": "/datasets/rababa",
+        "test_data": "arabic-sadeed-imf/test.jsonl",
+        "probe": "قوله",
+    },
     "urd-diac": {
         "volume": "/volumes/urdu-diacrit-checkpoints",
         "checkpoint": "urdu_diacrit/run-001/best",
