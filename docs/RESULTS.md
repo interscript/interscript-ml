@@ -315,6 +315,25 @@ gap) — roughly additive, slightly sub-additive on memory. Residual
 ~2.2pp is domain coverage. Optimization is the dominant recoverable
 term of the distillation gap at the ByT5-small rung.
 
+### run-006-r7-muon — E4: the 2.0 release candidate (2026-08-29)
+
+The two measured wins compounded on the vanilla architecture: r7
+canonical teacher (fresh greedy labels) + Muon optimizer, same
+corpus/limits/seed family. Pre-registered E4 gate ≤ 6.26 (prediction
+4.3–5.0):
+
+| Model | DER-CE (full 1,200) |
+|---|---|
+| Teacher (r7, in-run) | 2.2890% |
+| **ByT5-small, r7 labels + Muon (run-006)** | **4.8218%** |
+| ByT5-small, r6 labels + Muon (run-005) | 5.2945% |
+| ByT5-small, r6 labels + AdamW (run-002, shipped 1.0) | 8.2590% |
+
+**4.8218 — gate passed; −3.44pp / 42% relative vs the shipped 1.0** at
+identical architecture and artifact size. Matches the PKM arm's 4.829
+without the memory layers. Release: ara-diac-small-2.0 (run-006
+checkpoint; strict teacher+0.5pp still missed at +2.53pp, disclosed).
+
 Leaderboard context (SadeedDiac-25, Misraj evaluator, zero-skip,
 harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793
 (reproduced at 2.5815, 2026-08-26) is the best dedicated model measured

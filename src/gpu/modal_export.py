@@ -116,7 +116,7 @@ MODELS: dict[str, dict[str, str]] = {
     },
     "ara-diac-small-2": {
         "volume": "/volumes/rababa-checkpoints",
-        "checkpoint": "rababa_arabic_distill_small/run-005-muon/best",
+        "checkpoint": "rababa_arabic_distill_small/run-006-r7-muon/best",
         "metadata": "models/ara-diac-small/ara-diac-small-2.0.metadata.yaml",
         "readme": "models/ara-diac-small/ara-diac-small-2.0.README.md",
         "test_volume": "/datasets/rababa",
