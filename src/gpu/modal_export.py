@@ -270,7 +270,21 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     if limit:
         pairs = pairs[:limit]
 
+    def stage(event: str) -> None:
+        # the gate's observable interface: durable stage log on the
+        # volume (silent container kills are otherwise undiagnosable —
+        # seven consecutive ara-diac2 attempts died without a traceback)
+        import time as _time
+
+        out_dir0 = Path("/outputs/imf") / model_id
+        out_dir0.mkdir(parents=True, exist_ok=True)
+        with (out_dir0 / "parity_stages.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(f'{{"t": {round(_time.time())}, "event": "{event}"}}\n')
+        MODELS_VOLUME.commit()
+
+    stage(f"start model={model_id} pairs={len(pairs)}")
     reference = reference_decode(model, [src for src, _ in pairs], max_len=128)
+    stage("reference-decode done")
 
     out_dir = Path("/outputs/imf") / model_id
     meta_path = Path("/root/interscript-ml", spec["metadata"])
@@ -278,7 +292,9 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
     reports: dict[str, str] = {}
     for precision in precisions:
         zip_path = out_dir / f"{mid}-{precision}.zip"
+        stage(f"onnx decode {precision}")
         report = run_parity(model, zip_path, pairs, max_len=128, reference=reference)
+        stage(f"parity report {precision} delta={report.cer_delta}")
         reports[precision] = (
             f"samples={report.samples} cer_ref={report.cer_reference}pp "
             f"cer_onnx={report.cer_onnx}pp delta={report.cer_delta}pp "
@@ -288,6 +304,7 @@ def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
             raise RuntimeError(f"parity gate FAILED for {zip_path.name}")
         write_parity(zip_path, report)
         margins = run_margin_analysis(model, zip_path, pairs, max_len=128)
+        stage(f"margin report {precision} flips={margins.flip_rate:.4%}")
         write_margin_report(margins, out_dir / f"{mid}-margins-{precision}.json")
         reports[precision] += (
             f" | margin flips={margins.flip_rate:.4%} kld={margins.kld_mean:.2e} "
@@ -375,184 +392,3 @@ def margins(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0) -> N
     reports = margin_model.remote(model, precisions.split(","), limit)
     for precision, status in reports.items():
         print(f"{model} [{precision}] {status}")
-
-
-@app.function(
-    cpu=8,
-    memory=32 * 1024,
-    timeout=5 * 3600,
-    volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
-)
-def int8_pc_probe(model_id: str = "heb-diac", limit: int = 300) -> dict:
-    """E1 follow-up: does per-channel int8 remove the confident-position
-    argmax flips? Rebuilds the int8 graphs from the fp32 zip with
-    per_channel=True, packages them as a probe zip (copy of the shipped
-    int8 zip with graphs swapped — NOT a release artifact), and compares
-    margin reports on the same pairs."""
-    import sys
-    import tempfile
-    import zipfile
-
-    sys.path.insert(0, "/root/interscript-ml/src")
-
-    spec = MODELS[model_id]
-    checkpoint = Path(spec["volume"]) / spec["checkpoint"]
-    test_path = Path(spec["test_volume"]) / spec["test_data"]
-
-    from imf.export import load_byte_seq2seq, quantize_int8
-    from imf.parity import run_margin_analysis
-
-    model = load_byte_seq2seq(checkpoint)
-    pairs = _load_pairs(test_path)[:limit]
-
-    out_dir = Path("/outputs/imf") / model_id
-    meta_path = Path("/root/interscript-ml", spec["metadata"])
-    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
-    fp32_zip = out_dir / f"{mid}-fp32.zip"
-    int8_zip = out_dir / f"{mid}-int8.zip"
-    if not fp32_zip.exists() or not int8_zip.exists():
-        raise RuntimeError(f"need both {fp32_zip.name} and {int8_zip.name} on the volume")
-
-    shipped = run_margin_analysis(model, int8_zip, pairs, max_len=128)
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        with zipfile.ZipFile(fp32_zip) as zf:
-            zf.extract("encoder.onnx", tmp)
-            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
-            zf.extract(dec, tmp)
-        enc_pc = tmp / "encoder-pc.onnx"
-        dec_pc = tmp / dec.replace(".onnx", "-pc.onnx")
-        quantize_int8(tmp / "encoder.onnx", enc_pc, per_channel=True)
-        quantize_int8(tmp / dec, dec_pc, per_channel=True)
-
-        probe_zip = tmp / f"{mid}-int8-pc-probe.zip"
-        with zipfile.ZipFile(int8_zip) as src, zipfile.ZipFile(
-            probe_zip, "w", zipfile.ZIP_DEFLATED
-        ) as dst:
-            for name in src.namelist():
-                if name == "encoder.onnx":
-                    dst.writestr(name, enc_pc.read_bytes())
-                elif name == dec:
-                    dst.writestr(name, dec_pc.read_bytes())
-                else:
-                    dst.writestr(name, src.read(name))
-
-        per_channel_report = run_margin_analysis(model, probe_zip, pairs, max_len=128)
-        size_shipped = int8_zip.stat().st_size
-        size_probe = probe_zip.stat().st_size
-
-    def row(r):
-        return {
-            "flips": r.flipped_tokens, "tokens": r.tokens,
-            "flip_rate": r.flip_rate, "kld_mean": r.kld_mean,
-            "flip_low_margin_share": r.flip_low_margin_share,
-        }
-
-    return {
-        "model": model_id, "pairs": len(pairs),
-        "shipped_int8": row(shipped), "per_channel_int8": row(per_channel_report),
-        "size_bytes": {"shipped": size_shipped, "per_channel": size_probe},
-    }
-
-
-@app.local_entrypoint()
-def int8_pc(model: str = "heb-diac", limit: int = 300) -> None:
-    print(int8_pc_probe.remote(model, limit))
-
-
-@app.function(
-    cpu=8,
-    memory=32 * 1024,
-    timeout=5 * 3600,
-    volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
-)
-def int8_head_probe(model_id: str = "heb-diac", limit: int = 300) -> dict:
-    """E1 follow-up 2: per-channel alone did NOT fix heb-diac's 9.3%
-    flip rate (8.5% remaining, 78% still at confident positions). This
-    probe keeps the logits-producing MatMul (the tied head) in fp32 and
-    quantizes only the body — per-tensor and per-channel variants."""
-    import sys
-    import tempfile
-    import zipfile
-
-    sys.path.insert(0, "/root/interscript-ml/src")
-
-    spec = MODELS[model_id]
-    checkpoint = Path(spec["volume"]) / spec["checkpoint"]
-    test_path = Path(spec["test_volume"]) / spec["test_data"]
-
-    from imf.export import head_matmul_names, load_byte_seq2seq
-    from imf.parity import run_margin_analysis
-
-    model = load_byte_seq2seq(checkpoint)
-    pairs = _load_pairs(test_path)[:limit]
-
-    out_dir = Path("/outputs/imf") / model_id
-    meta_path = Path("/root/interscript-ml", spec["metadata"])
-    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
-    fp32_zip = out_dir / f"{mid}-fp32.zip"
-    int8_zip = out_dir / f"{mid}-int8.zip"
-    if not fp32_zip.exists() or not int8_zip.exists():
-        raise RuntimeError(f"need both {fp32_zip.name} and {int8_zip.name} on the volume")
-
-    shipped = run_margin_analysis(model, int8_zip, pairs, max_len=128)
-
-    results: dict = {
-        "model": model_id, "pairs": len(pairs),
-        "shipped_int8": {
-            "flips": shipped.flipped_tokens, "tokens": shipped.tokens,
-            "flip_rate": shipped.flip_rate, "kld_mean": shipped.kld_mean,
-            "flip_low_margin_share": shipped.flip_low_margin_share,
-        },
-    }
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        with zipfile.ZipFile(fp32_zip) as zf:
-            zf.extract("encoder.onnx", tmp)
-            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
-            zf.extract(dec, tmp)
-
-        head_nodes = head_matmul_names(tmp / dec)
-        results["head_nodes_excluded"] = head_nodes
-
-        from onnxruntime.quantization import QuantType, quantize_dynamic
-
-        for variant, per_channel in (("head32", False), ("head32_pc", True)):
-            enc_q = tmp / f"encoder-{variant}.onnx"
-            dec_q = tmp / dec.replace(".onnx", f"-{variant}.onnx")
-            quantize_dynamic(
-                str(tmp / "encoder.onnx"), str(enc_q),
-                weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul"],
-                per_channel=per_channel,
-            )
-            quantize_dynamic(
-                str(tmp / dec), str(dec_q),
-                weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul"],
-                per_channel=per_channel, nodes_to_exclude=head_nodes,
-            )
-            probe_zip = tmp / f"{mid}-int8-{variant}-probe.zip"
-            with zipfile.ZipFile(int8_zip) as src, zipfile.ZipFile(
-                probe_zip, "w", zipfile.ZIP_DEFLATED
-            ) as dst:
-                for name in src.namelist():
-                    if name == "encoder.onnx":
-                        dst.writestr(name, enc_q.read_bytes())
-                    elif name == dec:
-                        dst.writestr(name, dec_q.read_bytes())
-                    else:
-                        dst.writestr(name, src.read(name))
-            report = run_margin_analysis(model, probe_zip, pairs, max_len=128)
-            results[f"int8_{variant}"] = {
-                "flips": report.flipped_tokens, "tokens": report.tokens,
-                "flip_rate": report.flip_rate, "kld_mean": report.kld_mean,
-                "flip_low_margin_share": report.flip_low_margin_share,
-                "size_bytes": probe_zip.stat().st_size,
-            }
-    return results
-
-
-@app.local_entrypoint()
-def int8_head(model: str = "heb-diac", limit: int = 300) -> None:
-    print(int8_head_probe.remote(model, limit))

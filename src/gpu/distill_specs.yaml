@@ -1,0 +1,264 @@
+# Distillation specs — data, not code (architecture review C2).
+# Loaded by modal_distill.SPECS; one entry per distill/eval arm.
+tha-g2p-small:
+  teacher: B-K/umt5-thai-g2p-v2-0.5k
+  teacher_is_hub: 'true'
+  teacher_volume: secryst
+  student_init: google/byt5-base
+  train: thai-ipa-expanded/train.jsonl
+  train_extra:
+  - thai-ipa/train.jsonl
+  - thai-ipa/augmented_epitran.jsonl
+  val: thai-ipa-expanded/val.jsonl
+  test: thai-ipa-expanded/test.jsonl
+  eval_test: thai-ipa/test.jsonl
+  out: secryst_thai_g2p_distill_small/run-004
+  mode: sequence
+  note: umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate
+tha-g2p-client:
+  teacher: B-K/umt5-thai-g2p-v2-0.5k
+  teacher_is_hub: 'true'
+  teacher_volume: secryst
+  student_init: google/byt5-small
+  train: thai-ipa-expanded/train.jsonl
+  train_extra:
+  - thai-ipa/train.jsonl
+  - thai-ipa/augmented_epitran.jsonl
+  val: thai-ipa-expanded/val.jsonl
+  test: thai-ipa-expanded/test.jsonl
+  eval_test: thai-ipa/test.jsonl
+  out: secryst_thai_g2p_distill_small/run-003
+  mode: sequence
+  note: eval-only spec for tha-g2p-small-1.0 (client tier)
+ara-diac-small:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-002
+  labels_file: teacher_labels_v2.jsonl
+  mode: sequence
+  note: r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE
+ara-diac-small-pkm:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  pkm:
+    layer_indices:
+    - -1
+    - -2
+    - -3
+    n_keys: 128
+    topk: 32
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-003-pkm
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: PKM memory student; gate <= 3.07 windowed DER-CE; verdict vs run-002's 8.259 full-set (closes
+    >= 1.0pp?)
+ara-diac-small-pkm-muon:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  pkm:
+    layer_indices:
+    - -1
+    - -2
+    - -3
+    n_keys: 128
+    topk: 32
+  optimizer: muon
+  muon_lr: '0.01'
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-004-pkm-muon
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: Muon A/B arm; same gate and verdict rule as run-003-pkm
+ara-diac-small-muon:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  optimizer: muon
+  muon_lr: '0.01'
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-005-muon
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: vanilla ByT5-small + Muon (factorial cell 4)
+ara-diac-small-2:
+  teacher: rababa_arabic_byt5/run-007-news/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  optimizer: muon
+  muon_lr: '0.01'
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-006-r7-muon
+  labels_file: teacher_labels_r7.jsonl
+  mode: sequence
+  note: 'r7 teacher + Muon; E4 gate: beat the shipped 8.259 by >= 2pp'
+ara-diac-tiny:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  out_volume: secryst
+  student_config:
+    d_model: 384
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 8000
+  - 4000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_tiny/run-005
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: clean-label tiny re-run; r6 teacher (2.5793 DER); gate <= 3.07
+tha-g2p-tiny:
+  teacher: B-K/umt5-thai-g2p-v2-0.5k
+  teacher_is_hub: 'true'
+  teacher_volume: secryst
+  student_config:
+    d_model: 384
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  train: thai-ipa-expanded/train.jsonl
+  train_extra:
+  - thai-ipa/train.jsonl
+  - thai-ipa/augmented_epitran.jsonl
+  eval_test: thai-ipa/test.jsonl
+  out: secryst_thai_g2p_distill_tiny/run-001
+  labels_complete: 'true'
+  mode: sequence
+  label_beams: '4'
+  max_len: 384
+  note: client tier; collapsed from-scratch (75.8 PER) — see run-002 mk
+tha-g2p-tiny-mk:
+  teacher: B-K/umt5-thai-g2p-v2-0.5k
+  teacher_is_hub: 'true'
+  teacher_volume: secryst
+  student_config:
+    d_model: 384
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  eval_test: thai-ipa/test.jsonl
+  out: secryst_thai_g2p_distill_tiny/run-002
+  labels_complete: 'true'
+  max_len: 384
+  note: microkimi bridges; 71.12 PER — improved, not rescued
+tha-g2p-mid-mk:
+  teacher: B-K/umt5-thai-g2p-v2-0.5k
+  teacher_is_hub: 'true'
+  teacher_volume: secryst
+  student_config:
+    d_model: 512
+    d_ff: 2048
+    num_heads: 8
+    enc_layers: 10
+    dec_layers: 10
+  eval_test: thai-ipa/test.jsonl
+  out: secryst_thai_g2p_distill_mid/run-001
+  labels_complete: 'true'
+  max_len: 384
+  note: 70M bridge rung; labels reused from tiny run-002
+fas-g2p-tiny:
+  teacher: persian_g2p/run-001/best
+  teacher_volume: persian
+  student_config:
+    d_model: 384
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  data_volume: /datasets
+  train: persian_g2p/train.jsonl
+  unit_limits:
+  - 60000
+  test: persian_g2p/test.jsonl
+  out: interscript_fas_g2p_distill_tiny/run-001
+  mode: sequence
+  label_beams: '4'
+  note: client tier; collapsed from-scratch (77.97 PER)
+heb-diac-tiny:
+  teacher: rababa_hebrew_byt5_s43/run-001/best
+  teacher_volume: rababa
+  out_volume: secryst
+  student_config:
+    d_model: 384
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  train: hebrew-v4/train.jsonl
+  out: rababa_hebrew_distill_tiny/run-002
+  mode: sequence
+  label_beams: '4'
+  note: client tier; collapsed from-scratch (100 DER)
+fas-g2p-small:
+  teacher: persian_g2p/run-001/best
+  teacher_volume: persian
+  student_init: google/byt5-small
+  train: persian_g2p/train.jsonl
+  val: persian_g2p/val.jsonl
+  test: persian_g2p/test.jsonl
+  out: interscript_fas_g2p_distill_small/run-001
+  note: ByT5-small teacher (already byte-level) -> ByT5-small student; CER gate
+heb-diac-small:
+  teacher: rababa_hebrew_byt5_s43/run-001/best
+  student_init: google/byt5-small
+  train: hebrew-v4/train.jsonl
+  val: hebrew-v4/val.jsonl
+  out: rababa_hebrew_distill_small/run-001
+heb-diac-small-s46:
+  teacher: rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best
+  student_init: google/byt5-small
+  train: hebrew-v4/train.jsonl
+  val: hebrew-v4/val.jsonl
+  out: rababa_hebrew_distill_small/run-002-s46
