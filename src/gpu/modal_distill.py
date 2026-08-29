@@ -152,17 +152,19 @@ def layer_drop_state(pretrained: dict, narrow: dict, keep: int = 2) -> dict:
     for prefix in ("encoder.", "decoder."):
         d_dst, d_src = depth(prefix), src_depth(prefix)
         kept = list(range(0, d_src, keep))[:d_dst] if d_dst < d_src else list(range(d_src))
-        for name, tgt in narrow.items():
+        for name in narrow:
             if not name.startswith(f"{prefix}block."):
                 continue
             m = re.match(rf"{prefix}block\.(\d+)\.(.*)", name)
             src_name = f"{prefix}block.{kept[int(m.group(1))]}.{m.group(2)}"
             out[name] = pretrained[src_name].clone()
-    for name, tgt in narrow.items():
+    for name in narrow:
         if name in out:
             continue
         src = pretrained.get(name)
-        out[name] = (src if src is not None else tgt).clone()
+        if src is None:
+            raise KeyError(name)
+        out[name] = src.clone()
     return out
 
 def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
