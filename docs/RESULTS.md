@@ -358,5 +358,13 @@ tiers x environments x metrics). First measurements, node tier
 Headline: **the integrity discipline is free** — whole-file sha256 is
 ~0.1s against 7-13s session creation; the verified-index + cache-hit
 path is ~0.4s. int4 halves load time but decodes ~2.5x slower than
-int8; int8 is the client default. E2 (Modal 4-vCPU serving shape) and
-E3 (browser WASM/WebGPU) pending.
+int8; int8 is the client default. E2 (Modal 4-vCPU / 8 GiB — the production serving shape, 2026-08-29):
+
+| tier | cold load (zip + verify + ORT) | decode short/med/long |
+|---|---|---|
+| tha-g2p-small-1.0 (257MB) | 3.92s | 130 / 409 / 671 ms |
+| ara-diac-small-1.0-int8 (257MB) | 4.04s | 395 / 525 / 973 ms |
+
+Server vs node-laptop tier: cold load 4s vs 13s session create, decode
+~2.5-3x faster — the serving tier trades network for speed. E3 (browser
+WASM/WebGPU) pending.
