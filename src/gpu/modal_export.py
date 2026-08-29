@@ -392,3 +392,100 @@ def margins(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0) -> N
     reports = margin_model.remote(model, precisions.split(","), limit)
     for precision, status in reports.items():
         print(f"{model} [{precision}] {status}")
+
+@app.function(
+    cpu=8,
+    memory=32 * 1024,
+    timeout=5 * 3600,
+    volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
+)
+def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
+    """Rebuild a shipped int8 zip with the head kept in fp32 (the E1
+    fix) and run the full release gate stack on it: CER parity (written
+    into the zip) + margin analysis + the confident-flip budget.
+
+    The corrected artifact lands as {mid}-int8-head32.zip next to the
+    shipped one; swapping it into the release name is a version-number
+    decision, made separately."""
+    import sys
+    import tempfile
+    import zipfile
+
+    sys.path.insert(0, "/root/interscript-ml/src")
+
+    spec = MODELS[model_id]
+    checkpoint = Path(spec["volume"]) / spec["checkpoint"]
+    test_path = Path(spec["test_volume"]) / spec["test_data"]
+
+    from imf.export import head_matmul_names, load_byte_seq2seq, quantize_int8
+    from imf.parity import (
+        reference_decode,
+        run_margin_analysis,
+        run_parity,
+        write_margin_report,
+        write_parity,
+    )
+
+    model = load_byte_seq2seq(checkpoint)
+    pairs = _load_pairs(test_path)
+    if limit:
+        pairs = pairs[:limit]
+
+    out_dir = Path("/outputs/imf") / model_id
+    meta_path = Path("/root/interscript-ml", spec["metadata"])
+    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
+    fp32_zip = out_dir / f"{mid}-fp32.zip"
+    int8_zip = out_dir / f"{mid}-int8.zip"
+    for path in (fp32_zip, int8_zip):
+        if not path.exists():
+            raise RuntimeError(f"{path.name} missing on the volume")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        with zipfile.ZipFile(fp32_zip) as zf:
+            zf.extract("encoder.onnx", tmp)
+            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
+            zf.extract(dec, tmp)
+        enc_q, dec_q = tmp / "encoder-h32.onnx", tmp / dec.replace(".onnx", "-h32.onnx")
+        quantize_int8(tmp / "encoder.onnx", enc_q)
+        quantize_int8(tmp / dec, dec_q, nodes_to_exclude=head_matmul_names(tmp / dec))
+
+        new_zip = out_dir / f"{mid}-int8-head32.zip"
+        with zipfile.ZipFile(int8_zip) as src, zipfile.ZipFile(
+            new_zip, "w", zipfile.ZIP_DEFLATED
+        ) as dst:
+            for name in src.namelist():
+                if name == "encoder.onnx":
+                    dst.writestr(name, enc_q.read_bytes())
+                elif name == dec:
+                    dst.writestr(name, dec_q.read_bytes())
+                else:
+                    dst.writestr(name, src.read(name))
+
+    reference = reference_decode(model, [s for s, _ in pairs], max_len=128)
+    report = run_parity(model, new_zip, pairs, max_len=128, reference=reference)
+    if not report.passed:
+        raise RuntimeError(f"parity gate FAILED for {new_zip.name}: {report}")
+    write_parity(new_zip, report)
+    margins = run_margin_analysis(model, new_zip, pairs, max_len=128)
+    write_margin_report(margins, out_dir / f"{mid}-int8-head32-margins.json")
+    confident = margins.flip_rate * (1 - margins.flip_low_margin_share)
+    if confident > 0.01:
+        raise RuntimeError(
+            f"margin gate FAILED for {new_zip.name}: {confident:.2%} confident flips"
+        )
+    MODELS_VOLUME.commit()
+    return {
+        "model": model_id, "zip": new_zip.name,
+        "parity": {"samples": report.samples, "cer_delta": report.cer_delta},
+        "margins": {"flip_rate": margins.flip_rate, "kld": margins.kld_mean,
+                    "low_share": margins.flip_low_margin_share,
+                    "confident_flip_rate": round(confident, 6)},
+        "size_bytes": new_zip.stat().st_size,
+    }
+
+
+@app.local_entrypoint()
+def rebuild_int8(model: str, limit: int = 0) -> None:
+    print(rebuild_int8_head32.remote(model, limit))
+
