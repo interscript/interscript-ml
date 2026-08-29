@@ -118,9 +118,39 @@ def _sessions_from_zip(zip_path: Path):
         return enc, dec
 
 
-def reference_decode(model, sources, max_len: int = 256) -> list[list[int]]:
+def reference_decode(model, sources, max_len: int = 256, resume_path=None):
     """Torch-reference greedy decode of many inputs, computed once and
-    shared across precision variants by run_parity."""
+    shared across precision variants by run_parity.
+
+    resume_path: append-only JSONL of per-input results. Container-level
+    kills (variable-lifetime, traceback-less — observed five times on
+    ara-diac2) then cost only the tail: a relaunch resumes from the
+    saved prefix instead of redoing hours of decode."""
+    if resume_path is not None:
+        import json as _json
+        from pathlib import Path as _Path
+
+        resume_path = _Path(resume_path)
+        done: dict[int, list[int]] = {}
+        if resume_path.exists():
+            for line in resume_path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    row = _json.loads(line)
+                    done[row["i"]] = row["tokens"]
+        results: list[list[int]] = [[]] * len(sources)
+        with resume_path.open("a", encoding="utf-8") as fh:
+            for i, source in enumerate(sources):
+                if i in done:
+                    results[i] = done[i]
+                    continue
+                tokens = _torch_greedy_tokens(model, source, max_len)
+                results[i] = tokens
+                fh.write(
+                    _json.dumps({"i": i, "tokens": tokens}, ensure_ascii=False) + "\n"
+                )
+                if i % 100 == 0:
+                    fh.flush()
+        return results
     return [_torch_greedy_tokens(model, source, max_len) for source in sources]
 
 
