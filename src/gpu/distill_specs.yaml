@@ -134,6 +134,35 @@ ara-diac-small-2:
   labels_file: teacher_labels_r7.jsonl
   mode: sequence
   note: 'r7 teacher + Muon; E4 gate: beat the shipped 8.259 by >= 2pp'
+ara-diac-small-layerdrop:
+  teacher: rababa_arabic_byt5/run-006-morph/best
+  teacher_volume: rababa
+  out_volume: secryst
+  student_init: google/byt5-small
+  layer_drop: 'true'
+  student_config:
+    d_model: 1472
+    d_ff: 3584
+    num_heads: 6
+    enc_layers: 6
+    dec_layers: 4
+    feed_forward_proj: gated-gelu
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-006-layerdrop
+  labels_file: teacher_labels_v2.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  note: depth-cut rung - encoder 12->6, width untouched, layers copied
+    verbatim (both width-cut rungs failed); int4 target ~75MB; Muon
+    optimizer per E3
+  optimizer: muon
 ara-diac-tiny-stitched:
   teacher: rababa_arabic_byt5/run-006-morph/best
   teacher_volume: rababa

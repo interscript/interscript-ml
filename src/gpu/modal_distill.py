@@ -124,6 +124,47 @@ def svd_stitch_state(wide: dict, narrow: dict) -> dict:
     return out
 
 
+
+def layer_drop_state(pretrained: dict, narrow: dict, keep: int = 2) -> dict:
+    """Depth-reduction bridge: keep every `keep`-th encoder layer (and
+    all decoder layers), copying weights VERBATIM - no projection. The
+    width-cut failures (run-005/006) damaged every matrix; this touches
+    none of the survivors. Remaps block indices after the drop."""
+    out = {}
+    import re
+
+    def depth(prefix):
+        idxs = [
+            int(m.group(1))
+            for k in narrow
+            if (m := re.match(rf"{prefix}block\.(\d+)\.", k))
+        ]
+        return (max(idxs) + 1) if idxs else 0
+
+    def src_depth(prefix):
+        idxs = [
+            int(m.group(1))
+            for k in pretrained
+            if (m := re.match(rf"{prefix}block\.(\d+)\.", k))
+        ]
+        return (max(idxs) + 1) if idxs else 0
+
+    for prefix in ("encoder.", "decoder."):
+        d_dst, d_src = depth(prefix), src_depth(prefix)
+        kept = list(range(0, d_src, keep))[:d_dst] if d_dst < d_src else list(range(d_src))
+        for name, tgt in narrow.items():
+            if not name.startswith(f"{prefix}block."):
+                continue
+            m = re.match(rf"{prefix}block\.(\d+)\.(.*)", name)
+            src_name = f"{prefix}block.{kept[int(m.group(1))]}.{m.group(2)}"
+            out[name] = pretrained[src_name].clone()
+    for name, tgt in narrow.items():
+        if name in out:
+            continue
+        src = pretrained.get(name)
+        out[name] = (src if src is not None else tgt).clone()
+    return out
+
 def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
     """When a custom-width student also names a pretrained init, bridge
     the pretrained weights down instead of random init (the capacity
@@ -133,8 +174,9 @@ def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
     from transformers import AutoModelForSeq2SeqLM
 
     pretrained = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"])
-    print(f"[{spec_id}] svd-stitching from {spec['student_init']}", flush=True)
-    student.load_state_dict(svd_stitch_state(pretrained.state_dict(), student.state_dict()))
+    bridge = layer_drop_state if spec.get("layer_drop") else svd_stitch_state
+    print(f"[{spec_id}] {bridge.__name__} from {spec['student_init']}", flush=True)
+    student.load_state_dict(bridge(pretrained.state_dict(), student.state_dict()))
     del pretrained
 
 
