@@ -158,12 +158,14 @@ def layer_drop_state(pretrained: dict, narrow: dict, keep: int = 2) -> dict:
             m = re.match(rf"{prefix}block\.(\d+)\.(.*)", name)
             src_name = f"{prefix}block.{kept[int(m.group(1))]}.{m.group(2)}"
             out[name] = pretrained[src_name].clone()
-    for name in narrow:
+    for name, tgt in narrow.items():
         if name in out:
             continue
         src = pretrained.get(name)
         if src is None:
             raise KeyError(name)
+        if src.dim() == 2 and src.shape[0] > tgt.shape[0] and src.shape[1] == tgt.shape[1]:
+            src = src[: tgt.shape[0]]  # byte-table slice of the embedding
         out[name] = src.clone()
     return out
 
