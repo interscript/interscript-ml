@@ -199,7 +199,7 @@ def _load_pairs(path: Path) -> list[tuple[str, str]]:
     timeout=2 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
-def export_model(model_id: str, precisions: list[str]) -> dict[str, str]:
+def export_model(model_id: str, precisions: str = "fp32,fp16,int8") -> dict[str, str]:
     import sys
 
     sys.path.insert(0, "/root/interscript-ml/src")
@@ -219,7 +219,7 @@ def export_model(model_id: str, precisions: list[str]) -> dict[str, str]:
         metadata_path,
         readme_path.read_text(encoding="utf-8"),
         out_dir,
-        precisions=tuple(precisions),
+        precisions=tuple(p.strip() for p in precisions.split(",") if p.strip()),
     )
     MODELS_VOLUME.commit()
 
@@ -254,7 +254,9 @@ def export_model(model_id: str, precisions: list[str]) -> dict[str, str]:
     timeout=5 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
-def parity_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[str, str]:
+def parity_model(
+    model_id: str, precisions: str = "fp32,fp16,int8", limit: int = 0
+) -> dict[str, str]:
     """WO03 gate on Modal: torch reference vs ONNX decode over the test
     split; writes the parity block into each zip (strict gate enforced)."""
     import sys
