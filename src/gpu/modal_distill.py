@@ -80,264 +80,23 @@ SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
 PERSIAN_CHECKPOINTS = modal.Volume.from_name("persian-g2p-checkpoints")
 PERSIAN_DATASETS = modal.Volume.from_name("persian-g2p-datasets")
 
-SPECS: dict[str, dict[str, str]] = {
-    "tha-g2p-small": {
-        # secryst's saved umt5 artifacts are unusable (5.15 dropped the
-        # untied lm_head) and volume epitran data is tone-less (see
-        # modal_teacher_thai.py notes) — teacher is the B-K hub base
-        # directly: 6.37% PER published, verified loading + exact-match
-        # generations under transformers 5.14.1 (probes 2026-08-18)
-        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
-        "teacher_is_hub": "true",
-        "teacher_volume": "secryst",
-        # run-004: ByT5-base student — the small student hit a 12.06%
-        # generalization ceiling (+7.6pp over teacher, rejected); base
-        # has 4x capacity at a ~1.2GB artifact, still client-tier
-        "student_init": "google/byt5-base",
-        "train": "thai-ipa-expanded/train.jsonl",
-        "train_extra": ["thai-ipa/train.jsonl", "thai-ipa/augmented_epitran.jsonl"],
-        "val": "thai-ipa-expanded/val.jsonl",
-        "test": "thai-ipa-expanded/test.jsonl",
-        "eval_test": "thai-ipa/test.jsonl",
-        "out": "secryst_thai_g2p_distill_small/run-004",
-        "mode": "sequence",  # cross-tokenizer: teacher generates, student trains CE
-        "note": "umt5 (sentencepiece) teacher -> ByT5-small byte student; +5pp PER gate",
-    },
-    "tha-g2p-client": {
-        # the shipped client rung: run-003, ByT5-small on the full label
-        # set — capacity-limited (+7.6pp) but the smallest artifact that
-        # does not collapse (see docs/RESULTS.md frontier table)
-        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
-        "teacher_is_hub": "true",
-        "teacher_volume": "secryst",
-        "student_init": "google/byt5-small",
-        "train": "thai-ipa-expanded/train.jsonl",
-        "train_extra": ["thai-ipa/train.jsonl", "thai-ipa/augmented_epitran.jsonl"],
-        "val": "thai-ipa-expanded/val.jsonl",
-        "test": "thai-ipa-expanded/test.jsonl",
-        "eval_test": "thai-ipa/test.jsonl",
-        "out": "secryst_thai_g2p_distill_small/run-003",
-        "mode": "sequence",
-        "note": "eval-only spec for tha-g2p-small-1.0 (client tier)",
-    },
-    "ara-diac-small": {
-        # r5 paragraph-context teacher (2.68 DER-CE windowed @1400B,
-        # RELEASE-FROZEN) -> ByT5-small student. Contract decode is
-        # GREEDY with generation cap 2x window (eval_sadeed_windowed).
-        # Corpus: r5-units joined paragraph units (src = stripped
-        # diacritics, teacher regenerates the labels).
-        "teacher": "rababa_arabic_byt5/run-006-morph/best",
-        "teacher_volume": "rababa",
-        "student_init": "google/byt5-small",
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [24000, 6000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_small/run-002",
-        # v2: every label generated before the byt5 decode_joined fix is
-        # mojibake (double-encoded); relabel from scratch on the new file
-        "labels_file": "teacher_labels_v2.jsonl",
-        "mode": "sequence",
-        "note": "r6 canonical (2.5793 DER); gate <= 3.07 windowed DER-CE",
-    },
-    "ara-diac-small-pkm": {
-        # TODO.qwen-next/02 — the LongCat/Qwen capacity axis: keep the
-        # ByT5-small compute, add product-key lookup memory (+~25M
-        # params). Everything else identical to run-002 (teacher, corpus,
-        # labels, seed) so the comparison is single-variable.
-        "teacher": "rababa_arabic_byt5/run-006-morph/best",
-        "teacher_volume": "rababa",
-        "student_init": "google/byt5-small",
-        # byt5-small has only 4 decoder blocks (depth lives in the
-        # encoder) — all but the first carry memory
-        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [24000, 6000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_small/run-003-pkm",
-        "labels_file": "teacher_labels_v2.jsonl",
-        "labels_complete": "true",
-        "mode": "sequence",
-        "note": "PKM memory student; gate <= 3.07 windowed DER-CE; "
-                "verdict vs run-002's 8.259 full-set (closes >= 1.0pp?)",
-    },
-    "ara-diac-small-pkm-muon": {
-        # TODO.qwen-next/03 — identical to ara-diac-small-pkm except the
-        # optimizer (Muon + AdamW groups). The A/B pair is run-003-pkm
-        # (AdamW) vs run-004-pkm-muon.
-        "teacher": "rababa_arabic_byt5/run-006-morph/best",
-        "teacher_volume": "rababa",
-        "student_init": "google/byt5-small",
-        "pkm": {"layer_indices": [-1, -2, -3], "n_keys": 128, "topk": 32},
-        "optimizer": "muon",
-        "muon_lr": "0.01",
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [24000, 6000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_small/run-004-pkm-muon",
-        "labels_file": "teacher_labels_v2.jsonl",
-        "labels_complete": "true",
-        "mode": "sequence",
-        "note": "Muon A/B arm; same gate and verdict rule as run-003-pkm",
-    },
-    "ara-diac-small-muon": {
-        # factorial completion (EXPERIMENTS.md E3 caveat): the A/B was
-        # PKM+Muon vs PKM+AdamW; this cell measures Muon WITHOUT memory
-        # so the 2x2 {vanilla, pkm} x {adamw, muon} closes cleanly
-        "teacher": "rababa_arabic_byt5/run-006-morph/best",
-        "teacher_volume": "rababa",
-        "student_init": "google/byt5-small",
-        "optimizer": "muon",
-        "muon_lr": "0.01",
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [24000, 6000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_small/run-005-muon",
-        "labels_file": "teacher_labels_v2.jsonl",
-        "labels_complete": "true",
-        "mode": "sequence",
-        "note": "vanilla ByT5-small + Muon (factorial cell 4)",
-    },
-    "ara-diac-small-2": {
-        # ara-diac-small-2.0 candidate: the r7 canonical teacher + the
-        # E3-adopted Muon optimizer. Fresh labels from r7 (the v2 labels
-        # are r6-teacher). EXPERIMENTS.md E4.
-        "teacher": "rababa_arabic_byt5/run-007-news/best",
-        "teacher_volume": "rababa",
-        "student_init": "google/byt5-small",
-        "optimizer": "muon",
-        "muon_lr": "0.01",
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [24000, 6000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_small/run-006-r7-muon",
-        "labels_file": "teacher_labels_r7.jsonl",
-        "mode": "sequence",
-        "note": "r7 teacher + Muon; E4 gate: beat the shipped 8.259 by >= 2pp",
-    },
-    "ara-diac-tiny": {
-        "teacher": "rababa_arabic_byt5/run-006-morph/best",
-        "teacher_volume": "rababa",
-        "out_volume": "secryst",
-        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
-                           "enc_layers": 8, "dec_layers": 8},
-        "train": "r5-units/domain.txt",
-        "train_extra": ["r5-units/replay.txt"],
-        "unit_limits": [8000, 4000],
-        "max_len": 1450,
-        "label_beams": "1",
-        "out": "rababa_arabic_distill_tiny/run-005",
-        # run-004 used the Aug-23 snapshot = PRE decode_joined fix: every
-        # label mojibake (verified: its best/ decodes as UTF-8-as-Latin1,
-        # and its final_eval.json reproduces the retracted 83.08 exactly).
-        # run-005 is the actual clean-label re-run the retraction calls for.
-        "labels_file": "teacher_labels_v2.jsonl",
-        "labels_complete": "true",
-        "mode": "sequence",
-        "note": "clean-label tiny re-run; r6 teacher (2.5793 DER); gate <= 3.07",
-    },
-    "tha-g2p-tiny": {
-        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
-        "teacher_is_hub": "true",
-        "teacher_volume": "secryst",
-        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
-                           "enc_layers": 8, "dec_layers": 8},
-        "train": "thai-ipa-expanded/train.jsonl",
-        "train_extra": ["thai-ipa/train.jsonl", "thai-ipa/augmented_epitran.jsonl"],
-        "eval_test": "thai-ipa/test.jsonl",
-        "out": "secryst_thai_g2p_distill_tiny/run-001",
-        "labels_complete": "true",
-        "mode": "sequence",
-        "label_beams": "4",
-        "max_len": 384,
-        "note": "client tier; collapsed from-scratch (75.8 PER) — see run-002 mk",
-    },
-    "tha-g2p-tiny-mk": {
-        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
-        "teacher_is_hub": "true",
-        "teacher_volume": "secryst",
-        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
-                           "enc_layers": 8, "dec_layers": 8},
-        "eval_test": "thai-ipa/test.jsonl",
-        "out": "secryst_thai_g2p_distill_tiny/run-002",
-        "labels_complete": "true",
-        "max_len": 384,
-        "note": "microkimi bridges; 71.12 PER — improved, not rescued",
-    },
-    "tha-g2p-mid-mk": {
-        "teacher": "B-K/umt5-thai-g2p-v2-0.5k",
-        "teacher_is_hub": "true",
-        "teacher_volume": "secryst",
-        "student_config": {"d_model": 512, "d_ff": 2048, "num_heads": 8,
-                           "enc_layers": 10, "dec_layers": 10},
-        "eval_test": "thai-ipa/test.jsonl",
-        "out": "secryst_thai_g2p_distill_mid/run-001",
-        "labels_complete": "true",
-        "max_len": 384,
-        "note": "70M bridge rung; labels reused from tiny run-002",
-    },
-    "fas-g2p-tiny": {
-        "teacher": "persian_g2p/run-001/best",
-        "teacher_volume": "persian",
-        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
-                           "enc_layers": 8, "dec_layers": 8},
-        "data_volume": "/datasets",
-        "train": "persian_g2p/train.jsonl",
-        "unit_limits": [60000],
-        "test": "persian_g2p/test.jsonl",
-        "out": "interscript_fas_g2p_distill_tiny/run-001",
-        "mode": "sequence",
-        "label_beams": "4",
-        "note": "client tier; collapsed from-scratch (77.97 PER)",
-    },
-    "heb-diac-tiny": {
-        "teacher": "rababa_hebrew_byt5_s43/run-001/best",
-        "teacher_volume": "rababa",
-        "out_volume": "secryst",
-        "student_config": {"d_model": 384, "d_ff": 1536, "num_heads": 6,
-                           "enc_layers": 8, "dec_layers": 8},
-        "train": "hebrew-v4/train.jsonl",
-        "out": "rababa_hebrew_distill_tiny/run-002",
-        "mode": "sequence",
-        "label_beams": "4",
-        "note": "client tier; collapsed from-scratch (100 DER)",
-    },
-    "fas-g2p-small": {
-        "teacher": "persian_g2p/run-001/best",
-        "teacher_volume": "persian",
-        "student_init": "google/byt5-small",
-        "train": "persian_g2p/train.jsonl",
-        "val": "persian_g2p/val.jsonl",
-        "test": "persian_g2p/test.jsonl",
-        "out": "interscript_fas_g2p_distill_small/run-001",
-        "note": "ByT5-small teacher (already byte-level) -> ByT5-small student; CER gate",
-    },
-    "heb-diac-small": {
-        "teacher": "rababa_hebrew_byt5_s43/run-001/best",
-        "student_init": "google/byt5-small",
-        "train": "hebrew-v4/train.jsonl",
-        "val": "hebrew-v4/val.jsonl",
-        "out": "rababa_hebrew_distill_small/run-001",
-    },
-    "heb-diac-small-s46": {
-        # re-distill the client tier from the s46 teacher (greedy 16.44
-        # vs s43's 29.0) — the 1.0 student tracked its teacher's greedy
-        "teacher": "rababa_hebrew/run-s46-phonikud-plus/run-002-gold-ft/best",
-        "student_init": "google/byt5-small",
-        "train": "hebrew-v4/train.jsonl",
-        "val": "hebrew-v4/val.jsonl",
-        "out": "rababa_hebrew_distill_small/run-002-s46",
-    },
-}
+def _load_specs() -> dict:
+    """SPECS as data (distill_specs.yaml) — the entry file is copied to
+    /root/<name>.py on Modal while the repo image sits at
+    /root/interscript-ml, so try both layouts."""
+    import yaml
+
+    for cand in (
+        Path(__file__).resolve().parent / "distill_specs.yaml",
+        Path.cwd() / "src/gpu/distill_specs.yaml",
+        Path("/root/interscript-ml/src/gpu/distill_specs.yaml"),
+    ):
+        if cand.exists():
+            return yaml.safe_load(cand.read_text(encoding="utf-8"))
+    raise RuntimeError("distill_specs.yaml not found on any known layout")
+
+
+SPECS: dict[str, dict[str, str]] = _load_specs()
 
 app = modal.App("interscript-ml-distill", image=IMAGE)
 
@@ -1228,13 +987,16 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     cap, stitch, project haraqat onto the input letters (zero-skip),
     DER-CE via the Misraj evaluator. Gate: teacher + 0.5pp
     (DISTILL-SOURCE-PROMPT: 3.18 target from the 2.68 teacher)."""
-    import difflib
-    import re
     from pathlib import Path
 
     import pyarrow.parquet as pq
-    import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    _ensure_src_path()
+    from harness.sadeed import (
+        strip_diacritics,
+        windowed_paragraphs,
+    )
 
     spec = SPECS[spec_id]
     vol_map = {
@@ -1263,69 +1025,14 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     for m in (teacher, student):
         m.generation_config.max_length = 100_000
 
-    diac = re.compile("[ً-ٰٟۖ-ۭ]")
     table = pq.read_table("/opt/rababa/data/sadeed-diac-25/train.parquet")
-    inputs = [diac.sub("", t) for t in table.column("input").to_pylist()]
+    inputs = [strip_diacritics(t) for t in table.column("input").to_pylist()]
     gts = table.column("output").to_pylist()
     if limit:
         inputs, gts = inputs[:limit], gts[:limit]
 
-    def split_windows(text: str) -> list[str]:
-        if len(text.encode()) <= window:
-            return [text]
-        wins, cur, n = [], [], 0
-        for w in text.split():
-            c = len(w.encode()) + 1
-            if cur and n + c > window:
-                wins.append(" ".join(cur))
-                cur, n = [], 0
-            cur.append(w)
-            n += c
-        if cur:
-            wins.append(" ".join(cur))
-        return wins
-
-    def project_haraqat(pred: str, text: str) -> str:
-        haraqat = [""]
-        for ch in pred:
-            if diac.match(ch):
-                haraqat[-1] += ch
-            else:
-                haraqat.append("")
-        haraqat = haraqat[1:]
-        pred_letters = [c for c in pred if not diac.match(c)]
-        text_letters = [c for c in text if not diac.match(c)]
-        sm = difflib.SequenceMatcher(None, text_letters, pred_letters, autojunk=False)
-        out = []
-        for op, i1, i2, j1, _ in sm.get_opcodes():
-            if op == "equal":
-                for k in range(i2 - i1):
-                    out.append(text_letters[i1 + k] + haraqat[j1 + k])
-            else:
-                for k in range(i1, i2):
-                    out.append(text_letters[k])
-        return "".join(out)
-
     def der_ce(model) -> dict:
-        windows, counts = [], []
-        for text in inputs:
-            ws = split_windows(text)
-            counts.append(len(ws))
-            windows.extend(ws)
-        preds = []
-        with torch.no_grad():
-            for i in range(0, len(windows), 8):
-                batch = windows[i : i + 8]
-                enc = tok(batch, return_tensors="pt", padding=True, truncation=True,
-                          max_length=window).to("cuda")
-                with torch.autocast("cuda", torch.bfloat16):
-                    gen = model.generate(**enc, max_new_tokens=window * 2, num_beams=1)
-                preds.extend(tok.batch_decode(gen, skip_special_tokens=True))
-        k = 0
-        paragraphs = []
-        for text, c in zip(inputs, counts, strict=True):
-            paragraphs.append(project_haraqat(" ".join(preds[k : k + c]), text))
-            k += c
+        paragraphs = windowed_paragraphs(model, tok, inputs, window=window)
 
         import sys
 
