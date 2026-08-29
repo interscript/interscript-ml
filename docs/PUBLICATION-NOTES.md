@@ -116,3 +116,17 @@ data, not same capacity law. Two lessons for the experiments section:
 inferred from filenames; (2) a reproduced number is only evidence of
 reproducibility when the input pipeline is versioned. run-005
 (regenerating labels live from the r6 teacher) is the honest test.
+
+## ara-diac-tiny run-005: the law holds (2026-08-29)
+
+The clean-label rerun scores 74.68 vs the poisoned run's 83.08 (gate
+3.07): corruption explained 8pp, capacity explains the rest. The
+"pretrained backbone or nothing" claim now has Arabic evidence
+matching the Thai ablation, closing the retraction arc
+(verdict -> retraction -> poisoned rerun -> clean rerun). For the
+paper: report the pair (83.08, 74.68) as the label-quality and
+capacity bounds of the same from-scratch rung, with the teacher
+reproducing 1.3205 across all three measurements as the harness
+control. Next rung on the frontier: stitch-down from ByT5-small
+pretraining (ridge-fit width bridge), which changes init, not data or
+capacity alone.
