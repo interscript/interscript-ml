@@ -5,6 +5,7 @@ closed-form bridge)."""
 import pytest
 
 pytest.importorskip("torch")
+import torch  # noqa: E402
 
 from src.gpu.modal_distill import svd_stitch_state  # noqa: E402
 
