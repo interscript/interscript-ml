@@ -2,9 +2,11 @@
 config, preserving the top singular subspace (the microkimi
 closed-form bridge)."""
 
-import torch
+import pytest
 
-from src.gpu.modal_distill import svd_stitch_state
+pytest.importorskip("torch")
+
+from src.gpu.modal_distill import svd_stitch_state  # noqa: E402
 
 
 def _wide_narrow():
