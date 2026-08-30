@@ -233,13 +233,13 @@ models:
   ara-diac-small-2.0:
     task: diacritization
     scripts: [Arab, Arab]
-    precision: int8
-    filename: clean-int8.zip
-    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-2.0/clean-int8.zip
-    sha256: f4d07acdaf9c18cded97e15e0c5636e6cee90de2fa32c5a373a44c0cc912bf50
-    size: 264043016
+    precision: fp32
+    filename: clean-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-2.0/clean-fp32.zip
+    sha256: d9aa95d0e8fd0d7da80fd2f7dabedf0ac65f55ba984de565d252f5e14906d98c
+    size: 1418516306
     metrics:
       - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
       - {name: der_student_fullset, value: 4.8218, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
-    parity: {samples: 600, cer_delta: 0.1393}
+    parity: {samples: 600, cer_delta: 0.1187}
     license: BSD-3-Clause
