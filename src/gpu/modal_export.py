@@ -433,7 +433,12 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
     checkpoint = Path(spec["volume"]) / spec["checkpoint"]
     test_path = Path(spec["test_volume"]) / spec["test_data"]
 
-    from imf.export import head_matmul_names, load_byte_seq2seq, quantize_int8
+    from imf.export import (
+        head_matmul_names,
+        load_byte_seq2seq,
+        quantize_int8,
+        refresh_member_shas,
+    )
     from imf.parity import (
         reference_decode,
         run_margin_analysis,
@@ -477,6 +482,10 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
                     dst.writestr(name, dec_q.read_bytes())
                 else:
                     dst.writestr(name, src.read(name))
+
+    # re-quantized graphs replaced the members; the internal sha table
+    # must be refreshed or strict validation (write_parity) rejects the zip
+    refresh_member_shas(new_zip)
 
     reference = reference_decode(
         model,
