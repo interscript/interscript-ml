@@ -1187,10 +1187,21 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     result["gate_pass"] = result["gate_delta"] <= 0.5
     # durable verdict marker: the run dir is the provenance record (also
     # what r7-style _init_choice probes read)
+    import hashlib
     import json
 
     out_root = Path(paths["out_root"])
     out_root.mkdir(parents=True, exist_ok=True)
+    # label provenance, content-hashed: the mojibake forensics lesson
+    # (run-004 reproduced the retracted number on the same poisoned
+    # labels; identical numbers must mean identical data)
+    labels_src = out_root / spec.get("labels_file", "teacher_labels.jsonl")
+    if labels_src.exists():
+        result["labels"] = {
+            "file": labels_src.name,
+            "sha256": hashlib.sha256(labels_src.read_bytes()).hexdigest(),
+            "bytes": labels_src.stat().st_size,
+        }
     (out_root / "final_eval.json").write_text(
         json.dumps(result, indent=2), encoding="utf-8"
     )
