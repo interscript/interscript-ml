@@ -6,7 +6,7 @@ target: Arab
 tokenizer: bytes
 opset: 14
 decoder: kv
-precision: fp32
+precision: int8
 license: BSD-3-Clause
 trained_from: 'rababa train_arabic_r7.py run-007-news (news-domain adaptation of the
   r6 morphological-aux teacher: r5-units anchor + 13,986 teacher-labeled news units
@@ -33,8 +33,8 @@ metrics:
   source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28
 parity:
   samples: 600
-  cer_delta: 0.0903
+  cer_delta: 0.0947
 sha256:
-  decoder-kv.onnx: 1c012908b92efa3f051c667d82142d7cee990443f74a9cf36b957d669a66f27b
-  decoder.onnx: 939dd3498d819a793e90aa95122ab33b6925a005237766bf9be66968f2645867
-  encoder.onnx: abd659bd4818a361e4268c23aa8644aa867f0667f32742b688f42eb5fe7aa8cc
+  decoder-kv.onnx: 8d3c2409b500f44db5b92cb206dc9bd7789db9006f5d7e54b58aea42c94a2ed0
+  decoder.onnx: d5edc73942cab51a7893fcc5da1e4f2479d187465385d1d5d31e9a96dbc6e6d2
+  encoder.onnx: 4268e6245204d00ed32ec22c1b94b02e5020bdf426fb7d15b8964825387349c7
