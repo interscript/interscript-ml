@@ -263,6 +263,39 @@ def convert_fp16(model):
     return copy.deepcopy(model).half()
 
 
+def refresh_member_shas(zip_path: Path | str) -> None:
+    """Recompute the metadata.yaml sha256 table after members were
+    replaced inside a zip (the head32 re-quantization rewrites the
+    encoder/decoder graphs in place); the member set is unchanged, so
+    only the digests drift — until they are refreshed, strict zip
+    validation rejects the artifact (write_parity gates on it)."""
+
+    import hashlib
+    import os
+    import tempfile
+    import zipfile
+
+    import yaml
+
+    zip_path = Path(zip_path)
+    with zipfile.ZipFile(zip_path) as zf:
+        meta = yaml.safe_load(zf.read("metadata.yaml"))
+        for name in list(meta["sha256"]):
+            meta["sha256"][name] = hashlib.sha256(zf.read(name)).hexdigest()
+
+    with tempfile.TemporaryDirectory(dir=zip_path.parent) as tmp:
+        rewritten = Path(tmp) / "rewritten.zip"
+        with zipfile.ZipFile(zip_path) as src, zipfile.ZipFile(
+            rewritten, "w", zipfile.ZIP_DEFLATED
+        ) as dst:
+            for member in src.namelist():
+                if member == "metadata.yaml":
+                    dst.writestr(member, yaml.safe_dump(meta, sort_keys=False))
+                else:
+                    dst.writestr(member, src.read(member))
+        os.replace(rewritten, zip_path)
+
+
 def quantize_int8(
     src: Path | str, dst: Path | str, per_channel: bool = False,
     nodes_to_exclude: list[str] | None = None,

@@ -155,3 +155,37 @@ def test_int8_keeps_head_matmul_in_fp32(zips: dict[str, Path]) -> None:
             assert head in nodes, (graph_name, head)
             # converted heads become MatMulInteger with the same name
             assert nodes[head].op_type == "MatMul", (graph_name, head)
+
+
+def test_refresh_member_shas_after_member_replacement(zips: dict[str, Path]) -> None:
+    """The head32 rebuild replaces graphs inside an existing zip; the
+    stale sha table must make validation fail, and the refresh must
+    restore it without touching any other member."""
+    import zipfile
+
+    from imf.export import refresh_member_shas
+
+    path = zips["fixture-1.0-int8.zip"]
+    with zipfile.ZipFile(path) as src_zf:
+        members = {n: src_zf.read(n) for n in src_zf.namelist()}
+    import onnx
+
+    graph = onnx.load_from_string(members["encoder.onnx"])
+    graph.graph.name += "-tampered"
+    tampered = graph.SerializeToString()
+    members["encoder.onnx"] = tampered
+    tmp = path.with_suffix(".rewritten")
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as dst:
+        for n, data in members.items():
+            dst.writestr(n, data)
+    tmp.replace(path)
+
+    result = validate_zip(path)
+    assert not result.ok  # stale table rejects the replaced member
+
+    refresh_member_shas(path)
+    result = validate_zip(path)
+    assert result.ok, result.errors
+    with zipfile.ZipFile(path) as after_zf:
+        assert after_zf.read("encoder.onnx") == tampered
+        assert after_zf.read("decoder.onnx") == members["decoder.onnx"]
