@@ -368,3 +368,22 @@ int8; int8 is the client default. E2 (Modal 4-vCPU / 8 GiB — the production se
 Server vs node-laptop tier: cold load 4s vs 13s session create, decode
 ~2.5-3x faster — the serving tier trades network for speed. E3 (browser
 WASM/WebGPU) pending.
+
+## ara-diac-small-layerdrop — the depth-cut rung PASSES on the subset (2026-08-30)
+
+Encoder 12->6 from pretrained ByT5-small, layers copied VERBATIM
+(no projection - the width-cut rungs failed at 74.68/82.96), Muon,
+same clean r6 labels, 10,995 steps, final CE 0.016 (the scratch rung
+converged near 0.9 - 50x lower train loss at the same step count).
+300-paragraph subset gate (teacher reproduces 1.3205):
+
+| rung | params | subset DER-CE |
+|---|---|---|
+| ByT5-small 1.0 (AdamW, full) | 300M | 3.658 |
+| **layerdrop (enc 6, Muon)** | ~190M | **3.8088** |
+
+Halving encoder depth costs 0.15pp on the subset - the pretrained
+representation survives a depth cut that width surgery destroyed.
+Full-set gate (1,200 paragraphs) in flight; int8 ~190MB, int4 ~95MB
+(the browser-budget artifact). Survived two infra failures en route
+(eviction without watchdog; a regressed d_kv derivation) - both fixed.
