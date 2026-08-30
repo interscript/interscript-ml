@@ -259,6 +259,27 @@ models:
   ara-diac-2.0:
     task: diacritization
     scripts: [Arab, Arab]
+    precision: fp32
+    filename: ara-diac-2.0-fp32.zip
+    parts:
+      - url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-2.0/ara-diac-2.0-fp32.zip.part-00
+        sha256: 28c272b5ce58031c356e75823eb581f12351a1675a52d8e4000f851c80d5e14d
+        size: 1500000000
+      - url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-2.0/ara-diac-2.0-fp32.zip.part-01
+        sha256: 86016da35e14a8fc05d4fbf3b1ad9ef24c29f9f7893f1716e40bef4b491effa2
+        size: 1280299051
+    sha256: 872c655ec6750bf44e5986f958de26767eafa13f8e0a7c64340bc35fd8a4550e
+    size: 2780299051
+    metrics:
+      - {name: der_total_greedy, value: 2.2864, source: rababa/docs/RESULTS.md#r7-verdict-table-sadeeddiac-25-2026-08-28}
+      - {name: der_morph_greedy, value: 1.3343, source: rababa/docs/RESULTS.md#r7-verdict-table-sadeeddiac-25-2026-08-28}
+      - {name: wer_wikinews_multiref, value: 17.3794, source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28}
+      - {name: der_wikinews_multiref, value: 11.8273, source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28}
+    parity: {samples: 600, cer_delta: 0.0903}
+    license: BSD-3-Clause
+  ara-diac-2.0-int8:
+    task: diacritization
+    scripts: [Arab, Arab]
     precision: int8
     filename: ara-diac-2.0-int8.zip
     url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-2.0/ara-diac-2.0-int8.zip
