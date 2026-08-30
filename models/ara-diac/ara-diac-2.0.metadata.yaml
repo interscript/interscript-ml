@@ -8,9 +8,9 @@ opset: 14
 decoder: kv
 precision: fp32
 license: BSD-3-Clause
-trained_from: 'rababa train_arabic_r7.py run-007-news (news-domain adaptation of the r6
-  morphological-aux teacher: r5-units anchor + 13,986 teacher-labeled news units at
-  0.85% mix + 400 gold WikiNews-2014 lines, init from run-006-morph); checkpoint
+trained_from: 'rababa train_arabic_r7.py run-007-news (news-domain adaptation of the
+  r6 morphological-aux teacher: r5-units anchor + 13,986 teacher-labeled news units
+  at 0.85% mix + 400 gold WikiNews-2014 lines, init from run-006-morph); checkpoint
   rababa-checkpoints:/rababa_arabic_byt5/run-007-news/best'
 metrics:
 - name: der_total_greedy
@@ -31,3 +31,10 @@ metrics:
   value: 11.8273
   protocol: same harness
   source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28
+parity:
+  samples: 600
+  cer_delta: 0.0903
+sha256:
+  decoder-kv.onnx: 1c012908b92efa3f051c667d82142d7cee990443f74a9cf36b957d669a66f27b
+  decoder.onnx: 939dd3498d819a793e90aa95122ab33b6925a005237766bf9be66968f2645867
+  encoder.onnx: abd659bd4818a361e4268c23aa8644aa867f0667f32742b688f42eb5fe7aa8cc
