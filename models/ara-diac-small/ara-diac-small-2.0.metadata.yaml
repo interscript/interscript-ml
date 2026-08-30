@@ -6,7 +6,7 @@ target: Arab
 tokenizer: bytes
 opset: 14
 decoder: kv
-precision: int8
+precision: fp32
 license: BSD-3-Clause
 trained_from: 'sequence-level KD from the r7 canonical teacher (rababa_arabic_byt5/run-007-news/best,
   2.2864 windowed DER-CE full protocol): fresh greedy r7 labels on the same r5-units
@@ -32,8 +32,8 @@ metrics:
   source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon
 parity:
   samples: 600
-  cer_delta: 0.1393
+  cer_delta: 0.1187
 sha256:
-  decoder-kv.onnx: 324e8df388538f7ab22eae88cf78b9bcfe45a7edc704fa4864397014d00e38b8
-  decoder.onnx: d31d1c5329e16a583372a0679651d0af37e93b9fbb22e3cd7b49ab8bc0c6a40d
-  encoder.onnx: 9079b8058216af6d7475d63c8286c80cc2cbe701c9eba179f569c6c84d8d750a
+  decoder-kv.onnx: 61ef645345997eb5b9746ac77b39363228e5d0873093e6ebaca9a5903d3ac846
+  decoder.onnx: 56d81cc644e2c27b56f5efd07f3e6bac0244b74e1383782b13e2d615fbcd43c6
+  encoder.onnx: 1eab5f6d418bd718e0628e0cee3124143dd7f277e5b14669a8df76744d12c5ce
