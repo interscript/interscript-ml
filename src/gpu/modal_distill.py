@@ -112,9 +112,10 @@ def svd_stitch_state(wide: dict, narrow: dict) -> dict:
                 w = u[:, :o2].T @ w
             if i2 < i:
                 w = w @ vh[:i2, :].T
-            if o2 > o or i2 > i:
+            wo, wi = w.shape
+            if wo < o2 or wi < i2:
                 padded = torch.zeros((o2, i2), dtype=w.dtype)
-                padded[: min(o, o2), : min(i, i2)] = w[: min(o, o2), : min(i, i2)]
+                padded[: min(wo, o2), : min(wi, i2)] = w[: min(wo, o2), : min(wi, i2)]
                 w = padded
             out[name] = w.to(tgt.dtype)
         elif src.dim() == 1:
