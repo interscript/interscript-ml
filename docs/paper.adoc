@@ -206,12 +206,15 @@ External claims are made only where a public benchmark exists and the full proto
 |**our teacher (r7, ByT5-base)** |580M |**2.2864**
 |our previous teacher (r6) |580M |2.5793
 |GLM-5.2 (reproduced, zero-skip) |— |2.6911
+|GLM-5.3-Flash (reproduced, zero-skip, reasoning_effort=low) |— |8.7978
 |Gemini Flash 2.0 (published) |— |3.1926
 |GPT-4 (published) |— |3.8645
 |Sadeed (published) |1.5B |7.2915
 |**our client student 2.0 (ByT5-small)** |300M |**4.822**
 |our client student 1.0 (ByT5-small) |300M |8.259
 |===
+
+A protocol note attaches to the newest generalist: GLM-5.3-Flash's API rejects disabled thinking outright (HTTP 400, code 1210 — valid reasoning_effort values are exactly low/high/max), so its row carries `reasoning_effort=low`, the nearest expressible analog of the plain-completion protocol the other LLM rows used. It scores 8.7978 zero-skip / 8.5721 raw — ~3.4x the DER of its predecessor GLM-5.2 and behind Sadeed-1.5B — driven by Quranic-convention orthography (dagger-alif forms absent from the ground truth; 9.8% not-fully-diacritized words) and the reasoning floor. The frontier's newest generalist regressed on this classical-knowledge task while our dedicated 580M teacher improved; we record it rather than average it away.
 
 The teacher is the best dedicated (task-trained, runnable-locally) model measured under this protocol — second only to a frontier proprietary LLM's published number, ahead of a clean GLM-5.2 reproduction, Gemini Flash, and GPT-4 — and it does so at 580M parameters against Sadeed's 1.5B. The current rung (r7) adds a teacher-labeled news-domain mix to the morphological-auxiliary teacher (r6) and improves both surfaces at once: in-domain 2.5793 → 2.2864, and out-of-domain WikiNews-2024 multi-reference 19.82/12.46 → 17.38/11.83 (WER/DER) — the paragraph-specialization trade-off of the earlier lineage is gone.
 
