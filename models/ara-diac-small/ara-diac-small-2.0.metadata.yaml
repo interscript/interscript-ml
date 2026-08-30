@@ -6,28 +6,34 @@ target: Arab
 tokenizer: bytes
 opset: 14
 decoder: kv
-precision: fp32
+precision: int8
 license: BSD-3-Clause
 trained_from: 'sequence-level KD from the r7 canonical teacher (rababa_arabic_byt5/run-007-news/best,
   2.2864 windowed DER-CE full protocol): fresh greedy r7 labels on the same r5-units
   corpus/limits as ara-diac-small-1.0, Muon optimizer (E3-adopted), vanilla ByT5-small
-  (E4, pre-registered gate <= 6.26). Checkpoint
-  rababa-checkpoints:/rababa_arabic_distill_small/run-006-r7-muon/best. The two
-  measured wins compound: 8.259 -> 4.8218 full-set windowed DER-CE (teacher reproduces
-  2.289 in-run vs documented 2.2864) — a 42% error reduction on the 1.0 release at the
-  same architecture and artifact size. Still misses the strict teacher+0.5pp gate
-  (+2.53pp; miss disclosed); the E2/E3 factorial attributes the residual to domain
+  (E4, pre-registered gate <= 6.26). Checkpoint rababa-checkpoints:/rababa_arabic_distill_small/run-006-r7-muon/best.
+  The two measured wins compound: 8.259 -> 4.8218 full-set windowed DER-CE (teacher
+  reproduces 2.289 in-run vs documented 2.2864) — a 42% error reduction on the 1.0
+  release at the same architecture and artifact size. Still misses the strict teacher+0.5pp
+  gate (+2.53pp; miss disclosed); the E2/E3 factorial attributes the residual to domain
   coverage.'
 metrics:
 - name: der_teacher_fullset
   value: 2.289
-  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy,
-    haraqat-projected, Misraj evaluator); full 1,200-paragraph SadeedDiac-25;
-    in-run reproduction of the documented 2.2864 (r7 canonical teacher)
+  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy, haraqat-projected,
+    Misraj evaluator); full 1,200-paragraph SadeedDiac-25; in-run reproduction of
+    the documented 2.2864 (r7 canonical teacher)
   source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon
 - name: der_student_fullset
   value: 4.8218
-  protocol: same full-set harness; E4 (r7 teacher labels + Muon, vanilla
-    ByT5-small) vs the 8.259 AdamW/r6-labels 1.0 release — a 42% error
-    reduction at identical architecture and artifact size
+  protocol: same full-set harness; E4 (r7 teacher labels + Muon, vanilla ByT5-small)
+    vs the 8.259 AdamW/r6-labels 1.0 release — a 42% error reduction at identical
+    architecture and artifact size
   source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon
+parity:
+  samples: 600
+  cer_delta: 0.1393
+sha256:
+  decoder-kv.onnx: 324e8df388538f7ab22eae88cf78b9bcfe45a7edc704fa4864397014d00e38b8
+  decoder.onnx: d31d1c5329e16a583372a0679651d0af37e93b9fbb22e3cd7b49ab8bc0c6a40d
+  encoder.onnx: 9079b8058216af6d7475d63c8286c80cc2cbe701c9eba179f569c6c84d8d750a
