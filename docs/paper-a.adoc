@@ -1,0 +1,77 @@
+= Morphological Supervision, Not Phonemic: Controlled Evidence and a Dual-Surface Teacher for Arabic Diacritization
+Ronald Tse
+v0.1 draft scaffold, 2026-08-31
+:doctype: article
+:toc: macro
+:numbered:
+
+toc::[]
+
+== Abstract (draft)
+
+Arabic diacritization (haraqat restoration) is commonly assumed to
+benefit from phonemic supervision. Under a single-variable controlled
+ablation — identical teacher architecture, corpus, seed, and
+initialization, varying only the auxiliary stream's output
+representation — lexical-morphological supervision strictly dominates:
+morphology 2.5793 < phonemic IPA 2.6588 < none 2.6775 windowed DER-CE
+on the full 1,200-paragraph SadeedDiac-25 protocol. The IPA projection
+is itself learnable (2.3% CER probe), ruling out representation
+failure as the explanation: the strong form of "phonemes help
+diacritization" fails. A news-domain-adapted teacher (r7) then removes
+the lineage's in-domain/out-of-domain trade-off entirely — ID 2.2864
+and OOD WikiNews-2024 17.38/11.83 multi-reference — making it, to our
+knowledge, the best dedicated model measured under this protocol.
+
+== 1. Introduction
+- authority-backed transliteration context; the phonological layer
+- the aux-supervision question and why it matters for low-resource tiers
+- contributions: (1) controlled ablation, (2) dual-surface teacher,
+  (3) protocol-matched leaderboard, (4) full-set evaluation discipline
+
+== 2. Related work
+[Sadeed-1.5B; LLM baselines; aux-supervision literature]
+
+== 3. Protocol
+- windowed DER-CE (1,400-byte windows, word-boundary split, greedy,
+  haraqat-projected, zero-skip), Misraj evaluator
+- full-set-only rule; the subset-overstatement phenomenon (3 quantified
+  instances, 2-4x inflation — cross-ref paper B for the student tier)
+
+== 4. The controlled ablation (r8)
+| Arm | full-set DER-CE |
+| Morphological aux | 2.5793 |
+| Phonemic (IPA) aux | 2.6588 |
+| No aux | 2.6775 |
+[paired-bootstrap CIs — slot: task from PR #9 tooling]
+[IPA probe control: 2.3% CER]
+
+== 5. Dual-surface adaptation (r7)
+| Model | ID (SadeedDiac-25) | OOD (WikiNews-2024) |
+| r6 | 2.5793 | 19.82/12.46 |
+| r7 | 2.2864 | 17.38/11.83 |
+
+== 6. Leaderboard (protocol-matched)
+| Model | windowed DER-CE zero-skip |
+| Claude-3.7-Sonnet (published) | 1.3941 |
+| r7 teacher (ours, 580M dedicated) | 2.2864 |
+| GLM-5.2 zero-skip | 2.6911 |
+| [GLM-5.3-Flash, effort=low — RUN IN FLIGHT] | — |
+| Gemini-Flash-2.0 | 3.1926 |
+| GPT-4 | 3.8645 |
+| Sadeed-1.5B | 7.2915 |
+
+== 7. Limitations
+- single-seed arms; item-level bootstrap; multi-seed on the headline
+  pair if compute permits
+- benchmark scope (SadeedDiac-25; WikiNews-2024 multi-ref)
+
+== 8. Artifacts
+r7/r8 checkpoints; evaluator harness; full per-run provenance
+(cross-ref paper B artifact appendix).
+
+== Allocation note
+This file is Paper A per the 2026-08-29 two-paper decision
+(PUBLICATION-NOTES.md): A = teacher (this paper); B = student
+(paper.adoc, restructured around the 2x2 factorial + frontier);
+C = systems (benchmarks/imf-runtime, gated on E3).
