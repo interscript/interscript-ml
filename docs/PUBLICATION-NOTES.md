@@ -157,3 +157,15 @@ reproducing 1.3205 across all three measurements as the harness
 control. Next rung on the frontier: stitch-down from ByT5-small
 pretraining (ridge-fit width bridge), which changes init, not data or
 capacity alone.
+
+## layerdrop full-set (2026-08-31): the frontier is complete
+
+7.4413 at 63% of parameters - better than the shipped 1.0, 2.15pp
+behind its optimizer-matched full-depth peer. For paper B this closes
+the capacity section: a monotone five-point size-quality frontier
+(scratch, width-stitch, depth-cut, optimizer-matched, teacher-matched)
+with every rung measured full-set under one harness. The subset
+overstatement now has three quantified instances - it is a finding,
+not a nuisance: domain-neighborhood evaluation subsets inflate student
+quality by 2-4x in this regime. Frame it in the measurement section as
+a generalizable warning with the three pairs as evidence.

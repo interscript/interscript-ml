@@ -387,3 +387,28 @@ representation survives a depth cut that width surgery destroyed.
 Full-set gate (1,200 paragraphs) in flight; int8 ~190MB, int4 ~95MB
 (the browser-budget artifact). Survived two infra failures en route
 (eviction without watchdog; a regressed d_kv derivation) - both fixed.
+
+## ara-diac-small-layerdrop — full-set verdict: 7.44 (2026-08-31)
+
+The 1,200-paragraph gate (teacher reproduces 2.5815):
+
+| rung | params | full-set DER-CE | subset DER-CE |
+|---|---|---|---|
+| 1.0 (full depth, AdamW, r6) | 300M | 8.259 | 3.658 |
+| **layerdrop (enc 6, Muon, r6)** | **~190M (63%)** | **7.4413** | 3.8088 |
+| r6 + Muon (full depth) | 300M | 5.2945 | — |
+| 2.0 (r7 + Muon, full depth) | 300M | 4.8218 | — |
+| scratch d384 | 33M | 74.68 | 83.08 |
+| SVD width-stitch d384 | 29M | 82.96 | — |
+
+Reading: halving encoder depth + Muon BEATS full-depth AdamW (7.44 vs
+8.26) at 63% of the parameters — but the depth cut costs 2.15pp against
+its optimizer-matched peer (5.29). Strict gate (teacher+0.5) failed.
+This is the THIRD instance of the first-300 subset overstating quality
+(3.66 vs 8.26; 3.81 vs 7.44) — the subset sits in the training-domain
+neighborhood; full-set-only stands as the publication rule, now with a
+quantified repeat rate. The size-quality frontier is complete and
+monotone: 33M/74.7 - 29M/83.0 - 190M/7.4 - 300M/5.3 - 300M/4.8
+(teacher 2.28-2.58). Browser-tier decision (user): ship
+layerdrop-int4 (~95MB, ~7.5 DER with int4 flip risk ungated) as the
+lite rung, or hold the tier at 2.0-int8 (264MB, 4.82).
