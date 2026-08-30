@@ -510,3 +510,33 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
 def rebuild_int8(model: str, limit: int = 0) -> None:
     print(rebuild_int8_head32.remote(model, limit))
 
+
+
+@app.function(
+    cpu=1,
+    memory=1024,
+    timeout=600,
+    volumes={"/outputs": MODELS_VOLUME},
+)
+def zip_meta(model_id: str, precision: str) -> dict:
+    """Read metadata.yaml out of a zip on the volume — one-shot provenance
+    check (parity block, precision) without multi-GB downloads."""
+    import sys
+    import zipfile
+
+    import yaml
+
+    sys.path.insert(0, "/root/interscript-ml/src")
+    out_dir = Path("/outputs/imf") / model_id
+    meta_path = Path("/root/interscript-ml", MODELS[model_id]["metadata"])
+    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
+    with zipfile.ZipFile(out_dir / f"{mid}-{precision}.zip") as zf:
+        m = yaml.safe_load(zf.read("metadata.yaml"))
+        return {"id": m["id"], "precision": m.get("precision"),
+                "parity": m.get("parity"), "sha_members": len(m.get("sha256", {}))}
+
+
+@app.local_entrypoint()
+def zmeta(model: str, precisions: str = "fp32,fp16,int8") -> None:
+    for precision in precisions.split(","):
+        print(precision, zip_meta.remote(model, precision))
