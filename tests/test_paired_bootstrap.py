@@ -3,7 +3,7 @@ generalized to the windowed Arabic harness)."""
 
 import pytest
 
-pytest.importorskip("numpy")
+pytest.importorskip("modal")
 
 from src.gpu.modal_distill import paired_bootstrap
 
