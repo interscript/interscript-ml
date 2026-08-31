@@ -116,6 +116,29 @@ ara-diac-small-muon:
   labels_complete: 'true'
   mode: sequence
   note: vanilla ByT5-small + Muon (factorial cell 4)
+ara-diac-small-2-mtp:
+  # E5 (EXPERIMENTS.md): control = ara-diac-small-2 verbatim; single
+  # delta = MTP-aux head (3 steps, beta 0.15), discarded at inference
+  teacher: rababa_arabic_byt5/run-007-news/best
+  teacher_volume: rababa
+  student_init: google/byt5-small
+  optimizer: muon
+  muon_lr: '0.01'
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-007-r7-muon-mtp
+  labels_file: teacher_labels_r7.jsonl
+  mtp_aux:
+    steps: 3
+    beta: 0.15
+  mode: sequence
+
 ara-diac-small-2:
   teacher: rababa_arabic_byt5/run-007-news/best
   teacher_volume: rababa
