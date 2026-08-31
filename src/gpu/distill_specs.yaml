@@ -216,6 +216,37 @@ ara-diac-small-d768:
   mode: sequence
   optimizer: muon
   note: gentle-stitch rung (2x cut); frontier point at ~105M
+ara-diac-small-layerdrop-6ep:
+  # A2 from TODO.improve-compare: the lite rung gets the same levers
+  # G2a had (6 epochs, Muon, r7 labels) - if it tracks G2a's gain,
+  # the browser tier gets a 2.1-quality row at ~190M/int8 ~95MB int4.
+  teacher: rababa_arabic_byt5/run-007-news/best
+  teacher_volume: rababa
+  out_volume: rababa
+  student_init: google/byt5-small
+  layer_drop: 'true'
+  student_config:
+    d_model: 1472
+    d_kv: 64
+    d_ff: 3584
+    num_heads: 6
+    enc_layers: 6
+    dec_layers: 4
+    feed_forward_proj: gated-gelu
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-009-layerdrop-6ep
+  labels_file: teacher_labels_r7.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  optimizer: muon
+  note: A2 rung; gate tracks G2a (4.57) within 0.1pp at half depth
 ara-diac-tiny-stitched:
   teacher: rababa_arabic_byt5/run-006-morph/best
   teacher_volume: rababa
