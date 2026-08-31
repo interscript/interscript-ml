@@ -423,3 +423,15 @@ The law sharpens: the pretrained WIDTH is load-bearing - projection
 destroys the representation at any compression; depth is the
 compressible axis. First verdict carrying the label-provenance hash
 (labels sha256 e70ce991..., 137.2MB recorded in final_eval.json).
+
+## ara-diac-small-2-6ep — doubling epochs collapses the residual (2026-08-31, subset)
+
+Same as the 2.0 rung (r7 labels, Muon, vanilla ByT5-small) at 6 epochs
+instead of 3 (21,990 steps, final CE 0.0013). 300-subset verdict:
+teacher in-run 1.2887, student **2.0062** — gate_delta 0.72, within
+striking distance of the strict teacher+0.5 gate, vs 3.66 (1.0) and
+3.81 (layerdrop) on the same subset. **This overturns the E2/E3
+residual attribution**: the 2.25pp residual was mostly optimization
+(undertraining), not domain coverage. Full-set gate running - given
+three prior subset-overstatement instances, the honest number waits
+there. Provenance: labels sha256 e70ce991 (137.2MB) recorded.
