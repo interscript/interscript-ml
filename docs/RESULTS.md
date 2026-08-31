@@ -435,3 +435,16 @@ residual attribution**: the 2.25pp residual was mostly optimization
 (undertraining), not domain coverage. Full-set gate running - given
 three prior subset-overstatement instances, the honest number waits
 there. Provenance: labels sha256 e70ce991 (137.2MB) recorded.
+
+## ara-diac-small-2-6ep — full-set verdict: 4.5701; the discipline vindicated (2026-08-31)
+
+Full 1,200-paragraph gate (teacher in-run 2.289): student **4.5701**,
+gate_delta 2.28. Doubling epochs bought 0.25pp over the 3-epoch 2.0
+rung (4.8218 -> 4.5701) - the residual is NOT mostly undertraining;
+the E2/E3 domain attribution substantially stands (~0.25pp epochs,
+~2.0pp domain/other). The subset had said 2.0062 / delta 0.72 - a
+near-overturn of the decomposition that the full set corrects: the
+FOURTH subset-overstatement instance and the most dramatic (subset
+delta 0.72 -> full delta 2.28, a 3.2x inflation). The full-set-only
+publication rule earns its keep here: this entry is the paper's
+strongest measurement-discipline exhibit.
