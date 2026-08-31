@@ -429,6 +429,8 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
                 ck.mkdir(exist_ok=True)
                 torch.save(student.state_dict(), ck / "student.pt")
                 torch.save(optimizer.state_dict(), ck / "optim.pt")
+                if mtp_head is not None:
+                    torch.save(mtp_head.state_dict(), ck / "mtp_head.pt")
                 CHECKPOINTS.commit()
 
     vl = val_loss()
@@ -742,6 +744,14 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         from gpu.pkm import inject_pkm
 
         inject_pkm(student, **spec["pkm"])
+    mtp_head = None
+    if spec.get("mtp_aux"):
+        _ensure_src_path()
+        from gpu.mtp import build_mtp
+
+        mtp_head = build_mtp(student, **spec["mtp_aux"])
+        n = sum(q.numel() for q in mtp_head.parameters()) / 1e6
+        print(f"[{spec_id}] mtp_aux head: {n:.2f}M params", flush=True)
     student.train()
 
     class Pairs(Dataset):
@@ -1043,7 +1053,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         _ensure_src_path()
         from gpu.muon import Muon, split_parameters
 
-        muon_params, adamw_params = split_parameters(student.named_parameters())
+        named = list(student.named_parameters())
+        if mtp_head is not None:
+            from gpu.mtp import mtp_named
+
+            named += list(mtp_named(mtp_head))
+        muon_params, adamw_params = split_parameters(named)
         optimizer = Muon(
             muon_params, lr=float(spec.get("muon_lr", 0.01)),
             momentum=0.95, weight_decay=0.01,
@@ -1083,6 +1098,16 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         optimizer.load_state_dict(
             torch.load(ckpts[-1] / "optim.pt", map_location="cpu", weights_only=True)
         )
+        if mtp_head is not None and (ckpts[-1] / "mtp_head.pt").exists():
+            mtp_head.load_state_dict(
+                torch.load(ckpts[-1] / "mtp_head.pt", map_location="cpu", weights_only=True)
+            )
+        elif mtp_head is not None:
+            print(
+                f"[{spec_id}] WARNING: no mtp_head.pt at resume — "
+                "fresh head, aux dynamics reset",
+                flush=True,
+            )
         step = int(ckpts[-1].name.split("-")[1])
         for _ in range(step):
             scheduler.step()
@@ -1093,7 +1118,18 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             if step >= total_steps:
                 break
             ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
-            loss = student(input_ids=ids, attention_mask=am, labels=labels).loss
+            if mtp_head is not None:
+                beta = float(spec["mtp_aux"].get("beta", 0.15))
+                s_out = student(
+                    input_ids=ids, attention_mask=am, labels=labels,
+                    output_hidden_states=True,
+                )
+                aux = mtp_head.aux_loss(
+                    s_out.decoder_hidden_states[-1], labels
+                )
+                loss = s_out.loss + beta * aux
+            else:
+                loss = student(input_ids=ids, attention_mask=am, labels=labels).loss
             loss.backward()
             torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
             optimizer.step()
@@ -1119,6 +1155,8 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     best.mkdir(exist_ok=True)
     student.save_pretrained(str(best))
     student_tok.save_pretrained(str(best))
+    if mtp_head is not None:  # provenance only; never in the shipped artifact
+        torch.save(mtp_head.state_dict(), best / "mtp_head.pt")
     CHECKPOINTS.commit()
     SECRYST_CHECKPOINTS.commit()
     PERSIAN_CHECKPOINTS.commit()

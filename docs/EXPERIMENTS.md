@@ -195,6 +195,31 @@ All rows passed the CER parity gate at release. Readings:
   teacher+0.5pp budget remains the disclosed north star.
 - **Prediction (registered):** 4.3–5.0, by E3's 4.829 on weaker labels.
 
+## E5 — MTP-aux distillation rung (run-007-r7-muon-mtp)
+
+- **Status:** REGISTERED 2026-09-01, launching.
+- **Source:** Tencent Hy4-preview carries a native multi-token
+  prediction layer; mapped to our stack as a TRAINING auxiliary (TODO
+  07-hy4) — per-position multi-step heads densify supervision on the
+  decode path; serving-side speculation stays parked (decode measured
+  non-binding at our sizes).
+- **Hypothesis:** the student's residual errors concentrate where the
+  single-step objective leaves the byte decision underconstrained;
+  forcing each decoder position to also predict t+1..t+3 regularizes
+  the hidden state toward the local sequence structure that
+  diacritization output exhibits (letter + haraqat pattern).
+- **Design:** control = run-006-r7-muon verbatim (same teacher labels,
+  corpus, limits, schedule, Muon groups); single delta = MTPHead
+  attached to the student decoder (3 steps, byte-vocab 259, ~1.1M
+  params ≈ 0.4%), auxiliary CE weighted β=0.15, head DISCARDED at
+  inference (zero serving cost/size delta in the shipped artifact).
+- **Pre-agreed gate:** adopt if full-set windowed DER ≤ 4.5218
+  (≥0.3pp over 4.8218, the E3-style bar); report honestly in
+  [4.5218, 4.8218); investigate if worse.
+- **Prediction (registered):** 4.5–4.75 — denser supervision helps
+  the tail, but the factorial attributes most of the remaining gap to
+  domain coverage, so the effect should be second-order.
+
 ## Parked
 
 - **Speculative decoding** (LongCat converts sparsity→speed): revisit
