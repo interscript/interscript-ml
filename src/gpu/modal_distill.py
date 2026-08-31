@@ -185,6 +185,31 @@ def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
     del pretrained
 
 
+
+def paired_bootstrap(deltas: list[float], seed: int = 42, n: int = 1000) -> dict:
+    """Sentence-level paired bootstrap over per-item DER deltas
+    (microkimi eval_compare protocol): a point delta without a CI is
+    not evidence. Deterministic under the fixed default seed."""
+    import random
+    import statistics
+
+    if not deltas:
+        raise ValueError("empty deltas")
+    rng = random.Random(seed)
+    size = len(deltas)
+    means = sorted(
+        statistics.fmean(deltas[rng.randrange(size)] for _ in range(size))
+        for _ in range(n)
+    )
+    ci = (round(means[int(0.025 * n)], 3), round(means[int(0.975 * n) - 1], 3))
+    delta = statistics.fmean(deltas)
+    return {
+        "delta": round(delta, 4),
+        "ci95": ci,
+        "p_leq0": round(sum(1 for m in means if m <= 0) / n, 4),
+    }
+
+
 def _ensure_src_path() -> None:
     # Modal copies the entry file to /root/<name>.py while the repo image
     # sits at /root/interscript-ml — cover both layouts before importing
@@ -1169,20 +1194,39 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     if limit:
         inputs, gts = inputs[:limit], gts[:limit]
 
-    def der_ce(model) -> dict:
-        paragraphs = windowed_paragraphs(model, tok, inputs, window=window)
+    import sys
 
-        import sys
+    sys.path.insert(0, "/opt/rababa")
+    from sadeed_evaluator import ArabicDiacritizationEvaluator as E
 
-        sys.path.insert(0, "/opt/rababa")
-        from sadeed_evaluator import ArabicDiacritizationEvaluator as E
-
+    def der_ce_from_preds(preds) -> dict:
         _, _, total_der, _, _ = E.caculate_errors_on_sentences(
-            paragraphs, gts, gt_missing_diacritic_is_error=False
+            preds, gts, gt_missing_diacritic_is_error=False
         )
         return {"der_ce": round(total_der, 4), "n": len(inputs)}  # evaluator already returns %
 
-    result = {"teacher": der_ce(teacher), "student": der_ce(student)}
+    def item_der_from_preds(preds) -> list[float]:
+        ders = []
+        for pred, gt in zip(preds, gts, strict=True):
+            _, _, d, _, _ = E.caculate_errors_on_sentences(
+                [pred], [gt], gt_missing_diacritic_is_error=False
+            )
+            ders.append(float(d))
+        return ders
+
+    teacher_preds = windowed_paragraphs(teacher, tok, inputs, window=window)
+    student_preds = windowed_paragraphs(student, tok, inputs, window=window)
+
+    result = {
+        "teacher": der_ce_from_preds(teacher_preds),
+        "student": der_ce_from_preds(student_preds),
+    }
+    result["paired_bootstrap"] = paired_bootstrap([
+        s - t
+        for s, t in zip(
+            item_der_from_preds(student_preds), item_der_from_preds(teacher_preds), strict=True
+        )
+    ])
     result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
     result["gate_pass"] = result["gate_delta"] <= 0.5
     # durable verdict marker: the run dir is the provenance record (also
@@ -1205,6 +1249,14 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
     (out_root / "final_eval.json").write_text(
         json.dumps(result, indent=2), encoding="utf-8"
     )
+    with (out_root / "final_preds.jsonl").open("w", encoding="utf-8") as pf:
+        for i, (src, tp, sp) in enumerate(
+            zip(inputs, teacher_preds, student_preds, strict=True)
+        ):
+            pf.write(
+                json.dumps({"idx": i, "src": src, "teacher": tp, "student": sp},
+                           ensure_ascii=False) + "\n"
+            )
     CHECKPOINTS.commit()
     return result
 
