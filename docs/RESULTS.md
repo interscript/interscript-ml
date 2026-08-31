@@ -412,3 +412,14 @@ monotone: 33M/74.7 - 29M/83.0 - 190M/7.4 - 300M/5.3 - 300M/4.8
 (teacher 2.28-2.58). Browser-tier decision (user): ship
 layerdrop-int4 (~95MB, ~7.5 DER with int4 flip risk ungated) as the
 lite rung, or hold the tier at 2.0-int8 (264MB, 4.82).
+
+## ara-diac-small-d768 — gentle stitch fails too: the width-cut closure is complete (2026-08-31)
+
+The untested 2x ratio (d1472->d768, ~105M, Muon, same r7 labels,
+10,995 steps, train CE recovered to 0.95): 300-subset DER 78.23
+(teacher in-run 1.2887). SVD width-stitching now fails at BOTH tested
+ratios (3.8x: 82.96; 2x: 78.23) while the depth cut works (7.44).
+The law sharpens: the pretrained WIDTH is load-bearing - projection
+destroys the representation at any compression; depth is the
+compressible axis. First verdict carrying the label-provenance hash
+(labels sha256 e70ce991..., 137.2MB recorded in final_eval.json).
