@@ -1205,13 +1205,18 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
         )
         return {"der_ce": round(total_der, 4), "n": len(inputs)}  # evaluator already returns %
 
-    def item_der_from_preds(preds) -> list[float]:
-        ders = []
+    def item_der_from_preds(preds) -> list[float | None]:
+        ders: list[float | None] = []
         for pred, gt in zip(preds, gts, strict=True):
-            _, _, d, _, _ = E.caculate_errors_on_sentences(
-                [pred], [gt], gt_missing_diacritic_is_error=False
-            )
-            ders.append(float(d))
+            try:
+                _, _, d, _, _ = E.caculate_errors_on_sentences(
+                    [pred], [gt], gt_missing_diacritic_is_error=False
+                )
+                ders.append(float(d))
+            except ZeroDivisionError:
+                # paragraph carries no scorable haraqat positions; the
+                # aggregate call skips it, single-item calls cannot
+                ders.append(None)
         return ders
 
     teacher_preds = windowed_paragraphs(teacher, tok, inputs, window=window)
@@ -1221,11 +1226,12 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
         "teacher": der_ce_from_preds(teacher_preds),
         "student": der_ce_from_preds(student_preds),
     }
+    t_ders = item_der_from_preds(teacher_preds)
+    s_ders = item_der_from_preds(student_preds)
     result["paired_bootstrap"] = paired_bootstrap([
         s - t
-        for s, t in zip(
-            item_der_from_preds(student_preds), item_der_from_preds(teacher_preds), strict=True
-        )
+        for s, t in zip(s_ders, t_ders, strict=True)
+        if s is not None and t is not None
     ])
     result["gate_delta"] = round(result["student"]["der_ce"] - result["teacher"]["der_ce"], 4)
     result["gate_pass"] = result["gate_delta"] <= 0.5
