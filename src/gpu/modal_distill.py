@@ -749,7 +749,8 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         _ensure_src_path()
         from gpu.mtp import build_mtp
 
-        mtp_head = build_mtp(student, **spec["mtp_aux"])
+        mtp_cfg = spec["mtp_aux"]
+        mtp_head = build_mtp(student, steps=int(mtp_cfg.get("steps", 3)))
         n = sum(q.numel() for q in mtp_head.parameters()) / 1e6
         print(f"[{spec_id}] mtp_aux head: {n:.2f}M params", flush=True)
     student.train()
