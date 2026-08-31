@@ -391,7 +391,7 @@ def margin_model(model_id: str, precisions: list[str], limit: int = 0) -> dict[s
 
 @app.local_entrypoint()
 def main(model: str, precisions: str = "fp32,fp16,int8") -> None:
-    report = export_model.remote(model, precisions.split(","))
+    report = export_model.remote(model, precisions)
     for name, status in report.items():
         print(f"{name}: {status}")
 
