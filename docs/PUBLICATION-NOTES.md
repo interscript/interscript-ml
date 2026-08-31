@@ -169,3 +169,24 @@ overstatement now has three quantified instances - it is a finding,
 not a nuisance: domain-neighborhood evaluation subsets inflate student
 quality by 2-4x in this regime. Frame it in the measurement section as
 a generalizable warning with the three pairs as evidence.
+
+## GLM-5.3-Flash on SadeedDiac-25 (2026-08-31): frontier generalist regression
+
+First measurement of GLM-5.3-Flash (320B/18B active): **8.5721/6.5335
+raw, 8.7978/6.6368 zero-skip** at reasoning_effort=low — ~3.4x worse
+DER than GLM-5.2 (2.5060/2.6911), behind Sadeed-1.5B (7.2915). Two
+protocol facts discovered live: the API rejects disabled thinking
+outright (400 code 1210; valid efforts exactly low/high/max), so the
+plain-completion protocol is inexpressible for this model; and the gap
+is orthography-shaped (Quranic dagger-alif conventions vs the GT's
+MSA; 9.8% not-fully-diacritized). Paper: leaderboard row + protocol
+note (PR #100). This strengthens the dedicated-model thesis: the
+frontier's newest generalist regressed on this classical-knowledge
+task while the dedicated 580M teacher improved.
+
+Sibling measurement finding (same day): resumable LLM-eval
+checkpoints silently resume error sentinels — the first pass read
+15.96 DER because 140 exhausted-retry empties were resumed as done.
+Belongs in the paper's measurement-discipline paragraph with the
+subset-inflation instances; the resume path now drops empty rows
+(rababa PR #65).
