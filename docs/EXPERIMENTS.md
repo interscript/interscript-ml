@@ -69,6 +69,31 @@ All rows passed the CER parity gate at release. Readings:
   are a separate quantization class: fp16 (≥ int8 floor) when the body
   is quantized. Precision floors are keyed on access pattern, not
   tensor size (the Qwen/Unsloth lesson).
+- **Corrected-artifact sweep VERDICT (2026-08-31/09-01, complete for
+  the four shipped int8 zips)**: `rebuild_int8_head32` re-quantizes
+  body-int8/head-fp32 from the fp32 graphs and gates through the full
+  stack (CER parity in-zip + margin report + confident-flip budget
+  ≤1%). Two infra bugs found and fixed en route: the rebuilt zip's
+  internal sha table went stale after member replacement (write_parity
+  rejected everything — `refresh_member_shas`, PR #99) and the plain
+  export entrypoint double-split precisions (PR #109).
+
+  | artifact | parity | flip rate | confident flips | vs shipped int8 |
+  |---|---|---|---|---|
+  | khm-latn-1.0 (895) | 0.0946pp | 2.30% | 0.16% | fp16 was 2.93% all-near-tie |
+  | urd-g2p-1.0 (12,699) | 0.1493pp | 1.18% | 0.007% | — |
+  | urd-diac-1.0 (11,940) | 0.0042pp | 0.24% | 0.0% | — |
+  | **heb-diac-1.1 (1,864)** | 0.542pp | **0.29%** | **0.0005%** | **9.34% flips, 80% confident → 32× fewer flips, ~zero confident** |
+
+  The E1 diagnosis is verified end-to-end on the outlier that
+  motivated it: the quantized head was the fragility; head-fp32 at
+  +0.4% size removes it. Artifacts: `{mid}-int8-head32.zip` +
+  `{mid}-int8-head32-margins.json` on secryst-models. tha-g2p-small
+  in flight (needed an fp32 export first). **Swap-in is a version
+  decision**: (a) replace the shipped int8 zips in place + cut
+  index-v2 (consumers re-download; sha pins change deliberately), or
+  (b) publish as parallel `-int8-head32` ids (no migration, index
+  grows). Owner's call.
 
 ## E2 — PKM memory-layer student (ara-diac-small run-003-pkm)
 
