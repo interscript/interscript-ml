@@ -471,3 +471,19 @@ Depth cost at 6 epochs: 1.21pp (CIs non-overlapping vs G2a [1.91,
 2.35] - statistically real). Subset said 0.64pp: the FIFTH
 subset-overstatement instance. The lite tier is shippable: 28% smaller
 artifact for 1.21pp; int4 (~95MB) export is the browser-budget item.
+
+## CI table complete — every frontier row bracketed (2026-09-02)
+
+The 1.0 baseline's retrofit lands the final interval: student 8.2576,
+delta CI [4.596, 5.651] (n=1200). The full-set table, all rows with
+non-overlapping sequential intervals:
+
+| rung | full-set DER | delta CI95 vs teacher |
+|---|---|---|
+| 1.0 (AdamW, r6, 3ep) | 8.2576 | [4.596, 5.651] |
+| lite (Muon, r7, 6ep, half-depth) | 5.784 | [3.033, 3.491] |
+| 2.0 (Muon, r7, 3ep) | 4.8218 | [2.358, 2.823] |
+| G2a (Muon, r7, 6ep) | 4.5701 | [1.911, 2.352] |
+
+Every lever claim in paper B now carries its interval; the monotone
+separation between rungs is statistically real end to end.
