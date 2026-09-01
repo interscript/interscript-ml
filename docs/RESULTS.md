@@ -460,3 +460,14 @@ transfers at half depth; the depth cost widened from 0.15pp (3ep) to
 0.64pp (6ep) on this subset. Full-set gate in flight - the honest
 number per the four-instance subset-overstatement record. First lite
 verdict carrying its own CI.
+
+## ara-diac-small-layerdrop-6ep — full-set 5.784: the frontier closes (2026-09-01)
+
+Full 1,200-paragraph gate (teacher r7 in-run 2.2921): student
+**5.784**, paired bootstrap delta 3.2455 [3.033, 3.491], p=0. The
+complete full-set frontier: 1.0 (3ep AdamW, 300M) 8.259 -> lite (6ep
+Muon, 190M) **5.784** -> full (6ep Muon, 300M) 4.5701 -> teacher 2.29.
+Depth cost at 6 epochs: 1.21pp (CIs non-overlapping vs G2a [1.91,
+2.35] - statistically real). Subset said 0.64pp: the FIFTH
+subset-overstatement instance. The lite tier is shippable: 28% smaller
+artifact for 1.21pp; int4 (~95MB) export is the browser-budget item.
