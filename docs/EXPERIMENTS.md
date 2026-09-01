@@ -88,12 +88,17 @@ All rows passed the CER parity gate at release. Readings:
   The E1 diagnosis is verified end-to-end on the outlier that
   motivated it: the quantized head was the fragility; head-fp32 at
   +0.4% size removes it. Artifacts: `{mid}-int8-head32.zip` +
-  `{mid}-int8-head32-margins.json` on secryst-models. tha-g2p-small
-  in flight (needed an fp32 export first). **Swap-in is a version
-  decision**: (a) replace the shipped int8 zips in place + cut
-  index-v2 (consumers re-download; sha pins change deliberately), or
-  (b) publish as parallel `-int8-head32` ids (no migration, index
-  grows). Owner's call.
+  `{mid}-int8-head32-margins.json` on secryst-models.
+- **Sweep COMPLETE 2026-09-01 (all five shipped int8 artifacts)**:
+  tha-g2p-small-1.0 head32 — parity 0.0565pp @600, flips 0.26%
+  (94% near-tie), confident flips 0.015%, matching its int4's benign
+  profile; needed an fp32 export first (the volume had none — also
+  fixed the plain-export entrypoint double-split en route, PR #109).
+  All five head32 artifacts are gated and sitting on the volume.
+  **Swap-in is a version decision**: (a) replace the shipped int8
+  zips in place + cut index-v2 (consumers re-download; sha pins
+  change deliberately), or (b) publish as parallel `-int8-head32`
+  ids (no migration, index grows). Owner's call.
 
 ## E2 — PKM memory-layer student (ara-diac-small run-003-pkm)
 
