@@ -212,7 +212,22 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E5 — MTP-aux distillation rung (run-007-r7-muon-mtp)
 
-- **Status:** REGISTERED 2026-09-01, launching.
+- **Status:** COMPLETE 2026-09-01 — **GATE FAILED: 5.0853** full-set
+  windowed DER (gate <= 4.5218; worse than the 4.8218 control by
+  +0.26pp; registered prediction 4.5-4.75 missed). Teacher reproduces
+  2.289 — harness control intact. **NOT ADOPTED.** The MTP-aux head
+  at beta 0.15 / 3 steps did not densify supervision into quality at
+  this rung; it cost a quarter of a point.
+- **Confound, disclosed:** the run was preempted at step ~8,650 and
+  resumed from step-8,500 whose mtp_head.pt write was interrupted —
+  the final 23% of steps trained with a re-initialized aux head
+  (student+optimizer state intact). The clean control had no such
+  event. The +0.26pp cannot be cleanly attributed between MTP-aux
+  itself and the resume perturbation; a clean rerun is the optional
+  follow-up if MTP-aux is ever revisited. What is NOT confounded:
+  the head (0.57% params, discarded at inference) shipped nothing,
+  and the E6 arm is unaffected.
+- Original registration follows.
 - **Source:** Tencent Hy4-preview carries a native multi-token
   prediction layer; mapped to our stack as a TRAINING auxiliary (TODO
   07-hy4) — per-position multi-step heads densify supervision on the
