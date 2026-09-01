@@ -448,3 +448,15 @@ FOURTH subset-overstatement instance and the most dramatic (subset
 delta 0.72 -> full delta 2.28, a 3.2x inflation). The full-set-only
 publication rule earns its keep here: this entry is the paper's
 strongest measurement-discipline exhibit.
+
+## ara-diac-small-layerdrop-6ep — subset 2.6495 (2026-09-01)
+
+A2 (TODO.improve-compare): the lite rung with G2a's full lever set
+(6 epochs, Muon, r7 labels, half depth). 300-subset: teacher in-run
+1.3014, student **2.6495**, paired bootstrap delta 1.4842
+[1.079, 1.975], p=0. The epochs lever moved the lite rung 3.81 -> 2.65
+(full-depth moved 3.66 -> 2.01): most of the optimization gain
+transfers at half depth; the depth cost widened from 0.15pp (3ep) to
+0.64pp (6ep) on this subset. Full-set gate in flight - the honest
+number per the four-instance subset-overstatement record. First lite
+verdict carrying its own CI.
