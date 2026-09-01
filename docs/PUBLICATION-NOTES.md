@@ -177,12 +177,19 @@ raw, 8.7978/6.6368 zero-skip** at reasoning_effort=low — ~3.4x worse
 DER than GLM-5.2 (2.5060/2.6911), behind Sadeed-1.5B (7.2915). Two
 protocol facts discovered live: the API rejects disabled thinking
 outright (400 code 1210; valid efforts exactly low/high/max), so the
-plain-completion protocol is inexpressible for this model; and the gap
-is orthography-shaped (Quranic dagger-alif conventions vs the GT's
-MSA; 9.8% not-fully-diacritized). Paper: leaderboard row + protocol
-note (PR #100). This strengthens the dedicated-model thesis: the
-frontier's newest generalist regressed on this classical-knowledge
-task while the dedicated 580M teacher improved.
+plain-completion protocol is inexpressible for this model. ATTRIBUTION
+(2026-09-01, corrects the first orthography-shaped reading): the gap
+is wrong haraqat — 10.05% of positions vs GLM-5.2's 2.64% (matching
+our r7 teacher's 2.62% to 0.02pp); missing 1.01%, extra 0.20%, and
+the whole dagger-alif U+0670 convention effect is 0.125pp (rules
+derived from aligned positions; controls <=0.009pp). Paper: leaderboard
+row + protocol note (PR #100, attribution corrected in PR after #69
+in rababa). This strengthens the dedicated-model thesis: the
+frontier's newest generalist lost classical-Arabic mark knowledge its
+predecessor had, while the dedicated 580M teacher improved. The
+per-position decomposition method (missing/wrong/extra +
+convention-normalization with controls) is reusable — apply to any
+future LLM row before interpreting its DER.
 
 Sibling measurement finding (same day): resumable LLM-eval
 checkpoints silently resume error sentinels — the first pass read
