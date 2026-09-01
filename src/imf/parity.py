@@ -253,7 +253,7 @@ def _onnx_forced_logits(enc_sess, dec_sess, source: str, target_ids: list[int]):
     return dict(zip(out_names, out, strict=True))["logits"][0]
 
 
-def run_margin_analysis(model, zip_path, pairs, max_len: int = 256) -> MarginReport:
+def run_margin_analysis(model, zip_path, pairs, max_len: int = 256, dump_positions: Path | str | None = None) -> MarginReport:
     """pairs: iterable of (source_text, gold_target) — the same probe set
     the CER parity gate uses. Teacher-forces both sides and measures the
     argmax flip rate, reference top1−top2 margin quantiles, and KL
@@ -286,6 +286,20 @@ def run_margin_analysis(model, zip_path, pairs, max_len: int = 256) -> MarginRep
 
     margins = np.concatenate(margin_chunks)
     flips = np.concatenate(flip_chunks)
+    if dump_positions is not None:
+        # per-position flip vectors, pair-indexed — the unit the
+        # paired bootstrap needs for shipped-vs-rebuild comparisons
+        import json as _json
+
+        dump = Path(dump_positions)
+        dump.parent.mkdir(parents=True, exist_ok=True)
+        with dump.open("w", encoding="utf-8") as out:
+            for pair_idx, (m, f) in enumerate(zip(margin_chunks, flip_chunks)):
+                out.write(_json.dumps(
+                    {"pair": pair_idx, "tokens": int(f.size),
+                     "flip_positions": [int(x) for x in np.nonzero(f)[0]],
+                     "flip_margins": [round(float(m[x]), 4) for x in np.nonzero(f)[0]]}
+                ) + "\n")
     p1, p10, p50 = (float(np.quantile(margins, q)) for q in (0.01, 0.10, 0.50))
     n_flips = int(flips.sum())
     return MarginReport(

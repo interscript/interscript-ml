@@ -166,3 +166,19 @@ def test_margin_report_json_roundtrip(gated_zip: Path, fixture_model, tmp_path: 
     }
     assert data["samples"] == report.samples
     assert data["flip_rate"] == report.flip_rate
+
+
+def test_margin_analysis_dumps_per_pair_positions(gated_zip: Path, fixture_model, tmp_path: Path) -> None:
+    """TODO.training-work/05: the flip bootstrap needs per-pair token and
+    flip counts, not just aggregates."""
+    dump = tmp_path / "positions.jsonl"
+    report = run_margin_analysis(
+        fixture_model, gated_zip, PAIRS, max_len=12, dump_positions=dump,
+    )
+    rows = [json.loads(line) for line in dump.read_text().splitlines() if line]
+    assert rows and len(rows) <= len(PAIRS)
+    assert all({"pair", "tokens", "flip_positions", "flip_margins"} <= set(r) for r in rows)
+    total_flips = sum(len(r["flip_positions"]) for r in rows)
+    assert total_flips == report.flipped_tokens
+    total_tokens = sum(r["tokens"] for r in rows)
+    assert total_tokens == report.tokens
