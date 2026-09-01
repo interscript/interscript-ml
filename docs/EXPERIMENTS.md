@@ -95,6 +95,16 @@ All rows passed the CER parity gate at release. Readings:
   profile; needed an fp32 export first (the volume had none — also
   fixed the plain-export entrypoint double-split en route, PR #109).
   All five head32 artifacts are gated and sitting on the volume.
+- **Flip-rate CIs (2026-09-01, per-pair position dumps + paired
+  bootstrap, 10k resamples)**: heb-diac — the outlier family —
+  shipped 10.985% -> head32 0.288% flips, delta **-10.696pp, 95% CI
+  [-11.661, -9.726]**: the repair is overwhelming. khm-latn — a
+  benign family — 2.325% -> 2.302%, CI [-0.173, +0.125]: a proper
+  null, i.e. the rebuild changes nothing measurable where nothing
+  was broken (head32's role there is consistency, not repair).
+  Probe-set note: these use the full gate sets (1,864 / 895 pairs),
+  not the original E1 golden subset — the shipped-heb side therefore
+  reads 10.985% vs the table's 9.34%; same story, larger set.
   **Swap-in is a version decision**: (a) replace the shipped int8
   zips in place + cut index-v2 (consumers re-download; sha pins
   change deliberately), or (b) publish as parallel `-int8-head32`
