@@ -293,6 +293,37 @@ ara-diac-small-layerdrop-6ep:
   mode: sequence
   optimizer: muon
   note: A2 rung; gate tracks G2a (4.57) within 0.1pp at half depth
+ara-diac-tiny-max:
+  # THE gapless title test: the 30M class with the campaign's FULL
+  # lever set — full corpus (24k+6k, not the 12k subset the collapse
+  # rungs used), r7 labels, Muon, 6 epochs. If this still collapses,
+  # the "30M encoder" claim dies by our own standard; if it works,
+  # data quality rescued the small model and the title stands.
+  teacher: rababa_arabic_byt5/run-007-news/best
+  teacher_volume: rababa
+  out_volume: rababa
+  student_config:
+    d_model: 384
+    d_kv: 64
+    d_ff: 1536
+    num_heads: 6
+    enc_layers: 8
+    dec_layers: 8
+  train: r5-units/domain.txt
+  train_extra:
+  - r5-units/replay.txt
+  unit_limits:
+  - 24000
+  - 6000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-010-tiny-max
+  labels_file: teacher_labels_r7.jsonl
+  labels_complete: 'true'
+  mode: sequence
+  optimizer: muon
+  note: gapless 30M rung - full data + r7 + Muon + 6ep; the title
+    claim's decisive test
 ara-diac-tiny-stitched:
   teacher: rababa_arabic_byt5/run-006-morph/best
   teacher_volume: rababa
