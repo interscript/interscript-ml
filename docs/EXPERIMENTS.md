@@ -225,6 +225,28 @@ All rows passed the CER parity gate at release. Readings:
   the tail, but the factorial attributes most of the remaining gap to
   domain coverage, so the effect should be second-order.
 
+## E6 — label-scale/domain-mix rung (run-008-tashkeela-mix)
+
+- **Status:** REGISTERED 2026-09-01; data built (120,000 decontaminated
+  Tashkeela units on rababa-datasets:r5-units/tashkeela-scale.txt);
+  launches when a GPU slot frees (E5 + owner runs hold the budget).
+- **Hypothesis:** the E2/E3 factorial attributes the client tier's
+  remaining ~2.0pp to domain coverage; the shipped mix is news-heavy.
+  Replacing 8,000 of the 24,000 news-domain units with classical-
+  register Tashkeela units AT CONSTANT TOTAL (30,000 units, identical
+  steps/schedule/optimizer/teacher) diversifies register coverage —
+  classical text is also the benchmark's own register.
+- **Data hygiene:** lines <=1,450B with Arabic; decontaminated against
+  SadeedDiac-25 by stripped-normalized exact match and 80-char prefix
+  match (48 units dropped); deduped internally (17,036) and against
+  the existing domain/replay units; seeded shuffle; 120k emitted, the
+  chain samples 8,000.
+- **Pre-agreed gate:** adopt if full-set windowed DER <= 4.5218
+  (>=0.3pp over 4.8218, the E3-style bar); honest report otherwise.
+- **Prediction (registered):** 4.45-4.75 — a register-diversification
+  effect at constant budget should be real but second-order; if the
+  domain attribution is right, this should beat E5's MTP-aux.
+
 ## Parked
 
 - **Speculative decoding** (LongCat converts sparsity→speed): revisit
