@@ -197,3 +197,29 @@ checkpoints silently resume error sentinels — the first pass read
 Belongs in the paper's measurement-discipline paragraph with the
 subset-inflation instances; the resume path now drops empty rows
 (rababa PR #65).
+
+## The distillation-gap decomposition, revised by measurement (2026-09-01)
+
+The E2/E3 factorial (3-epoch students) attributed the ~5.7pp gap as
+0.70pp capacity + 2.73pp optimizer + ~2.25pp residual "domain
+coverage." The 6-epoch rung (G2a) and the CI-carrying harness revise
+this: doubling epochs alone recovered 0.25pp full-set (4.8218 ->
+4.5701, CIs non-overlapping) — the residual was not purely domain.
+The decomposition for paper B, every line full-set with brackets:
+
+| lever | full-set DER | paired CI of delta |
+|---|---|---|
+| teacher r7 | 2.2864/2.2921 | — |
+| 1.0: AdamW, 3ep, r6 | 8.259 | retrofit in flight |
+| + Muon (E3) | 5.2945 | — |
+| + r7 teacher | 4.8218 | — |
+| + 6 epochs (G2a) | 4.5701 | delta 2.12 [1.91, 2.35] |
+| depth halved (lite, 6ep) | 5.784 | delta 3.25 [3.03, 3.49] |
+
+Paper-B framing: levers compose roughly additively (optimizer >>
+teacher > epochs), the remaining ~2.0-2.2pp is domain-shaped (the
+label-scale rung is the causal test), and capacity appears ONLY as
+depth — width is load-bearing (both stitch ratios collapsed) while
+depth trades 1.21pp for 37% of the artifact. The subset-overstatement
+phenomenon (five instances, up to 3.2x inflation) is the
+measurement-discipline exhibit.
