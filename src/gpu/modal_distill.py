@@ -1033,6 +1033,8 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     torch.cuda.empty_cache()
     student.to("cuda")
     student.gradient_checkpointing_enable()
+    if mtp_head is not None:  # built while student was still on cpu
+        mtp_head.to("cuda")
 
     class TeacherPairs(Dataset):
         def __len__(self):
