@@ -168,7 +168,9 @@ def test_margin_report_json_roundtrip(gated_zip: Path, fixture_model, tmp_path: 
     assert data["flip_rate"] == report.flip_rate
 
 
-def test_margin_analysis_dumps_per_pair_positions(gated_zip: Path, fixture_model, tmp_path: Path) -> None:
+def test_margin_analysis_dumps_per_pair_positions(
+    gated_zip: Path, fixture_model, tmp_path: Path
+) -> None:
     """TODO.training-work/05: the flip bootstrap needs per-pair token and
     flip counts, not just aggregates."""
     dump = tmp_path / "positions.jsonl"

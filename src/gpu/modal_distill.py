@@ -429,8 +429,6 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
                 ck.mkdir(exist_ok=True)
                 torch.save(student.state_dict(), ck / "student.pt")
                 torch.save(optimizer.state_dict(), ck / "optim.pt")
-                if mtp_head is not None:
-                    torch.save(mtp_head.state_dict(), ck / "mtp_head.pt")
                 CHECKPOINTS.commit()
 
     vl = val_loss()

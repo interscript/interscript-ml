@@ -69,6 +69,7 @@ def main(
     if not filename:
         import yaml
 
-        index = yaml.safe_load(open("models.yaml", encoding="utf-8"))
+        with open("models.yaml", encoding="utf-8") as fh:
+            index = yaml.safe_load(fh)
         filename = index["models"][model_id]["filename"]
     print(bench.remote(model_id, filename))

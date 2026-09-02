@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import zipfile
+import os  # noqa: E402
 from pathlib import Path
 
 import pytest
 import yaml
-
 from interscript_ml.registry import RegistryError, resolve
 from tests_helpers import build_tiny_zip
-
-import os  # noqa: E402
 
 
 def _index_file(tmp_path: Path, zip_path: Path, sha256: str | None = None) -> Path:
