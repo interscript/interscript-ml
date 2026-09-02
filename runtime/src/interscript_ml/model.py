@@ -6,8 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
-from interscript_ml.tokens import EOS_ID, PAD_ID, decode, encode
 from interscript_ml.loader import load_manifest, verify_and_read
+from interscript_ml.tokens import EOS_ID, PAD_ID, decode, encode
 
 
 class Model:
@@ -45,7 +45,7 @@ class Model:
         self._output_names = [o.name for o in self._decoder.get_outputs()]
 
     @classmethod
-    def load(cls, path_or_id: Path | str, index_url: str | None = None) -> "Model":
+    def load(cls, path_or_id: Path | str, index_url: str | None = None) -> Model:
         """Accepts a zip path OR a model id from models.yaml (dynamic
         fetch: download -> verify -> cache)."""
         candidate = str(path_or_id)

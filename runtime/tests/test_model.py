@@ -19,10 +19,9 @@ import yaml
 ort = pytest.importorskip("onnxruntime")
 onnx = pytest.importorskip("onnx")
 
+import numpy as np  # noqa: E402
 from interscript_ml import Model, ModelFormatError, decode, encode  # noqa: E402
 from onnx import TensorProto, helper, numpy_helper  # noqa: E402
-
-import numpy as np  # noqa: E402
 
 
 def _graph(opset: int = 14) -> bytes:

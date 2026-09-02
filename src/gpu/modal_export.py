@@ -356,7 +356,9 @@ def parity_model(
     timeout=5 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
-def margin_model(model_id: str, precisions: list[str], limit: int = 0, dump_positions: bool = False) -> dict[str, str]:
+def margin_model(
+    model_id: str, precisions: list[str], limit: int = 0, dump_positions: bool = False
+) -> dict[str, str]:
     """Margin analysis alone over already-exported zips — read-only for the
     zips (diagnostic JSON only); validates published artifacts without
     touching their metadata."""
@@ -414,7 +416,9 @@ def parity(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0) -> No
 
 
 @app.local_entrypoint()
-def margins(model: str, precisions: str = "fp32,fp16,int8", limit: int = 0, dump_positions: bool = False) -> None:
+def margins(
+    model: str, precisions: str = "fp32,fp16,int8", limit: int = 0, dump_positions: bool = False
+) -> None:
     reports = margin_model.remote(model, precisions.split(","), limit, dump_positions)
     for precision, status in reports.items():
         print(f"{model} [{precision}] {status}")

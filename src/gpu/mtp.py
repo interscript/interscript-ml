@@ -11,8 +11,8 @@ mtp_head.pt beside student.pt for resume, never exported).
 from __future__ import annotations
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class MTPHead(nn.Module):
