@@ -271,6 +271,20 @@ All rows passed the CER parity gate at release. Readings:
 - **Prediction (registered):** 4.45-4.75 — a register-diversification
   effect at constant budget should be real but second-order; if the
   domain attribution is right, this should beat E5's MTP-aux.
+- **Status:** COMPLETE 2026-09-02 — **GATE FAILED: 5.8057** full-set
+  windowed DER (gate <=4.5218; control 4.8218; E5's failed 5.0853).
+  NOT ADOPTED. Teacher reproduces at 2.289 (n=1200, protocol
+  consistent). Paired bootstrap student-teacher: +3.2388pp, CI
+  [2.939, 3.575]. The prediction (4.45-4.75) missed badly. Read:
+  swapping news-domain units OUT for classical-register units at
+  constant budget HURT (−0.98pp vs control) — the news-domain
+  teacher labels match the benchmark surface better than classical
+  units do, and 30k total was already enough budget that register
+  mix was not the binding constraint. Together with G2a (4.5701 at
+  6 epochs) the ladder now reads: longer training and MORE total
+  units move the rung; register swaps at constant budget do not.
+  Clean negative; direction shifts to G2b (48k add). Labels sha256
+  39b4213b5ab4c9f7273da90a9a1954f7701320b62870a954e6e2c02e810617a4.
 
 ## Parked
 

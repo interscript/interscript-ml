@@ -70,7 +70,19 @@ Paper: frontier section (fourth question). RESULTS.md run-003-pkm.
 RL teacher polishing flat/negative ×3; microkimi bridges improve
 structure but not accuracy; teacher beam-search unnecessary for
 Arabic; per-channel int8 rejected on measurement; the 30 MiB tier
-closed as infeasible without pretraining.
+closed as infeasible without pretraining; **E5 MTP-aux (2026-09-01):
+5.0853 vs the 4.8218 control — multi-token-prediction as a training
+auxiliary HURT at this scale (+0.26pp), with a disclosed preemption
+confound (fresh aux head for the final 23% of steps); E6
+constant-budget register swap (2026-09-02): 5.8057 — replacing news
+units with classical Tashkeela at constant total HURT (−0.98pp vs
+control), the domain-shaped-residual hypothesis's causal test
+failing in the swap direction; the add direction (G2b) remains
+open.** The E5/E6 pair is the paper's data-vs-architecture exhibit:
+two levers from the frontier-LLM literature (MTP, register
+diversification at constant budget) both regressed on byte-level
+student distillation — the levers that moved the rung were optimizer
+(E3), fresher teacher labels (E4), and epochs (G2a).
 
 ### 9. Muon optimizer A/B on the memory student (E3) — LANDED 2026-08-28
 **4.8287 vs 7.5553 full-set (−2.727pp from the optimizer alone); adopt
@@ -217,8 +229,11 @@ The decomposition for paper B, every line full-set with brackets:
 | depth halved (lite, 6ep) | 5.784 | delta 3.25 [3.03, 3.49] |
 
 Paper-B framing: levers compose roughly additively (optimizer >>
-teacher > epochs), the remaining ~2.0-2.2pp is domain-shaped (the
-label-scale rung is the causal test), and capacity appears ONLY as
+teacher > epochs), and the E6 causal test came back NEGATIVE —
+swapping 8k news units for classical-register Tashkeela at constant
+30k total scored 5.8057 (−0.98pp vs control), so the residual is
+not fixed by register mix at constant budget; the add direction
+(G2b, 48k total) is the live test, and capacity appears ONLY as
 depth — width is load-bearing (both stitch ratios collapsed) while
 depth trades 1.21pp for 37% of the artifact. The subset-overstatement
 phenomenon (five instances, up to 3.2x inflation) is the
