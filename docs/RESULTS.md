@@ -471,3 +471,17 @@ Depth cost at 6 epochs: 1.21pp (CIs non-overlapping vs G2a [1.91,
 2.35] - statistically real). Subset said 0.64pp: the FIFTH
 subset-overstatement instance. The lite tier is shippable: 28% smaller
 artifact for 1.21pp; int4 (~95MB) export is the browser-budget item.
+
+## ara-diac-tiny-max — the gapless title test: 73.95, collapse confirmed (2026-09-02)
+
+The 30M class with EVERY lever (full 24k+6k corpus — 2.5x the collapse
+rungs' data — r7 labels, Muon, 6 epochs, 21,990 steps, CE ~0.51):
+full-set **73.9489**, delta CI [70.222, 71.093], p=0. The maximal run
+improves on the handicapped scratch collapse (74.68) by 0.7pp. Data
+quality and optimization do NOT rescue 30M from-scratch: the capacity
+floor is real and measured at its fairest. Conclusion from evidence:
+the "30M-parameter encoder" title claim is closed; the paper's thesis
+repositions per PAPER-ALIGNMENT.md — data quality buys teacher-tier
+quality (r7 2.29 vs frontier LLMs), capacity is a hard boundary with
+pretrained-init ByT5-small (300M) as the client floor and depth (not
+width) as the only compressible axis.

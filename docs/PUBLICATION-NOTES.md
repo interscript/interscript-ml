@@ -223,3 +223,12 @@ depth — width is load-bearing (both stitch ratios collapsed) while
 depth trades 1.21pp for 37% of the artifact. The subset-overstatement
 phenomenon (five instances, up to 3.2x inflation) is the
 measurement-discipline exhibit.
+
+## Title decision resolved by the gapless test (2026-09-02)
+
+tiny-max closes the question the 2026-09-01 flag raised: 73.95
+[70.2-71.1] with full data + r7 + Muon + 6ep. The title claim does not
+survive its own fairest test; per the user directive (conclusion from
+evidence), the paper repositions — data quality is the teacher-tier
+story, the capacity floor is the client-tier story, and both are now
+measured without gaps.
