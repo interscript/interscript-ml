@@ -223,3 +223,9 @@ depth — width is load-bearing (both stitch ratios collapsed) while
 depth trades 1.21pp for 37% of the artifact. The subset-overstatement
 phenomenon (five instances, up to 3.2x inflation) is the
 measurement-discipline exhibit.
+
+## Title decision resolved by the gapless test (2026-09-02)
+
+tiny-max: 73.95 [70.2-71.1] with full data + r7 + Muon + 6ep. The
+title does not survive its fairest test; the paper repositions per the
+conclusion-from-evidence directive.

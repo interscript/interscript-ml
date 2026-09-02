@@ -471,3 +471,13 @@ Depth cost at 6 epochs: 1.21pp (CIs non-overlapping vs G2a [1.91,
 2.35] - statistically real). Subset said 0.64pp: the FIFTH
 subset-overstatement instance. The lite tier is shippable: 28% smaller
 artifact for 1.21pp; int4 (~95MB) export is the browser-budget item.
+
+## ara-diac-tiny-max — the gapless title test: 73.95, collapse confirmed (2026-09-02)
+
+The 30M class with EVERY lever (full 24k+6k corpus, r7 labels, Muon,
+6 epochs, 21,990 steps, CE ~0.51): full-set **73.9489**, delta CI
+[70.222, 71.093], p=0. The maximal run improves on the handicapped
+scratch collapse (74.68) by 0.7pp: data quality and optimization do
+NOT rescue 30M from-scratch. Conclusion from evidence: the
+"30M-parameter encoder" title claim is closed; the thesis repositions
+per PAPER-ALIGNMENT.md.
