@@ -1,0 +1,84 @@
+= Neural Artifacts Under a Deterministic Contract: Verified Model Delivery for the Client Tier
+Ronald Tse
+v0.1 draft, 2026-09-03
+:doctype: article
+:toc: macro
+:numbered:
+
+toc::[]
+
+== Abstract (draft)
+
+Deterministic transliteration systems ship as machine-readable maps
+that produce byte-identical output across runtimes; neural conversion
+models (diacritization, grapheme-to-phoneme) have historically shipped
+as loose weights with none of that discipline. We present the Interscript
+Model Format (IMF v1) and its delivery channel: content-addressed zips
+(per-member SHA-256) resolved through a tag-pinned index with sidecar
+verification, served from release assets through a CORS front door,
+cached once per client, and executed byte-identically across
+TypeScript, Python, and Ruby runtimes. We measure the cost of this
+discipline across three tiers — node, server, and browser — and find
+it effectively free: whole-file hashing adds ~0.1 s against 7-13 s
+session creation, verified reloads complete in ~0.4 s from cache, and
+a 202 MB int8 model runs end-to-end in a headless browser over WASM.
+A margins-based quantization gate (keeping the 1.2M-parameter head in
+fp32) cuts silent int8 flips 36x at +0.4% artifact size. Eleven-to-17
+models ship under the contract with full provenance.
+
+== 1. Introduction
+- the deterministic-map discipline (OGC ISC context) and why learned
+  functions deserve the same contract
+- threat model: untrusted channels, silent quantization flips, stale
+  replicas, mojibake label provenance (the run-004 forensics)
+
+== 2. The artifact contract (IMF v1)
+- zip + metadata.yaml + per-member sha256; fixed ByT5 byte table
+  (byte+3, trailing EOS); opset-14 floor; KV decoder graphs
+- cross-runtime parity: byte-identical decode in TS/Py/Ruby
+- provenance: labels sha256 recorded in every verdict; per-paragraph
+  predictions saved with every evaluation
+
+== 3. The delivery channel
+- tag-pinned index (index-vN) + .sha256 sidecar; never a branch head
+- GitHub Releases as origin; the CORS front door (the github.com
+  redirect hop lacks ACAO — measured); Range-resumable downloads
+- client cache: download-once Cache API with stale-entry eviction and
+  offline index fallback
+- OIDC trusted publishing end-to-end (npm, PyPI, RubyGems)
+
+== 4. Tier measurements (E1/E2/E3)
+| tier | cold | warm | verify tax | decode (short/long) |
+|---|---|---|---|---|
+| node (M-series) | 25 s net / 0.5 s cache | 0.4 s | 0.11 s | 1.0-2.8 s |
+| server (4-vCPU) | 3.9-4.0 s | — | included | 0.13-0.97 s |
+| browser (WASM) | 44-74 s | 20 s (session rebuild) | included | end-to-end |
+
+- int4 vs int8: 2x faster load, ~2.5x slower decode — int8 default
+- confidence signal: per-step top-2 logit gap exposed to clients
+
+== 5. The quantization gate
+- margin analysis across the catalog; the Hebrew int8 artifact flipped
+  9.34% of positions invisibly to the CER gate
+- controlled probe matrix isolates the head; fp32 head = 36x fewer
+  flips at +0.4% size; now the export default + release gate
+
+== 6. Reproducibility discipline
+- subset-overstatement: five instances, up to 3.2x inflation
+- full-set-only rule; paired sentence-level bootstrap CIs on every
+  verdict; provenance hashing (identical numbers must mean identical
+  data — the run-004 lesson)
+
+== 7. Related work
+- content provenance: statistical watermarks, C2PA content credentials
+  (Fable 5.1) — our sha256 chain is the artifact-side analog
+- model zoos and packaging formats; speculative serving tiers
+
+== 8. Limitations
+- browser tier session rebuild ~20 s per page load (persisted warm
+  state is future work); WebGPU unmeasured; single-manufacturer
+  hardware for E1
+
+== 9. Artifacts
+All benchmarks, the index workflow, and the 17-model catalog are
+public; every number in this paper regenerates from committed scripts.
