@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("torch")
+
 import torch
 
 from gpu.mtp import MTPHead, mtp_named
