@@ -324,6 +324,27 @@ ara-diac-tiny-max:
   optimizer: muon
   note: gapless 30M rung - full data + r7 + Muon + 6ep; the title
     claim's decisive test
+ara-diac-small-2-6ep-tashkeela:
+  # G2b: the domain-residual causal test (TODO.publish-client 01).
+  # Identical to the G2a recipe (r7 teacher, Muon, 6 epochs, vanilla
+  # ByT5-small) except the corpus: 144,662 units from the FULL cleaned
+  # Tashkeela corpus (~5x the r5-units corpus) — classical Arabic books
+  # + MSA. Gate: >= 0.5pp full-set DER improvement over G2a (4.5701)
+  # attributes the residual to domain coverage; flat reframes it.
+  teacher: rababa_arabic_byt5/run-007-news/best
+  teacher_volume: rababa
+  out_volume: rababa
+  student_init: google/byt5-small
+  train: tashkeela-units/train.txt
+  train_extra: []
+  unit_limits:
+  - 48000
+  max_len: 1450
+  label_beams: '1'
+  out: rababa_arabic_distill_small/run-011-tashkeela-6ep
+  mode: sequence
+  optimizer: muon
+  note: G2b label-scale rung; 5x corpus, same levers; gate vs 4.5701
 ara-diac-tiny-stitched:
   teacher: rababa_arabic_byt5/run-006-morph/best
   teacher_volume: rababa
