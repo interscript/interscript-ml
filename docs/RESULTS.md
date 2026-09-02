@@ -487,3 +487,13 @@ non-overlapping sequential intervals:
 
 Every lever claim in paper B now carries its interval; the monotone
 separation between rungs is statistically real end to end.
+
+## ara-diac-tiny-max — the gapless title test: 73.95, collapse confirmed (2026-09-02)
+
+The 30M class with EVERY lever (full 24k+6k corpus, r7 labels, Muon,
+6 epochs, 21,990 steps, CE ~0.51): full-set **73.9489**, delta CI
+[70.222, 71.093], p=0. The maximal run improves on the handicapped
+scratch collapse (74.68) by 0.7pp: data quality and optimization do
+NOT rescue 30M from-scratch. Conclusion from evidence: the
+"30M-parameter encoder" title claim is closed; the thesis repositions
+per PAPER-ALIGNMENT.md.
