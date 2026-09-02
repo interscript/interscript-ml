@@ -353,7 +353,7 @@ def parity_model(
 @app.function(
     cpu=8,
     memory=32 * 1024,
-    timeout=5 * 3600,
+    timeout=12 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
 def margin_model(
