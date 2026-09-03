@@ -2,4 +2,4 @@
 
 Draft paper C around verification-is-free + tier tradeoffs + IMF contract + provenance. [papers]
 
-Status: pending (2026-09-02).
+Status: DONE (2026-09-02). Drafted, PR #142.
