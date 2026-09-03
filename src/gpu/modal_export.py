@@ -315,7 +315,7 @@ def parity_model(
     meta_path = Path("/root/interscript-ml", spec["metadata"])
     mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
-    for precision in precisions:
+    for precision in [q.strip() for q in precisions.split(",") if q.strip()]:
         zip_path = out_dir / f"{mid}-{precision}.zip"
         stage(f"onnx decode {precision}")
         report = run_parity(model, zip_path, pairs, max_len=128, reference=reference)
