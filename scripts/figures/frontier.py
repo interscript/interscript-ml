@@ -62,7 +62,7 @@ def main() -> None:
     pts = [(r[1], r[2]) for r in RUNS if r[2] is not None]
     labels = [r[0] for r in RUNS if r[2] is not None]
     ax.plot([p[0] for p in pts], [p[1] for p in pts], "o-")
-    for (x, y), lab in zip(pts, labels):
+    for (x, y), lab in zip(pts, labels, strict=True):
         ax.annotate(lab, (x, y), fontsize=7, xytext=(4, 4),
                     textcoords="offset points")
     ax.set_xscale("log")
