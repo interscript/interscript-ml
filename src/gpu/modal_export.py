@@ -382,7 +382,7 @@ def margin_model(
     meta_path = Path("/root/interscript-ml", spec["metadata"])
     mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
-    for precision in precisions:
+    for precision in [p.strip() for p in precisions.split(",") if p.strip()]:
         zip_path = out_dir / f"{mid}-{precision}.zip"
         if not zip_path.exists():
             reports[precision] = "zip not exported (skipped)"
