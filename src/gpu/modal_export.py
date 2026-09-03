@@ -191,6 +191,18 @@ MODELS: dict[str, dict[str, str]] = {
 app = modal.App("interscript-ml-export", image=IMAGE)
 
 
+def pending_precisions(
+    out_dir: Path, mid: str, precisions: list[str]
+) -> list[str]:
+    """Precision stages still to run: the margin report is the last
+    artifact a stage writes, so its presence means the stage (parity
+    block in the zip included) completed durably. Preemption restarts
+    resume at the next stage instead of redoing hours of decode."""
+    return [
+        p for p in precisions if not (out_dir / f"{mid}-margins-{p}.json").exists()
+    ]
+
+
 def _load_pairs(path: Path) -> list[tuple[str, str]]:
     import json
 
@@ -324,7 +336,10 @@ def parity_model(
     meta_path = Path("/root/interscript-ml", spec["metadata"])
     mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
-    for precision in [q.strip() for q in precisions.split(",") if q.strip()]:
+    todo = pending_precisions(
+        out_dir, mid, [q.strip() for q in precisions.split(",") if q.strip()]
+    )
+    for precision in todo:
         zip_path = out_dir / f"{mid}-{precision}.zip"
         stage(f"onnx decode {precision}")
         report = run_parity(model, zip_path, pairs, max_len=128, reference=reference)
