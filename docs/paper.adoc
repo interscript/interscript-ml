@@ -1,6 +1,6 @@
 = The Phonological Layer of Interoperable Script Conversion: Distilled Byte-Level Models Under a Deterministic Transliteration Contract
 Ronald Tse
-v1.0, 2026-08-25
+v1.1, 2026-09-03
 :doctype: book
 :toc: macro
 :numbered:
@@ -14,7 +14,7 @@ Interoperable script conversion (OGC Abstract Standard topic _Interoperable Scri
 
 We contribute: (1) the Interscript Model Format (IMF v1), a checksummed, runtime-agnostic artifact contract that carries models across Ruby, Python, and JavaScript with byte-identical output; (2) a distillation methodology in which students are trained from frozen, independently evaluated teachers under pre-registered error budgets; (3) a measured size–quality frontier for client-tier models demonstrating that sub-100M randomly-initialized byte-level students fail catastrophically, while a pretrained 300M backbone quantized to 4 bits (193 MiB) retains full utility; and (4) a decode-protocol study showing that beam search with conventional length normalization is *counterproductive* on distilled byte-level students, inflating phoneme error rate by a factor of four relative to greedy decoding on the same artifact — a calibration artifact with implications for any evaluation of low-confidence autoregressive models.
 
-Eleven models across four languages are released under BSD-3-Clause, every one traceable to a documented protocol. Where public benchmarks permit protocol-matched comparison, the teacher tier ranks among the best dedicated systems measured — second only to a frontier proprietary LLM on the SadeedDiac-25 Arabic diacritization leaderboard, and above the published SentenceBench homograph accuracy for Persian.
+Twelve models across four languages are released under BSD-3-Clause, every one traceable to a documented protocol. Where public benchmarks permit protocol-matched comparison, the teacher tier ranks among the best dedicated systems measured — second only to a frontier proprietary LLM on the SadeedDiac-25 Arabic diacritization leaderboard, and above the published SentenceBench homograph accuracy for Persian.
 
 == Introduction
 
@@ -43,7 +43,7 @@ Our goal is to serve the second class under the guarantees of the first. This im
 
 1. **IMF v1** (<<section-imf>>): a minimal artifact contract — one zip, three graphs, a byte-level tokenizer fixed by construction — that makes neural models as portable and as verifiable as transliteration maps.
 2. **Gated distillation campaign** (<<section-method>>, <<section-results>>): teachers frozen and independently evaluated before any student trains; students gated against their teacher on the same harness under budgets pre-registered before training. Four languages shipped; two capacity limits measured and disclosed rather than averaged away.
-3. **The client-tier frontier** (<<section-frontier>>): from-scratch sub-100M byte-level students collapse — including a from-scratch 33M student that fits its training objective under teacher forcing yet emits an immediate end-of-sequence at inference. The clean-label evidence is Thai; the Arabic replica's labels were later found corrupted, and that caveat is carried with the claim. The pretrained backbone is the whole quality cliff; below ByT5-small there is no useful rung today.
+3. **The client-tier frontier** (<<section-frontier>>): from-scratch sub-100M byte-level students collapse — including a from-scratch 33M student that fits its training objective under teacher forcing yet emits an immediate end-of-sequence at inference. The Arabic replica's labels were first found corrupted and retracted; the clean-label falsification has since been run and the collapse holds (74.68 clean-label; 73.95 with every lever), in both task families. The pretrained backbone is the whole quality cliff; below ByT5-small there is no useful rung today — and within the pretrained backbone, width is load-bearing while depth is the compressible axis.
 4. **The decode-protocol correction** (<<section-decode>>): beam-4 evaluation numbers overstated student phoneme error rate by 4.2x relative to greedy decoding on the same artifact. We analyze why (per-token distributions barely above uniform make likelihood-ranked completion pathological), and argue that runtime protocol — greedy — must be the published protocol for this model class.
 5. **Reproducibility record** (<<section-repro>>): the full engineering post-mortem of a multi-day debugging effort that unmasked four stacked infrastructure and code defects that masqueraded as storage-layer corruption, with the guards now preventing each.
 
@@ -179,6 +179,9 @@ Students train either by sequence-level KD (teacher-generated targets; cross-ent
 |tha-g2p-small-1.0-int4 |Thai→IPA (same student) |parity 0.07pp; CER cost +0.17pp |int4 · 193 MiB |client
 |heb-diac-small-1.0 |Hebrew niqqud |DER 30.37 (teacher 24.79; +5.58 within budget) |fp32 · 1.3 GiB |client
 |ara-diac-small-1.0 |Arabic haraqat |DER-CE 8.26 full-set (teacher 2.58; +5.68 disclosed) |fp32 · 1.3 GiB |client
+|ara-diac-small-2.0 |Arabic haraqat |DER-CE 4.822 full-set |int8 · 264 MiB |client
+|ara-diac-small-2.1 |Arabic haraqat |DER-CE 4.5701 (delta vs teacher [1.91, 2.35], paired bootstrap) |int8 · 264 MiB |client
+|ara-diac-layerdrop-1.0 |Arabic haraqat (enc 12→6) |DER-CE 5.784 (delta vs teacher [3.03, 3.49]) |int4 · 95 MiB |client-lite
 |===
 
 All fp32 artifacts measured 0.0pp parity (torch reference vs ONNX, ≥500 samples each); quantized artifacts as noted. Every row resolves from the public index and live-verifies from a cold cache in all three runtimes.
@@ -212,7 +215,8 @@ External claims are made only where a public benchmark exists and the full proto
 |Gemini Flash 2.0 (published) |— |3.1926
 |GPT-4 (published) |— |3.8645
 |Sadeed (published) |1.5B |7.2915
-|**our client student 2.0 (ByT5-small)** |300M |**4.822**
+|**our client student 2.1 (ByT5-small)** |300M |**4.5701**
+|our client student 2.0 (ByT5-small) |300M |4.822
 |our client student 1.0 (ByT5-small) |300M |8.259
 |===
 
@@ -222,7 +226,7 @@ The teacher is the best dedicated (task-trained, runnable-locally) model measure
 
 The r6 teacher's auxiliary-task design is validated by a controlled ablation: an identical run differing only in the auxiliary stream's output representation — broad-phonemic IPA of the same training units (deterministic converter) in place of morphological analysis — scores 2.6588 (vs 2.6775 for no auxiliary task and 2.5793 for the morphological one), while a held-out probe confirms the phonemic projection itself was learned (2.3% CER on the IPA stream). The improvement is therefore attributable to lexical-morphological knowledge injection, not to phonemic supervision per se: the strong form of the "phonemes help diacritization" hypothesis fails where its weak form (any structured auxiliary projection beats none) barely holds.
 
-The client student's row carries a measurement lesson we record rather than bury. Its first-published figure, 3.66, was measured on the first 300 paragraphs of the benchmark; the full 1,200-paragraph run scores 8.26 (teacher reproduces at 2.5815 against its documented 2.5793, confirming protocol consistency). The subset was not representative: its paragraphs sit closer to the student's training domain, and the remaining 900 expose a domain-generalization gap the subset hid. Two practices follow, now standing rules: student-tier numbers are published only from full benchmark sets, and a subset figure is labeled as such at first publication. A second, sibling lesson came from the newest external row: resumable API-evaluation checkpoints must be validated, not just resumed — exhausted retries were checkpointed as empty predictions, and a first GLM-5.3-Flash pass read 15.96 DER until the 140 sentinel rows were detected and re-fetched (the recorded number is 8.5721 raw / 8.7978 zero-skip, with the resume path now dropping empty rows by default). The student ships with the full-set number disclosed — behind Sadeed-1.5B on the leaderboard — and closing its domain gap (more diverse label coverage, or on-policy distillation; <<section-discussion>>) is open work. The measured levers have since moved it: the 2.0 rung (r7-teacher labels + the Muon optimizer, pre-registered as E4) reaches **4.822** — a 42% error reduction at identical architecture and artifact size — with the optimizer contributing −2.96pp and the teacher's fresher labels −0.47pp of the −3.44pp total; the factorial decomposition of the remaining gap is in <<section-frontier>>.
+The client student's row carries a measurement lesson we record rather than bury. Its first-published figure, 3.66, was measured on the first 300 paragraphs of the benchmark; the full 1,200-paragraph run scores 8.26 (teacher reproduces at 2.5815 against its documented 2.5793, confirming protocol consistency). The subset was not representative: its paragraphs sit closer to the student's training domain, and the remaining 900 expose a domain-generalization gap the subset hid. Two practices follow, now standing rules: student-tier numbers are published only from full benchmark sets, and a subset figure is labeled as such at first publication. A second, sibling lesson came from the newest external row: resumable API-evaluation checkpoints must be validated, not just resumed — exhausted retries were checkpointed as empty predictions, and a first GLM-5.3-Flash pass read 15.96 DER until the 140 sentinel rows were detected and re-fetched (the recorded number is 8.5721 raw / 8.7978 zero-skip, with the resume path now dropping empty rows by default). The student ships with the full-set number disclosed — behind Sadeed-1.5B on the leaderboard — and closing its domain gap (more diverse label coverage, or on-policy distillation; <<section-discussion>>) is open work. The measured levers have since moved it: the 2.0 rung (r7-teacher labels + the Muon optimizer, pre-registered as E4) reaches **4.822** — a 42% error reduction at identical architecture and artifact size — with the optimizer contributing −2.96pp and the teacher's fresher labels −0.47pp of the −3.44pp total; doubling epochs moves it again to **4.5701** (2.1, −0.25pp), every rung carrying a paired-bootstrap interval (<<section-frontier>>). The subset lesson itself compounded after first publication: five measured instances of first-300-paragraph figures overstating full-set quality (worst: a subset delta of 0.72pp that the full set corrected to 2.28pp, a 3.2× inflation that would have overturned a residual-attribution conclusion); the full-set-only rule is now standing, and the complete instance table is Paper A's Section 3.2.
 
 Two protocol notes the benchmark's own authors make and we adopt: self-reported numbers from other protocols (Sadeed's repository reports 1.2% DER under its own split) are not comparable, and multi-reference evaluation (Mohamed & Mubarak 2025) is the honest treatment of valid-alternative diacritizations; on WikiNews-2024 our teacher scores 17.38 WER against QCRI's in-domain-trained 2.70 — a domain gap (classical hadith vs news text), recorded rather than averaged away.
 
@@ -254,7 +258,7 @@ Three findings:
 
 1. **Random initialization collapses regardless of capacity or structure.** The bridge projections (teacher activations ridge-regressed into the student's geometry) measurably improve internal structure — 75.80 → 71.12 — but cannot rescue task accuracy. Enlarging without pretraining does not help (70M scores *worse* than 33M).
 2. **The pretrained rung is the whole cliff.** From 70M/78.51 to 300M/2.85 — two orders of magnitude in error across one initialization decision. ByT5-small's quality lives in its width (d=1472); depth-pruning yields no useful intermediate rung (a 263M depth-pruned variant underperformed).
-3. **The collapse reproduces in diacritization — with an honesty caveat.** An Arabic 33M from-scratch student scored the bare-text error constant (83.08% DER-CE vs teacher 1.32% on the same subset) while fitting its training objective under teacher forcing — emitting an immediate end-of-sequence at inference. A later audit showed that run's labels were corrupted in transit (<<section-repro>>), so this instance is confounded and the results log retracts its evidentiary weight; the *clean-label* collapse evidence is Thai, where the label pipeline was byte-exact and every from-scratch rung fails identically. We state the provenance because the pretrained-or-collapse conclusion should not lean on a measurement we know was poisoned.
+3. **The collapse reproduces in diacritization — now on clean labels.** The first Arabic replica (a 33M from-scratch student) scored the bare-text error constant (83.08% DER-CE vs teacher 1.32% on the same subset) while fitting its training objective under teacher forcing; a later audit showed that run's labels were corrupted in transit (<<section-repro>>), and the results log retracted its evidentiary weight. The falsification the retraction called for has since been run twice. A clean-label from-scratch 30M student (fresh teacher labels, no snapshot, digest-guarded) scores **74.68** full-set — collapsed, three orders off the teacher. And the maximal-lever variant — full 24k+6k corpus, r7 labels, Muon, 6 epochs, every optimization lever the campaign has — scores **73.95** full-set (paired-bootstrap delta vs teacher [70.22, 71.09], p=0): 0.7pp of improvement over the handicapped collapse. Data quality and optimization do not rescue the size class; the pretrained-or-collapse law now rests on measured clean-label evidence in both task families.
 
 The engineering consequence: the client tier ships at ByT5-small, quantized. A true 30–70 MiB tier requires a *pretrained* backbone at that scale — byte-level pretraining of a narrow model — which remains open future work. The quantization ladder is the practical size lever today: 246 MiB at int8, 193 MiB at int4, with the 4-bit quality cost measured at +0.17pp CER and certified by the parity gate.
 
@@ -272,6 +276,22 @@ A fourth question completes the frontier analysis: at the shipped rung, is the r
 |===
 
 The 2×2 closes cleanly: the optimizer alone recovers −2.96pp, memory alone −0.70pp (−0.47 under Muon), both together −3.43pp — roughly additive, slightly sub-additive on the memory term. The gap at this rung decomposes into ≈3.0pp optimization + ≈0.6pp capacity + ≈2.2pp residual (domain coverage; the full-benchmark subset lesson of <<section-leaderboard>> measures exactly this exposure). Two practical notes travel with the numbers: Muon's training CE was ~3× lower at equal steps *and* ~2.8× faster per step on this workload (1450-byte windows dominate; Newton–Schulz is cheap next to them), and the optimizer adopt gate (≥0.3pp, set before training) was exceeded nine-fold — while the capacity arm, measured under the same discipline, stayed below its 1.0pp bar. Optimization — not parameter count — is the dominant recoverable term of the distillation gap at this rung. A final pre-registered arm (E4) compounded the two positive levers on the vanilla architecture — the r7 canonical teacher's labels plus Muon — and landed at 4.822, matching the PKM arm (4.829) without the memory layers; that rung ships as ara-diac-small-2.0. (This speaks to the *distillation* gap on a pretrained backbone; it does not reopen the from-scratch collapse of finding 1, which is an initialization effect.)
+
+The Arabic client line has since been extended to a complete, confidence-bracketed full-set frontier — every rung measured on the full 1,200-paragraph set with paired-bootstrap intervals on the delta vs teacher (seed 42, 1,000 resamples):
+
+[%autowidth,cols="1,1,1,1"]
+|===
+|Student (Arabic, ByT5-small lineage) |Params |Full-set DER-CE |Delta vs teacher [95% CI]
+
+|from-scratch d384, every lever |30M |73.95 |[70.22, 71.09]
+|1.0 rung (AdamW, 3 ep) |300M |8.26 |[4.6, 5.7]
+|layerdrop (enc 12→6, Muon, 6 ep) |190M |5.78 |[3.03, 3.49]
+|2.0 rung (Muon, 3 ep) |300M |4.82 |[2.36, 2.82]
+|2.1 rung (Muon, 6 ep) |300M |4.57 |[1.91, 2.35]
+|teacher r7 |580M |2.29 |—
+|===
+
+Intervals are disjoint between adjacent rungs end to end: the frontier's separations are statistically real, not seed noise. Two structural findings sit on it. First, *pretrained width is load-bearing; depth is the compressible axis*. SVD width-stitching of the pretrained ByT5-small fails at both tested ratios (3.8× narrow: 82.96 — worse than the from-scratch collapse; 2× narrow: 78.23), while a verbatim layer copy of encoder layers 12→6 trains to 5.78 full-set — a shippable rung at 63% of the parameters whose 1.21pp depth cost at 6 epochs is CI-separated from the full-depth peer. Width surgery destroys the pretrained representation; depth surgery spends it. Second, the epochs lever is real but secondary: doubling 3→6 epochs moves the rung 4.82→4.57 (−0.25pp) — most of the residual is not undertraining. A pre-registered causal test of the remaining domain-coverage attribution swapped 8k news-domain units for classical-register Tashkeela at constant 30k budget and came back *negative* (5.81, −0.98pp vs control): register mix at constant budget does not fix the residual. The add-direction variant — 48k total with the full cleaned Tashkeela corpus (5× classical coverage, all other levers held) — is the live test of the domain-coverage attribution.
 
 == The decode protocol is part of the measurement
 [[section-decode]]
@@ -369,7 +389,7 @@ The general lesson: when a file "reads corrupt remotely and clean locally," susp
 
 == Conclusion
 
-The phonological layer ships: eleven models, four languages, two tiers, one artifact contract, zero untraceable numbers. The deterministic guarantees of map-based transliteration — same bytes everywhere, verifiable artifacts, public protocols — carry over to learned conversion. The two negative results (no sub-100M rung without pretraining; beam decode counterproductive on distilled byte students) are released with the same rigor as the positive ones, because in an infrastructure whose value is trust, a measured failure is a deliverable.
+The phonological layer ships: twelve models, four languages, three tiers, one artifact contract, zero untraceable numbers. The deterministic guarantees of map-based transliteration — same bytes everywhere, verifiable artifacts, public protocols — carry over to learned conversion. The two negative results (no sub-100M rung without pretraining; beam decode counterproductive on distilled byte students) are released with the same rigor as the positive ones, because in an infrastructure whose value is trust, a measured failure is a deliverable.
 
 == Data and compute statement
 
