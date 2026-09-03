@@ -292,3 +292,16 @@ models:
       - {name: der_wikinews_multiref, value: 11.8273, source: rababa/docs/RESULTS.md#r7-ood-verdict-table-wikinews-2024-multiref-2026-08-28}
     parity: {samples: 600, cer_delta: 0.0947}
     license: BSD-3-Clause
+  ara-diac-small-2.1:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp32
+    filename: ara-diac-small-2.1-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-2.1/ara-diac-small-2.1-fp32.zip
+    sha256: a69918de9f87664fd97cdab3bf68b655966f608211dbeadd7b6fb3f7b03e5ffb
+    size: 1419756840
+    metrics:
+      - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+      - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+    parity: {samples: 2480, cer_delta: 0.0714}
+    license: BSD-3-Clause
