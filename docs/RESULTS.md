@@ -339,9 +339,12 @@ harakat-projected DER-CE): the teacher tier (r6, 580M) at 2.5793
 (reproduced at 2.5815, 2026-08-26) is the best dedicated model measured
 under this protocol — second only to Claude-3.7-Sonnet's published
 1.3941, ahead of GLM-5.2 zero-skip (2.6911), Gemini-Flash-2.0 (3.1926),
-GPT-4 (3.8645), and Sadeed-1.5B (7.2915; source table in rababa
-docs/RESULTS.md). The client student's full-set 8.26 lands behind
-Sadeed-1.5B; see the correction above.
+GPT-4 (3.8645), Sadeed-1.5B (7.2915; source table in rababa
+docs/RESULTS.md), and GLM-5.3-Flash (8.5721 raw / 8.7978 zero-skip,
+effort=low, 2026-08-31 — behind Sadeed-1.5B; protocol note: the API
+rejects disabled thinking combined with reasoning_effort, HTTP 400
+code 1210, so effort is pinned per row). The client student's full-set
+8.26 lands behind Sadeed-1.5B; see the correction above.
 
 ## IMF runtime benchmarks — E1 node tier (2026-08-29)
 
