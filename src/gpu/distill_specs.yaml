@@ -198,7 +198,7 @@ ara-diac-small-2-gkd:
   - 6000
   max_len: 1450
   label_beams: '1'
-  out: rababa_arabic_distill_small/run-011-r7-muon-gkd
+  out: rababa_arabic_distill_small/run-012-r7-muon-gkd
   labels_file: teacher_labels_r7.jsonl
   mode: sequence
   gkd:
