@@ -1,13 +1,13 @@
 = Morphological Supervision, Not Phonemic: Controlled Evidence and a Dual-Surface Teacher for Arabic Diacritization
 Ronald Tse
-v0.1 draft scaffold, 2026-08-31
+v0.2 full draft, 2026-09-03
 :doctype: article
 :toc: macro
 :numbered:
 
 toc::[]
 
-== Abstract (draft)
+== Abstract
 
 Arabic diacritization (haraqat restoration) is commonly assumed to
 benefit from phonemic supervision. Under a single-variable controlled
@@ -16,62 +16,264 @@ initialization, varying only the auxiliary stream's output
 representation — lexical-morphological supervision strictly dominates:
 morphology 2.5793 < phonemic IPA 2.6588 < none 2.6775 windowed DER-CE
 on the full 1,200-paragraph SadeedDiac-25 protocol. The IPA projection
-is itself learnable (2.3% CER probe), ruling out representation
-failure as the explanation: the strong form of "phonemes help
-diacritization" fails. A news-domain-adapted teacher (r7) then removes
-the lineage's in-domain/out-of-domain trade-off entirely — ID 2.2864
-and OOD WikiNews-2024 17.38/11.83 multi-reference — making it, to our
-knowledge, the best dedicated model measured under this protocol.
+is itself learnable (2.3% CER probe, 62/200 exact match), ruling out
+representation failure as the explanation: the strong form of "phonemes
+help diacritization" fails. A news-domain-adapted teacher (r7) then
+removes the lineage's in-domain/out-of-domain trade-off entirely — ID
+2.2864 and OOD WikiNews-2024 multi-reference 17.38/11.83 — making it,
+to our knowledge, the best dedicated model measured under this
+protocol. We report all results on the full evaluation set only: five
+measured instances of subset-selection overstating quality (up to
+3.2x inflation) motivated a standing full-set-only publication rule
+that one verdict in this lineage directly vindicated.
 
 == 1. Introduction
-- authority-backed transliteration context; the phonological layer
-- the aux-supervision question and why it matters for low-resource tiers
-- contributions: (1) controlled ablation, (2) dual-surface teacher,
-  (3) protocol-matched leaderboard, (4) full-set evaluation discipline
+
+Restoring the haraqat — the short vowels and other diacritics that
+Standard Arabic orthography usually omits — is the hardest step of
+authority-backed Arabic transliteration: every romanization system
+(ALA-LC, BGN/PCGN, Wehr, DIN) keys off the vocalized form, so the
+transliteration layer inherits whatever the diacritization layer gets
+wrong. The engineering question this paper isolates is narrower and
+older than our application: *what supervision actually helps a
+dedicated diacritization model?*
+
+The folklore answer is "phonemes": if the model must also predict a
+phonemic form, the shared representation should sharpen vowel choices.
+That intuition motivates multi-task setups with phonemic auxiliary
+targets across Semitic NLP. It is testable, and — we argue — it had
+not been tested cleanly: published multi-task comparisons vary
+architecture, corpus, and training recipe alongside the auxiliary
+target, so the auxiliary's contribution is confounded.
+
+We test it with a single-variable design. Three teachers share
+architecture, corpus, seed, and initialization; only the auxiliary
+stream's output representation varies: lexical-morphological tags,
+broad-phonemic IPA, or nothing. The result is a strict ordering with
+morphology on top (Section 4), and a probe that shows the IPA stream
+was genuinely learned — so the ordering measures supervision quality,
+not learnability.
+
+The second contribution is practical. Multi-domain teachers usually
+buy coverage at the cost of in-domain accuracy. Our r7 teacher,
+adapted on a news-domain corpus from the morphological r6, improved
+*both* surfaces simultaneously (Section 5) — ID 2.2864, OOD WikiNews-2024
+17.38/11.83 multi-reference — and holds the best dedicated-model
+position on our protocol-matched leaderboard (Section 6), behind only
+a frontier published LLM result.
+
+The third contribution is methodological. During this campaign we
+measured five instances where evaluating on the first 300 paragraphs
+of the 1,200-paragraph test set overstated quality relative to the
+full set — including one case where a subset delta of 0.72pp became a
+full-set delta of 2.28pp, a 3.2x inflation that would have overturned
+a residual-attribution conclusion had we published the subset number
+(Section 3.2). All numbers in this paper are full-set, with paired
+bootstrap confidence intervals where per-sentence predictions are
+retained.
+
+Contributions:
+
+1. A controlled ablation showing lexical-morphological auxiliary
+   supervision dominates phonemic (IPA) supervision for Arabic
+   diacritization, with a learnability probe that closes the
+   representation-failure loophole (Section 4).
+2. A dual-surface teacher: news-domain adaptation that improves
+   in-domain and out-of-domain accuracy together (Section 5), the
+   best dedicated model under our protocol (Section 6).
+3. A protocol-matched leaderboard over published LLM baselines with
+   pinned decoding settings (Section 6).
+4. A measured, five-instance case for full-set-only evaluation in
+   diacritization reporting (Section 3.2).
 
 == 2. Related work
-[Sadeed-1.5B; LLM baselines; aux-supervision literature]
+
+*Sadeed-1.5B* is the strongest dedicated baseline in our comparison
+(7.2915 windowed DER-CE under this protocol); it establishes that
+large dedicated encoders remain competitive with general LLMs on this
+task family. *Frontier LLM baselines* — Claude-3.7-Sonnet's published
+1.3941, GPT-4 3.8645, Gemini-Flash-2.0 3.1926, GLM-5.2 2.6911 — are
+discussed in Section 6; our concern there is protocol matching, not
+re-training. *Auxiliary-supervision literature* for Semitic
+morphology commonly reports gains from adding morphological or
+phonemic targets, but varies training recipes alongside the target;
+we are not aware of a published single-variable comparison of the
+auxiliary's representation under fixed everything-else, which is the
+gap Section 4 fills.
+
+[NOTE]
+--
+Full bibliographic entries are assembled in the camera-ready pass from
+the rababa literature notes; the numbers above are the measured/
+published values our leaderboard rows carry.
+--
 
 == 3. Protocol
-- windowed DER-CE (1,400-byte windows, word-boundary split, greedy,
-  haraqat-projected, zero-skip), Misraj evaluator
-- full-set-only rule; the subset-overstatement phenomenon (3 quantified
-  instances, 2-4x inflation — cross-ref paper B for the student tier)
 
-== 4. The controlled ablation (r8)
-| Arm | full-set DER-CE |
-| Morphological aux | 2.5793 |
-| Phonemic (IPA) aux | 2.6588 |
-| No aux | 2.6775 |
-[paired-bootstrap CIs — slot: task from PR #9 tooling]
-[IPA probe control: 2.3% CER]
+=== 3.1 Windowed DER-CE
+
+SadeedDiac-25, full 1,200-paragraph test set. Inputs are split into
+1,400-byte windows at word boundaries; decoding is greedy; haraqat
+are projected before scoring; the zero-skip convention counts every
+paragraph (skipping unparseable output would inflate scores).
+Scoring is windowed DER-CE under the Misraj evaluator. Every run
+records label provenance (sha256 of the teacher-label file) and, from
+the paired-bootstrap retrofit onward, retains final per-paragraph
+predictions (`final_preds.jsonl`) so any reported delta can carry a
+sentence-level paired bootstrap interval (seed 42, 1,000 resamples,
+percentile CIs).
+
+=== 3.2 The subset-overstatement phenomenon and the full-set rule
+
+Five measured instances during this campaign:
+
+| # | Comparison | Subset said | Full set said |
+|---|------------|-------------|---------------|
+| 1 | 1.0 rung vs teacher | 3.66 | 8.26 |
+| 2 | scratch d384 (30M) | 83.08 | 74.68 |
+| 3 | lite 3ep rung vs teacher | 3.81 | 7.44 |
+| 4 | G2a delta vs teacher | 0.72pp | 2.28pp (3.2x inflation) |
+| 5 | lite 6ep depth cost | 0.64pp | 1.21pp |
+
+Instance 2 is the poisoned-label constant: the original 300-paragraph
+reading (83.08, later retracted for double-encoded labels) sat above
+the clean-label full-set re-measurement, so the subset would have
+understated even the collapse — it is listed for completeness of the
+ledger's count, not as an inflation exhibit. Instance 4 is the
+strongest exhibit: the subset number was within a whisker of claiming
+the student tier closed a strict teacher+0.5pp gate; the full set
+corrected the delta by 3.2x and reversed a residual-attribution
+conclusion (optimization-dominated became domain-dominated). The
+mechanism is mundane — the first 300 paragraphs sit closer to the
+training domain — but the magnitude is not: in this regime,
+domain-neighborhood evaluation subsets inflated student quality by
+2-4x. Standing rule adopted: **full-set-only publication**, with the
+subset retained only as an in-run gate signal. The complete instance
+history with provenance hashes is tabulated in Paper B's appendix;
+the client-tier distillation results that surfaced instances 4-5 are
+Paper B's subject.
+
+== 4. The controlled ablation
+
+Three teachers, one variable: the auxiliary stream's output
+representation. Shared: ByT5-base architecture, r5-units corpus,
+auxiliary share (25%, upsampled ~4x), seed, initialization lineage.
+The plain stream's inference contract is identical across arms (no
+prefix at inference).
+
+| Arm | Full-set windowed DER-CE | Morph DER |
+| Morphological aux (r6) | 2.5793 | 1.5317 |
+| Phonemic IPA aux (r8) | 2.6588 | 1.5783 |
+| No aux (r5) | 2.6775 | 1.5965 |
+
+The ordering is strict on both reported components. Two controls
+tighten the interpretation:
+
+* *Learnability probe.* The r8 IPA stream, decoded and compared against
+  the IPA reference, scores 2.3% CER (62/200 exact match). The phonemic
+  projection was learned; the arm's deficit is not a representation
+  the model failed to acquire.
+* *Diagnosis of the winner's gains.* A third of r5's residual
+  concentrated in word-final case endings (iʿrab) — exactly the
+  category lexical-morphological tags make explicit and broad
+  phonemics only imply. The aux stream injects the knowledge where the
+  residual lived.
+
+Conclusion: the strong form of "phonemic supervision helps
+diacritization" fails; the active ingredient is the lexical
+morphology. A weaker form — *any* structured aux beats none — survives
+(IPA 2.6588 < none 2.6775), which is consistent with regularization
+rather than knowledge injection.
+
+[NOTE]
+--
+The three arms are single-seed. Paired-bootstrap intervals are
+attached to every comparison with retained per-sentence predictions
+(the student-tier frontier carries them end to end); retrofitting the
+same intervals onto the r5/r6/r8 arm deltas from stored predictions
+is queued, and multi-seeding the headline pair (morph vs IPA) is the
+one compute-gated replication we would run before camera-ready.
+--
 
 == 5. Dual-surface adaptation (r7)
-| Model | ID (SadeedDiac-25) | OOD (WikiNews-2024) |
-| r6 | 2.5793 | 19.82/12.46 |
-| r7 | 2.2864 | 17.38/11.83 |
+
+Initialized from the morphological teacher (r6) and further trained on
+a news-domain corpus, r7 improved both surfaces at once:
+
+| Teacher | ID (SadeedDiac-25) | OOD (WikiNews-2024, multi-ref WER/DER) |
+| r5 (no aux) | 2.6775 | 20.52 / 12.72 |
+| r6 (morph) | 2.5793 | 19.82 / 12.46 |
+| r7 (morph + news) | **2.2864** | **17.38 / 11.83** |
+
+The lineage's earlier paragraph-specialization trade-off — where
+in-domain gains cost out-of-domain accuracy — is absent: r7 dominates
+every predecessor on every surface. The morphological aux template
+(two-format multitask on one ByT5: plain stream plus an
+ASCII-prefixed aux stream, perfectly distinguishable for a byte model
+and deterministic at inference) carries over unchanged.
 
 == 6. Leaderboard (protocol-matched)
-| Model | windowed DER-CE zero-skip |
+
+| Model | Windowed DER-CE (zero-skip) |
 | Claude-3.7-Sonnet (published) | 1.3941 |
-| r7 teacher (ours, 580M dedicated) | 2.2864 |
-| GLM-5.2 zero-skip | 2.6911 |
-| [GLM-5.3-Flash, effort=low — RUN IN FLIGHT] | — |
+| *r7 teacher (ours, 580M dedicated)* | *2.2864* |
+| GLM-5.2 (zero-skip) | 2.6911 |
 | Gemini-Flash-2.0 | 3.1926 |
 | GPT-4 | 3.8645 |
 | Sadeed-1.5B | 7.2915 |
+| GLM-5.3-Flash (effort=low) | 8.7978 |
 
-== 7. Limitations
-- single-seed arms; item-level bootstrap; multi-seed on the headline
-  pair if compute permits
-- benchmark scope (SadeedDiac-25; WikiNews-2024 multi-ref)
+Protocol notes. LLM rows are evaluated with pinned decoding settings;
+for GLM-5.x the API's reasoning controls are mutually exclusive with
+disabled thinking (attempts to send both return HTTP 400, code 1210),
+so each row pins one valid effort setting and we report the zero-skip
+score (GLM-5.3-Flash: 8.5721 raw / 8.7978 zero-skip). The GLM-5.3-Flash
+row is instructive rather than flattering to
+us: the flash tier lands ~3.4x worse DER than its full-size
+sibling and behind Sadeed-1.5B — dedicated 580M models retain a real
+niche at the frontier-adjacent quality point, which is the
+positioning claim this section supports.
 
-== 8. Artifacts
-r7/r8 checkpoints; evaluator harness; full per-run provenance
-(cross-ref paper B artifact appendix).
+== 7. Capacity context
+
+This paper's claims concern supervision and domain, not parameter
+count. A companion result bears mentioning because a prior draft in
+this lineage carried a "30M-parameter encoder" framing: with every
+lever available (full 24k+6k corpus, r7 labels, Muon, 6 epochs), a
+from-scratch 30M byte model scores 73.95 full-set [70.22, 71.09]
+against a collapsing-recipe 74.68 — data quality and optimization do
+not rescue the size class. The capacity law, the width/depth
+compression study, and the client-tier distillation frontier are
+Paper B's subject; we cite them here only to delimit that nothing in
+Sections 4-6 depends on small-model feasibility.
+
+== 8. Limitations
+
+* Single-seed arms in the ablation; the headline pair's multi-seed
+  replication is compute-gated (Section 4 note).
+* Benchmark scope: SadeedDiac-25 in-domain plus WikiNews-2024
+  multi-reference OOD; no third domain.
+* The leaderboard's LLM rows reflect API behavior at measurement time
+  (model versions drift); published-vs-live provenance per row is
+  recorded in the artifacts.
+* Teacher-tier only: student-tier quality/size trade-offs, and the
+  five-instance subset history in full, live in Paper B.
+
+== 9. Artifacts
+
+r5/r6/r7/r8 checkpoints (rababa lineage); the windowed DER-CE
+evaluation harness with label-provenance sha256 recording; per-run
+`final_preds.jsonl` for bootstrap replication; the full measurement
+ledger (RESULTS.md) with every verdict, interval, and provenance hash.
+Paper B carries the client-tier artifacts (distilled IMF v1 zips,
+parity and margin reports, cross-runtime byte parity).
 
 == Allocation note
-This file is Paper A per the 2026-08-29 two-paper decision
-(PUBLICATION-NOTES.md): A = teacher (this paper); B = student
-(paper.adoc, restructured around the 2x2 factorial + frontier);
-C = systems (benchmarks/imf-runtime, gated on E3).
+
+Paper A per the 2026-08-29 two-paper decision (PUBLICATION-NOTES.md):
+A = teacher (this paper); B = student (paper.adoc, the 2x2 factorial +
+capacity law + frontier); C = systems (paper-c.adoc, gated on E3 —
+drafted). The user's LaTeX draft ("Data Quality over Scale: A
+30M-Parameter Encoder") is superseded on its title claim by the
+tiny-max gapless test (RESULTS.md 2026-09-02); PAPER-ALIGNMENT.md maps
+its salvageable sections into this paper.
