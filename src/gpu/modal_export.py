@@ -132,6 +132,15 @@ MODELS: dict[str, dict[str, str]] = {
         "test_data": "arabic-sadeed-imf/test.jsonl",
         "probe": "قوله",
     },
+    "ara-diac-layerdrop": {
+        "volume": "/volumes/rababa-checkpoints",
+        "checkpoint": "rababa_arabic_distill_small/run-009-layerdrop-6ep/best",
+        "metadata": "models/ara-diac-layerdrop/ara-diac-layerdrop-1.0.metadata.yaml",
+        "readme": "models/ara-diac-layerdrop/ara-diac-layerdrop-1.0.README.md",
+        "test_volume": "/datasets/rababa",
+        "test_data": "arabic-sadeed-imf/test.jsonl",
+        "probe": "قوله",
+    },
     "urd-diac": {
         "volume": "/volumes/urdu-diacrit-checkpoints",
         "checkpoint": "urdu_diacrit/run-001/best",
