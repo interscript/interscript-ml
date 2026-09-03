@@ -285,6 +285,17 @@ All rows passed the CER parity gate at release. Readings:
   units move the rung; register swaps at constant budget do not.
   Clean negative; direction shifts to G2b (48k add). Labels sha256
   39b4213b5ab4c9f7273da90a9a1954f7701320b62870a954e6e2c02e810617a4.
+- **CE curves (2026-09-03, registered checkbox):** control run-006's
+  per-step curve is not recoverable (client died pre-compaction;
+  steps never persisted) — recorded as absent, not reconstructed.
+  E6 (local log, steps 2,550-11,050): CE oscillates 0.003-0.023 with
+  no anomaly at either resume; both preemptions invisible in CE.
+  E5's captured segment IS the confound quantified: CE 0.8444 at step
+  8,550 (fresh aux head) decaying through 0.16 @ 9,000 and 0.069 @
+  9,500 to ~0.035 by 10,500 — ~2,000 steps to return to trend,
+  independently confirming the fresh-head diagnosis. Neither lever
+  shows a convergence-speed effect distinguishable from noise on the
+  surviving curves; the DER gates remain the only verdicts.
 
 ## Parked
 
