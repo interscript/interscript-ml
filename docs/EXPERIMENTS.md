@@ -297,6 +297,31 @@ All rows passed the CER parity gate at release. Readings:
   shows a convergence-speed effect distinguishable from noise on the
   surviving curves; the DER gates remain the only verdicts.
 
+## GKD — on-policy distillation rung (REGISTERED/ARMED 2026-09-03)
+
+- **Status:** REGISTERED, launch pending owner ordering (the last
+  lever with no data; TODO.substantiate/03). Implementation follows
+  this registration verbatim when launched.
+- **Hypothesis:** the client tier's remaining ~2.0pp over the teacher
+  is domain-shaped exposure: the student never trains on its own
+  decode distribution. On-policy GKD (sequences sampled from the
+  student during training, scored against the frozen r7 teacher's
+  targets/logits) attacks exactly that.
+- **Design:** spec `ara-diac-small-2-gkd`, control = run-006 verbatim
+  (30k units, identical steps/schedule/optimizer); delta = GKD loss
+  mixing — student-sampled sequences (temperature-matched to greedy
+  inference) blended into the sequence-KD objective at a fixed ratio,
+  annealed to zero over the final third.
+- **Pre-agreed gate:** adopt at <= 4.5218 full-set windowed DER;
+  honest-report band [4.5218, 4.8218); investigate if worse.
+- **Prediction (registered):** 4.30-4.65 — the E6 swap-negative says
+  register mix at constant budget is not the lever; on-policy
+  exposure is the remaining untested reading of the domain
+  attribution. Note: run-006's canonical control is 4.8218 (E4-era
+  eval); a later auto-chain re-eval printed 5.0821 for the same run —
+  the ledger's 4.8218 stays canonical; a GKD verdict compares within
+  one eval pass.
+
 ## Parked
 
 - **Speculative decoding** (LongCat converts sparsity→speed): revisit
