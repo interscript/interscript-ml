@@ -166,6 +166,8 @@ def run_parity(
     zip_path = Path(zip_path)
     enc, kv = _sessions_from_zip(zip_path)
 
+    import gc
+
     import yaml
 
     with zipfile.ZipFile(zip_path) as zf:
@@ -175,16 +177,23 @@ def run_parity(
     mismatches = 0
     cer_ref_sum = 0.0
     cer_onnx_sum = 0.0
-    for i, (source, gold) in enumerate(pairs):
-        n += 1
-        ref = reference[i] if reference is not None else _torch_greedy_tokens(
-            model, source, max_len
-        )
-        got = onnx_greedy_kv(enc, kv, source, max_len)
-        if ref != got:
-            mismatches += 1
-        cer_ref_sum += char_error_rate(_decode_tokens(ref), gold)
-        cer_onnx_sum += char_error_rate(_decode_tokens(got), gold)
+    try:
+        for i, (source, gold) in enumerate(pairs):
+            n += 1
+            ref = reference[i] if reference is not None else _torch_greedy_tokens(
+                model, source, max_len
+            )
+            got = onnx_greedy_kv(enc, kv, source, max_len)
+            if ref != got:
+                mismatches += 1
+            cer_ref_sum += char_error_rate(_decode_tokens(ref), gold)
+            cer_onnx_sum += char_error_rate(_decode_tokens(got), gold)
+    finally:
+        # ORT arenas accumulate across precision stages (six session
+        # lifetimes + the torch reference OOMed the container at int8);
+        # release deterministically instead of waiting on GC
+        del enc, kv
+        gc.collect()
 
     cer_ref = 100.0 * cer_ref_sum / max(n, 1)
     cer_onnx = 100.0 * cer_onnx_sum / max(n, 1)
