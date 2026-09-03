@@ -31,9 +31,9 @@ metrics:
     architecture and artifact size
   source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon
 parity:
-  samples: 600
-  cer_delta: 0.1187
+  samples: 2480
+  cer_delta: 0.0714
 sha256:
-  decoder-kv.onnx: 61ef645345997eb5b9746ac77b39363228e5d0873093e6ebaca9a5903d3ac846
-  decoder.onnx: 56d81cc644e2c27b56f5efd07f3e6bac0244b74e1383782b13e2d615fbcd43c6
-  encoder.onnx: 1eab5f6d418bd718e0628e0cee3124143dd7f277e5b14669a8df76744d12c5ce
+  decoder-kv.onnx: 8a8c55cf78105383766dd3245f8c7b1d88f781428a7e568e7c7760d1133711d9
+  decoder.onnx: 81852f41838f6ad8dd8ee5b72e709328afdad474ee28da6381abbd32659219d7
+  encoder.onnx: 887972badf56b9fd57ff65c64c4f2f06096b36815ae46619979c675f91c0ec23
