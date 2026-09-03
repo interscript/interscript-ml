@@ -751,6 +751,15 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         mtp_head = build_mtp(student, steps=int(mtp_cfg.get("steps", 3)))
         n = sum(q.numel() for q in mtp_head.parameters()) / 1e6
         print(f"[{spec_id}] mtp_aux head: {n:.2f}M params", flush=True)
+    gkd_cfg = spec.get("gkd")
+    if gkd_cfg:
+        print(
+            f"[{spec_id}] gkd: ratio={gkd_cfg.get('ratio', 0.3)} "
+            f"temp={gkd_cfg.get('temperature', 1.0)} "
+            f"every={gkd_cfg.get('sample_every', 4)} "
+            f"sub={gkd_cfg.get('sample_sub', 2)} cap={gkd_cfg.get('sample_cap', 1024)}",
+            flush=True,
+        )
     student.train()
 
     class Pairs(Dataset):
@@ -1033,6 +1042,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     student.gradient_checkpointing_enable()
     if mtp_head is not None:  # built while student was still on cpu
         mtp_head.to("cuda")
+    if gkd_cfg is not None:  # on-policy scoring needs the teacher resident
+        teacher.to("cuda")
+        teacher.eval()
+        _ensure_src_path()
+        from gpu.gkd import gkd_weight, reverse_kl
+        print(f"[{spec_id}] gkd: teacher resident on cuda for scoring", flush=True)
 
     class TeacherPairs(Dataset):
         def __len__(self):
@@ -1131,6 +1146,32 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 loss = s_out.loss + beta * aux
             else:
                 loss = student(input_ids=ids, attention_mask=am, labels=labels).loss
+            if (
+                gkd_cfg is not None
+                and step % int(gkd_cfg.get("sample_every", 4)) == 0
+            ):
+                w = gkd_weight(step, total_steps, float(gkd_cfg.get("ratio", 0.3)))
+                if w > 0:
+                    sub = int(gkd_cfg.get("sample_sub", 2))
+                    with torch.no_grad():
+                        gen = student.generate(
+                            input_ids=ids[:sub], attention_mask=am[:sub],
+                            do_sample=True,
+                            temperature=float(gkd_cfg.get("temperature", 1.0)),
+                            max_new_tokens=int(gkd_cfg.get("sample_cap", 1024)),
+                        )
+                    # gen is the decoder-side sample; score both models on
+                    # (prompt -> sample). Skip the decoder-start token.
+                    cont_mask = torch.zeros_like(gen, dtype=torch.bool)
+                    cont_mask[:, 1:] = True
+                    s_logits = student(
+                        input_ids=ids[:sub], attention_mask=am[:sub], labels=gen
+                    ).logits
+                    with torch.no_grad():
+                        t_logits = teacher(
+                            input_ids=ids[:sub], attention_mask=am[:sub], labels=gen
+                        ).logits
+                    loss = loss + w * reverse_kl(s_logits, t_logits, gen, cont_mask)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
             optimizer.step()
