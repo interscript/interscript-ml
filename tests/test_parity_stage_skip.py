@@ -33,3 +33,17 @@ def test_zip_without_margin_report_still_runs(tmp_path: Path) -> None:
     (tmp_path / "ara-diac-small-2.1-int8.zip").write_text("partial")
     got = pending_precisions(tmp_path, "ara-diac-small-2.1", ["int8"])
     assert got == ["int8"]
+
+
+def test_list_input_from_entrypoint(tmp_path: Path) -> None:
+    # the parity/margins entrypoints pass precisions.split(",") — a
+    # list — into the remote functions; the functions must accept both
+    # forms (direct ::parity_model CLI invocation passes a string)
+    (tmp_path / "ara-diac-small-2.1-margins-fp32.json").write_text("{}")
+    got = pending_precisions(tmp_path, "ara-diac-small-2.1", ["fp32", "int8"])
+    assert got == ["int8"]
+
+
+def test_string_input_strips_whitespace(tmp_path: Path) -> None:
+    got = pending_precisions(tmp_path, "m", "fp32, int8")
+    assert got == ["fp32", "int8"]

@@ -191,15 +191,26 @@ MODELS: dict[str, dict[str, str]] = {
 app = modal.App("interscript-ml-export", image=IMAGE)
 
 
+def normalize_precisions(precisions: "str | list[str]") -> list[str]:
+    """Accept both invocation forms: the parity/margins entrypoints pass
+    a pre-split list, direct ::parity_model-style CLI calls pass a
+    comma string."""
+    if isinstance(precisions, str):
+        precisions = precisions.split(",")
+    return [q.strip() for q in precisions if q.strip()]
+
+
 def pending_precisions(
-    out_dir: Path, mid: str, precisions: list[str]
+    out_dir: Path, mid: str, precisions: "str | list[str]"
 ) -> list[str]:
     """Precision stages still to run: the margin report is the last
     artifact a stage writes, so its presence means the stage (parity
     block in the zip included) completed durably. Preemption restarts
     resume at the next stage instead of redoing hours of decode."""
     return [
-        p for p in precisions if not (out_dir / f"{mid}-margins-{p}.json").exists()
+        p
+        for p in normalize_precisions(precisions)
+        if not (out_dir / f"{mid}-margins-{p}.json").exists()
     ]
 
 
@@ -336,9 +347,7 @@ def parity_model(
     meta_path = Path("/root/interscript-ml", spec["metadata"])
     mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
-    todo = pending_precisions(
-        out_dir, mid, [q.strip() for q in precisions.split(",") if q.strip()]
-    )
+    todo = pending_precisions(out_dir, mid, precisions)
     for precision in todo:
         zip_path = out_dir / f"{mid}-{precision}.zip"
         stage(f"onnx decode {precision}")
@@ -406,7 +415,7 @@ def margin_model(
     meta_path = Path("/root/interscript-ml", spec["metadata"])
     mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
     reports: dict[str, str] = {}
-    for precision in [p.strip() for p in precisions.split(",") if p.strip()]:
+    for precision in normalize_precisions(precisions):
         zip_path = out_dir / f"{mid}-{precision}.zip"
         if not zip_path.exists():
             reports[precision] = "zip not exported (skipped)"
