@@ -42,3 +42,14 @@ def test_byte_model_defaults() -> None:
     cfg = student_t5_config({})
     assert cfg.num_layers == 8 and cfg.num_decoder_layers == 8
     assert cfg.d_model == 384
+
+
+def test_vocab_size_override_matches_teacher() -> None:
+    # logit-KD computes teacher-vs-student KL: the student vocab must
+    # match the teacher's (ByT5 = 384), while the sequence path's
+    # byte-table default (259) stays intact
+    from gpu.modal_distill import student_t5_config
+
+    cfg = student_t5_config({"vocab_size": 384, "enc_layers": 6, "dec_layers": 4})
+    assert cfg.vocab_size == 384
+    assert student_t5_config({"enc_layers": 6, "dec_layers": 4}).vocab_size == 259
