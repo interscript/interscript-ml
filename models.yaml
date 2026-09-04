@@ -334,8 +334,8 @@ models:
     task: diacritization
     scripts: [Arab, Arab]
     precision: int8
-    filename: ld-int8.zip
-    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-layerdrop-1.0/ld-int8.zip
+    filename: ara-diac-layerdrop-1.0-int8.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-layerdrop-1.0/ara-diac-layerdrop-1.0-int8.zip
     sha256: 68dcc06cd8861e017c4d4912ce3e1fe057d78b79b0a7b6246ae8603c99930963
     size: 191603048
     metrics:
