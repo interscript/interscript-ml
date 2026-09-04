@@ -297,6 +297,27 @@ All rows passed the CER parity gate at release. Readings:
   shows a convergence-speed effect distinguishable from noise on the
   surviving curves; the DER gates remain the only verdicts.
 
+## G2b — label-scale ADD rung (run-011-tashkeela-6ep) — verdict recorded 2026-09-04
+
+- **Design** (ml #135): 48,000 total units — the control's news-mix
+  plus 18,000 additional classical Tashkeela units — trained 6 epochs
+  (G2a's epoch count). Spec `ara-diac-small-2-6ep-tashkeela`.
+- **Status:** COMPLETE — **4.8231** full-set windowed DER (n=1200;
+  teacher reproduces 2.289; paired bootstrap student−teacher +2.3717,
+  CI [2.194, 2.554]). From final_eval.json on the volume; run
+  completed and evaluated by its owners; recorded here per
+  TODO.substantiate item 04. Labels sha256 b59e2f5677693eab8968208e0
+  0a70590d03ce743fbc43b2acdb0ac9bd508c8fb.
+- **Read:** the domain-coverage attribution is now negative in BOTH
+  directions at matched epochs. Swapping news out (E6, 3ep): 5.8057.
+  Adding classical units on top (G2b, 6ep): 4.8231 — flat vs the 3ep
+  30k control (4.8218) and 0.25pp WORSE than news-only G2a (4.5701):
+  the Tashkeela add neutralized the epoch gain entirely. The
+  post-E3 residual is not register-shaped; the only levers that have
+  moved this rung are optimizer (−2.96pp), fresher teacher labels
+  (−0.47pp), and epochs (−0.25pp). What remains is GKD (on-policy
+  exposure, run-012 in flight) — after which the ladder is closed.
+
 ## GKD — on-policy distillation rung (REGISTERED/ARMED 2026-09-03)
 
 - **Status:** REGISTERED, launch pending owner ordering (the last

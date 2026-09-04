@@ -77,11 +77,16 @@ confound (fresh aux head for the final 23% of steps); E6
 constant-budget register swap (2026-09-02): 5.8057 — replacing news
 units with classical Tashkeela at constant total HURT (−0.98pp vs
 control), the domain-shaped-residual hypothesis's causal test
-failing in the swap direction; the add direction (G2b) remains
-open.** The E5/E6 pair is the paper's data-vs-architecture exhibit:
+failing in the swap direction; G2b label-scale ADD (2026-09-04,
+verdict recorded per TODO.substantiate 04): 4.8231 — 48k total
+(+18k classical) at 6 epochs is FLAT vs the 3ep control and 0.25pp
+worse than news-only G2a (4.5701): the add neutralized the epoch
+gain, closing the domain hypothesis negative in BOTH directions.**
+The E5/E6/G2b set is the paper's data-vs-architecture exhibit:
 two levers from the frontier-LLM literature (MTP, register
-diversification at constant budget) both regressed on byte-level
-student distillation — the levers that moved the rung were optimizer
+diversification — swap or add) plus the label-scale hypothesis all
+regressed or flat on byte-level student distillation — the levers
+that moved the rung were optimizer
 (E3), fresher teacher labels (E4), and epochs (G2a).
 
 ### 9. Muon optimizer A/B on the memory student (E3) — LANDED 2026-08-28
@@ -226,14 +231,19 @@ The decomposition for paper B, every line full-set with brackets:
 | + Muon (E3) | 5.2945 | — |
 | + r7 teacher | 4.8218 | — |
 | + 6 epochs (G2a) | 4.5701 | delta 2.12 [1.91, 2.35] |
+| register swap (E6, 3ep) | 5.8057 | negative |
+| register add (G2b, 6ep) | 4.8231 | delta 2.37 [2.19, 2.55] |
+| MTP-aux (E5, 3ep) | 5.0853 | negative (confound disclosed) |
 | depth halved (lite, 6ep) | 5.784 | delta 3.25 [3.03, 3.49] |
 
 Paper-B framing: levers compose roughly additively (optimizer >>
-teacher > epochs), and the E6 causal test came back NEGATIVE —
+teacher > epochs), and BOTH register tests came back NEGATIVE —
 swapping 8k news units for classical-register Tashkeela at constant
-30k total scored 5.8057 (−0.98pp vs control), so the residual is
-not fixed by register mix at constant budget; the add direction
-(G2b, 48k total) is the live test, and capacity appears ONLY as
+30k total scored 5.8057 (−0.98pp vs control), and adding 18k
+classical units on top at 6 epochs scored 4.8231 (flat vs the 3ep
+control, 0.25pp worse than news-only G2a — the add neutralized the
+epoch gain): the residual is not register-shaped in either
+direction, and capacity appears ONLY as
 depth — width is load-bearing (both stitch ratios collapsed) while
 depth trades 1.21pp for 37% of the artifact. The subset-overstatement
 phenomenon (five instances, up to 3.2x inflation) is the
