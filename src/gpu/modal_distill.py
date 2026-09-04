@@ -170,6 +170,27 @@ def layer_drop_state(pretrained: dict, narrow: dict, keep: int = 2) -> dict:
         out[name] = src.clone()
     return out
 
+def student_t5_config(cfg: dict):
+    """Spec vocabulary -> T5Config, shared by every distill path.
+    The spec speaks enc_layers/dec_layers and byte-model constants;
+    T5Config speaks num_layers/num_decoder_layers. One translation."""
+    from transformers import T5Config
+
+    return T5Config(
+        vocab_size=259,
+        d_model=cfg.get("d_model", 384),
+        d_ff=cfg.get("d_ff", 1536),
+        d_kv=cfg.get("d_kv", cfg.get("d_model", 384) // cfg.get("num_heads", 6)),
+        num_layers=cfg.get("enc_layers", 8),
+        num_decoder_layers=cfg.get("dec_layers", 8),
+        num_heads=cfg.get("num_heads", 6),
+        dropout_rate=0.1,
+        feed_forward_proj=cfg.get("feed_forward_proj", "relu"),
+        decoder_start_token_id=0,
+        relative_attention_max_distance=128,
+    )
+
+
 def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
     """When a custom-width student also names a pretrained init, bridge
     the pretrained weights down instead of random init (the capacity
@@ -307,9 +328,9 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
         # tiny tier: no pretrained backbone at this width — random init
         # from an explicit config (dense teacher-label supervision, see
         # the spec note on collapse risk)
-        from transformers import T5Config, T5ForConditionalGeneration
+        from transformers import T5ForConditionalGeneration
 
-        cfg = T5Config(**spec["student_config"])
+        cfg = student_t5_config(spec["student_config"])
         student = T5ForConditionalGeneration(cfg).to(device)
         if spec.get("layer_drop"):
             # depth-cut students keep the pretrained init: verbatim
@@ -719,22 +740,9 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
     # teacher needs the GPU there; eviction-prone A10G headroom matters.
     student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
     if spec.get("student_config"):
-        from transformers import T5Config, T5ForConditionalGeneration
+        from transformers import T5ForConditionalGeneration
 
-        cfg = spec["student_config"]
-        config = T5Config(
-            vocab_size=259,
-            d_model=cfg.get("d_model", 384),
-            d_ff=cfg.get("d_ff", 1536),
-            d_kv=cfg.get("d_kv", cfg.get("d_model", 384) // cfg.get("num_heads", 6)),
-            num_layers=cfg.get("enc_layers", 8),
-            num_decoder_layers=cfg.get("dec_layers", 8),
-            num_heads=cfg.get("num_heads", 6),
-            dropout_rate=0.1,
-            feed_forward_proj=cfg.get("feed_forward_proj", "relu"),
-            decoder_start_token_id=0,
-            relative_attention_max_distance=128,
-        )
+        config = student_t5_config(spec["student_config"])
         student = T5ForConditionalGeneration(config)
         _maybe_stitch(spec_id, spec, student)
         n_params = sum(q.numel() for q in student.parameters()) / 1e6
