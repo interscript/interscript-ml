@@ -304,4 +304,16 @@ models:
       - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
       - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
     parity: {samples: 2480, cer_delta: 0.0714}
+  ara-diac-small-2.1-int8:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: int8
+    filename: ara-diac-small-2.1-int8.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-2.1/ara-diac-small-2.1-int8.zip
+    sha256: 9b4e4aad2ab53a8cfbec432a78e27b409376627243aec3fd043f06574552a32b
+    size: 267965657
+    metrics:
+      - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+      - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+    parity: {samples: 2480, cer_delta: 0.0857}
     license: BSD-3-Clause
