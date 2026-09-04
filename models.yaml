@@ -317,3 +317,16 @@ models:
       - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
     parity: {samples: 2480, cer_delta: 0.0857}
     license: BSD-3-Clause
+  ara-diac-layerdrop-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp32
+    filename: ld-fp32.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-layerdrop-1.0/ld-fp32.zip
+    sha256: 8f297bdc0e7eba5160c6ed8a2a437abbd399687fd14f2f2b640a4b4c639a3d16
+    size: 1015218371
+    metrics:
+      - {name: der_teacher_fullset, value: 2.2921, source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep}
+      - {name: der_student_fullset, value: 5.784, source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep}
+    parity: {samples: 2480, cer_delta: 0.0632}
+    license: BSD-3-Clause

@@ -8,23 +8,28 @@ opset: 14
 decoder: kv
 precision: fp32
 license: BSD-3-Clause
-trained_from: 'the depth-cut rung: ByT5-small with the encoder halved
-  12->6 (surviving layers copied VERBATIM from pretraining - both width-cut
-  approaches collapsed at 74.68/82.96 while this works), Muon optimizer, r7
-  teacher labels (the 2.0 recipe), 6 epochs. ~190M parameters (63% of
-  ByT5-small). Full-set windowed DER-CE 5.784, delta CI [3.033, 3.491] vs
-  in-run teacher 2.2921 — the depth premium over the full-depth G2a peer
-  (4.5701, CI [1.911, 2.352]) is 1.21pp with non-overlapping intervals.
-  The int4 variant (~95MB) is the browser-budget tier; margin-gated before
-  ship. Checkpoint
+trained_from: 'the depth-cut rung: ByT5-small with the encoder halved 12->6 (surviving
+  layers copied VERBATIM from pretraining - both width-cut approaches collapsed at
+  74.68/82.96 while this works), Muon optimizer, r7 teacher labels (the 2.0 recipe),
+  6 epochs. ~190M parameters (63% of ByT5-small). Full-set windowed DER-CE 5.784,
+  delta CI [3.033, 3.491] vs in-run teacher 2.2921 — the depth premium over the full-depth
+  G2a peer (4.5701, CI [1.911, 2.352]) is 1.21pp with non-overlapping intervals. The
+  int4 variant (~95MB) is the browser-budget tier; margin-gated before ship. Checkpoint
   rababa-checkpoints:/rababa_arabic_distill_small/run-009-layerdrop-6ep/best.'
 metrics:
 - name: der_teacher_fullset
   value: 2.2921
-  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy,
-    haraqat-projected, Misraj evaluator); full 1,200-paragraph SadeedDiac-25
+  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy, haraqat-projected,
+    Misraj evaluator); full 1,200-paragraph SadeedDiac-25
   source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep
 - name: der_student_fullset
   value: 5.784
   protocol: same harness; paired bootstrap delta 3.2455 [3.033, 3.491]
   source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep
+parity:
+  samples: 2480
+  cer_delta: 0.0632
+sha256:
+  decoder-kv.onnx: 6174f11ccd1f328390df17fe2e8a66e794d14e01ceed8fae85d8b590366f30a8
+  decoder.onnx: 1662fb55fe99a0c83da8e0f96418518da944f7c6d8c7f15bf589a9c078540271
+  encoder.onnx: 22a2b1477afab2f033ced9f9f21732e71e2717821d7e251936d52e8c06a4d6ea
