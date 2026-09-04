@@ -485,7 +485,10 @@ def _edit_distance(a, b) -> int:
     gpu="A10G",
     cpu=8,
     memory=32 * 1024,
-    timeout=2 * 3600,
+    # s46-era eval decodes teacher (ByT5-base) + student over 1,864 long
+    # sentences; measured >2h under A10G contention — the 2h ceiling
+    # killed full-set evals mid-run
+    timeout=5 * 3600,
     volumes={"/datasets": DATASETS, "/checkpoints": CHECKPOINTS},
 )
 def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
