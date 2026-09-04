@@ -56,7 +56,8 @@ def test_score_plain_text_lines(tmp_path: Path, capsys) -> None:
 def test_bootstrap_vs_reference(tmp_path: Path, capsys) -> None:
     data = _parquet(tmp_path)
     cand = _preds(tmp_path, "c.jsonl", [{"idx": i, "student": s} for i, s in enumerate(GT)])
-    stripped = [g.replace("َ", "").replace("ُ", "").replace("ْ", "").replace("ً", "").replace("ّ", "") for g in GT]
+    marks = "ًَُّْ"
+    stripped = ["".join(c for c in g if c not in marks) for g in GT]
     ref = _preds(tmp_path, "r.jsonl", [{"idx": i, "student": s} for i, s in enumerate(stripped)])
     rc = main(["score", "--preds", str(cand), "--data", str(data), "--key", "student",
                "--vs", str(ref), "--vs-key", "student"])
