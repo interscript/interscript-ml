@@ -22,9 +22,15 @@ discipline across three tiers — node, server, and browser — and find
 it effectively free: whole-file hashing adds ~0.1 s against 7-13 s
 session creation, verified reloads complete in ~0.4 s from cache, and
 a 202 MB int8 model runs end-to-end in a headless browser over WASM.
-A margins-based quantization gate (keeping the 1.2M-parameter head in
-fp32) cuts silent int8 flips 36x at +0.4% artifact size. Eleven-to-17
-models ship under the contract with full provenance.
+Since the benchmark round, a depth-cut student (encoder 12->6,
+verbatim layer copy) ships a ~95 MB int4 tier — full utility at
+browser-native weight (0.0364% argmax flips, all near-tie; KLD
+1.2e-4). A margins-based quantization gate (keeping the
+1.2M-parameter head in fp32) cuts silent int8 flips 36x at +0.4%
+artifact size. The live surfaces: the demo at
+https://interscript.org/neural (lead artifact: the 95 MB lite tier),
+the REST surface at https://api.interscript.org, and the
+tag-pinned index channel (index-v3).
 
 == 1. Introduction
 - the deterministic-map discipline (OGC ISC context) and why learned
