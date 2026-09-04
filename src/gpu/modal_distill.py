@@ -210,25 +210,13 @@ def _maybe_stitch(spec_id: str, spec: dict, student) -> None:
 def paired_bootstrap(deltas: list[float], seed: int = 42, n: int = 1000) -> dict:
     """Sentence-level paired bootstrap over per-item DER deltas
     (microkimi eval_compare protocol): a point delta without a CI is
-    not evidence. Deterministic under the fixed default seed."""
-    import random
-    import statistics
+    not evidence. Deterministic under the fixed default seed.
+    Delegates to sadeedbench.bootstrap (the pure shared home)."""
+    from sadeedbench.bootstrap import bootstrap_means
 
-    if not deltas:
-        raise ValueError("empty deltas")
-    rng = random.Random(seed)
-    size = len(deltas)
-    means = sorted(
-        statistics.fmean(deltas[rng.randrange(size)] for _ in range(size))
-        for _ in range(n)
-    )
-    ci = (round(means[int(0.025 * n)], 3), round(means[int(0.975 * n) - 1], 3))
-    delta = statistics.fmean(deltas)
-    return {
-        "delta": round(delta, 4),
-        "ci95": ci,
-        "p_leq0": round(sum(1 for m in means if m <= 0) / n, 4),
-    }
+    out = bootstrap_means(deltas, seed=seed, n=n)
+    out["ci95"] = tuple(round(v, 3) for v in out["ci95"])
+    return out
 
 
 def _ensure_src_path() -> None:
