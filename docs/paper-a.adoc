@@ -101,13 +101,6 @@ we are not aware of a published single-variable comparison of the
 auxiliary's representation under fixed everything-else, which is the
 gap Section 4 fills.
 
-[NOTE]
---
-Full bibliographic entries are assembled in the camera-ready pass from
-the rababa literature notes; the numbers above are the measured/
-published values our leaderboard rows carry.
---
-
 == 3. Protocol
 
 === 3.1 Windowed DER-CE
@@ -267,6 +260,35 @@ evaluation harness with label-provenance sha256 recording; per-run
 ledger (RESULTS.md) with every verdict, interval, and provenance hash.
 Paper B carries the client-tier artifacts (distilled IMF v1 zips,
 parity and margin reports, cross-runtime byte parity).
+
+== References
+
+* [%hardbreaks]
+  Aldallal, Z., Chrouf, S., Hennara, K., Hamed, M. M., Hreden, M., AlModhayan, S. _Sadeed: Advancing Arabic diacritization through small language model._ arXiv:2504.21635, 2025. (Introduces the Sadeed-1.5B baseline; the SadeedDiac-25 benchmark protocol.)
+  +
+* Mohamed, A., Mubarak, H. _Advancing Arabic diacritization: Improved datasets, benchmarking, and state-of-the-art models._ EMNLP 2025, pp. 16718-16730. (WikiNews-2024 multi-reference evaluation.)
+  +
+* Xue, L. et al. _ByT5: Towards a token-free future with pre-trained byte-to-byte models._ NeurIPS 2021.
+  +
+* Raffel, C. et al. _Exploring the limits of transfer learning with a unified text-to-text transformer._ JMLR 2020.
+  +
+* Hinton, G., Vinyals, O., Dean, J. _Distilling the knowledge in a neural network._ arXiv:1503.02531, 2015.
+  +
+* Kim, Y., Rush, A. _Sequence-level knowledge distillation._ EMNLP 2016.
+  +
+* Tse, R. et al. _Interscript: an interoperable script conversion system registry._ 2022.
+
+[NOTE]
+--
+LLM leaderboard rows (Claude-3.7-Sonnet, GLM-5.2/5.3, Gemini-Flash-2.0,
+GPT-4) are identified by their vendors' published model identifiers and
+measured values under the protocol of Section 3; per-vendor technical
+reports are cited in the camera-ready pass. The auxiliary-supervision
+literature comparison (Section 2) draws on the Semitic multi-task
+morphology line catalogued in the companion repository's literature
+notes; its per-work citations are likewise completed at camera-ready
+from those notes rather than from memory.
+--
 
 == Allocation note
 
