@@ -1,0 +1,35 @@
+format: imf-v1
+id: ara-diac-layerdrop-1.0
+task: diacritization
+source_script: Arab
+target: Arab
+tokenizer: bytes
+opset: 14
+decoder: kv
+precision: int4
+license: BSD-3-Clause
+trained_from: 'the depth-cut rung: ByT5-small with the encoder halved 12->6 (surviving
+  layers copied VERBATIM from pretraining - both width-cut approaches collapsed at
+  74.68/82.96 while this works), Muon optimizer, r7 teacher labels (the 2.0 recipe),
+  6 epochs. ~190M parameters (63% of ByT5-small). Full-set windowed DER-CE 5.784,
+  delta CI [3.033, 3.491] vs in-run teacher 2.2921 — the depth premium over the full-depth
+  G2a peer (4.5701, CI [1.911, 2.352]) is 1.21pp with non-overlapping intervals. The
+  int4 variant (~95MB) is the browser-budget tier; margin-gated before ship. Checkpoint
+  rababa-checkpoints:/rababa_arabic_distill_small/run-009-layerdrop-6ep/best.'
+metrics:
+- name: der_teacher_fullset
+  value: 2.2921
+  protocol: windowed DER-CE (1400-byte windows, word-boundary split, greedy, haraqat-projected,
+    Misraj evaluator); full 1,200-paragraph SadeedDiac-25
+  source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep
+- name: der_student_fullset
+  value: 5.784
+  protocol: same harness; paired bootstrap delta 3.2455 [3.033, 3.491]
+  source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep
+parity:
+  samples: 2480
+  cer_delta: 0.0589
+sha256:
+  decoder-kv.onnx: a315762c02a42794378b140b01b0065fe2abbd7d6e9f5bc84e8ac4b1055da90d
+  decoder.onnx: d1c0070f1eb5ce06610c9162d321beb86563e96e7ed280aede45814c59a07ac5
+  encoder.onnx: b6437f045e708f6dab06396c4c388fe6f53bf485136d3e2a85f7efb00b07dcbc
