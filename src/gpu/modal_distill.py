@@ -177,7 +177,7 @@ def student_t5_config(cfg: dict):
     from transformers import T5Config
 
     return T5Config(
-        vocab_size=259,
+        vocab_size=cfg.get("vocab_size", 259),
         d_model=cfg.get("d_model", 384),
         d_ff=cfg.get("d_ff", 1536),
         d_kv=cfg.get("d_kv", cfg.get("d_model", 384) // cfg.get("num_heads", 6)),

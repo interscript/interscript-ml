@@ -538,6 +538,7 @@ heb-diac-small-s46-layerdrop:
   student_init: google/byt5-small
   layer_drop: 'true'
   student_config:
+    vocab_size: 384  # logit-KD: must match the ByT5 teacher's vocab
     d_model: 1472
     d_kv: 64
     d_ff: 3584
