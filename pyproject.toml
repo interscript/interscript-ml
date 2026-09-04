@@ -68,6 +68,9 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# ADR-0001: the vendored Misraj evaluator is a provenance artifact —
+# excluded, never rewritten or reformatted (same policy as rababa's copy)
+extend-exclude = ["src/sadeedbench/vendored_sadeed_evaluator.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "C4"]

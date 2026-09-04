@@ -9,8 +9,6 @@ set — same order as the benchmark rows."""
 
 from __future__ import annotations
 
-from typing import Iterable
-
 
 def score_predictions(preds: list[str], gts: list[str]) -> dict:
     """Aggregate DER-CE over aligned (pred, gt) paragraph pairs."""
