@@ -17,6 +17,7 @@ from gpu.modal_export import pending_precisions  # noqa: E402
 
 def _write_zip(path: Path, parity: bool) -> None:
     import zipfile
+
     import yaml
 
     meta = {"id": "m", "precision": "int4"}

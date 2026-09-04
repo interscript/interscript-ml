@@ -191,7 +191,7 @@ MODELS: dict[str, dict[str, str]] = {
 app = modal.App("interscript-ml-export", image=IMAGE)
 
 
-def normalize_precisions(precisions: "str | list[str]") -> list[str]:
+def normalize_precisions(precisions: str | list[str]) -> list[str]:
     """Accept both invocation forms: the parity/margins entrypoints pass
     a pre-split list, direct ::parity_model-style CLI calls pass a
     comma string."""
@@ -220,7 +220,7 @@ def _zip_has_parity(zip_path: Path) -> bool:
 
 
 def pending_precisions(
-    out_dir: Path, mid: str, precisions: "str | list[str]"
+    out_dir: Path, mid: str, precisions: str | list[str]
 ) -> list[str]:
     """Precision stages still to run. A stage is durably complete only
     when BOTH its margin report exists and its zip carries the parity
