@@ -500,3 +500,24 @@ scratch collapse (74.68) by 0.7pp: data quality and optimization do
 NOT rescue 30M from-scratch. Conclusion from evidence: the
 "30M-parameter encoder" title claim is closed; the thesis repositions
 per PAPER-ALIGNMENT.md.
+
+## ara-diac-small-2-6ep-tashkeela (G2b) — full-set 4.8231: the add-direction test is FLAT-NEGATIVE (2026-09-04)
+
+The domain-residual causal test (TODO.publish-client 01): the G2a
+recipe with the FULL cleaned Tashkeela corpus added (5x classical
+coverage, 48k units, 39,018 steps, final CE ~0.002). Full 1,200-para
+gate: teacher in-run 2.289, student **4.8231**, paired bootstrap delta
+2.3717 [2.194, 2.554], p=0 — vs G2a's 4.5701 [1.91, 2.35]. The point
+estimate moved the WRONG direction by 0.25pp with overlapping CIs:
+statistically flat. Gate (>=0.5pp improvement) FAILED.
+
+Verdict: combined with E6 (register swap at constant budget, -0.98pp),
+BOTH directions of the classical-corpus manipulation fail to close the
+residual — the student-tier gap is NOT a classical-domain coverage
+deficit. The domain-coverage attribution is rejected in the add
+direction and the swap direction; the residual reframes as a
+teacher-student interaction the corpus cannot reach (candidate next
+levers: on-policy distillation — GKD in flight; label-distribution
+effects). G2a (2.1) remains the best student; G2b stands as the
+closing negative of the data-side program. Provenance: labels sha256
+b59e2f56 (235.0MB).
