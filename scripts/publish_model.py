@@ -19,6 +19,7 @@ import hashlib
 import os
 import re
 import subprocess
+import shutil
 import sys
 import tempfile
 import zipfile
@@ -37,6 +38,14 @@ from imf.validator import validate_zip  # noqa: E402
 # GitHub hard-caps release assets at 2,147,483,648 bytes; split well below.
 SPLIT_THRESHOLD = 2_000_000_000
 DEFAULT_REPO = "interscript/interscript-ml"
+
+
+def canonical_filename(meta: dict) -> str:
+    """Published filenames derive from the zip's own metadata (id +
+    precision), never from the local staging path — a /tmp name like
+    ld-int4.zip must not leak into the index entry or asset name: the
+    runtime resolver matches volume files by this pattern."""
+    return f"{meta['id']}-{meta['precision']}.zip"
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -166,18 +175,26 @@ def main() -> None:
         raise SystemExit(f"metadata id {meta['id']!r} != requested {args.model_id!r}")
     key = args.key or args.model_id
 
-    whole_sha = sha256_file(args.zip)
-    size = args.zip.stat().st_size
+    canonical = canonical_filename(meta)
+    zip_path = args.zip
+    if zip_path.name != canonical:
+        staged = Path(tempfile.mkdtemp(prefix="publish-")) / canonical
+        shutil.copyfile(zip_path, staged)
+        print(f"staging {zip_path.name} -> {canonical}")
+        zip_path = staged
 
-    assets = [args.zip]
+    whole_sha = sha256_file(zip_path)
+    size = zip_path.stat().st_size
+
+    assets = [zip_path]
     if size > SPLIT_THRESHOLD:
         print(f"{size:,} bytes > {SPLIT_THRESHOLD:,}; splitting for the GitHub asset cap")
-        parts = split_zip(args.zip, 1_500_000_000)
+        parts = split_zip(zip_path, 1_500_000_000)
         assets = [part for part, _, _ in parts]
 
     tag = args.model_id
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as fh:
-        fh.write(release_notes(key, meta, args.zip.name, size, whole_sha, assets))
+        fh.write(release_notes(key, meta, canonical, size, whole_sha, assets))
         notes_path = fh.name
 
     existing = subprocess.run(
@@ -225,7 +242,7 @@ def main() -> None:
         # models/<family>/<id>.metadata.yaml, e.g. models/heb-diac/heb-diac-1.0...
         family = key.rsplit("-", 1)[0]
         upsert_models_yaml(wt_models, key,
-                           entry_block(key, meta, args.zip.name, whole_sha,
+                           entry_block(key, meta, canonical, whole_sha,
                                        size, assets, args.repo, tag))
         model_dir = worktree / "models" / family
         model_dir.mkdir(parents=True, exist_ok=True)
