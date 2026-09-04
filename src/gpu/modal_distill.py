@@ -311,6 +311,10 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
 
         cfg = T5Config(**spec["student_config"])
         student = T5ForConditionalGeneration(cfg).to(device)
+        if spec.get("layer_drop"):
+            # depth-cut students keep the pretrained init: verbatim
+            # layer copy, not the random init the tiny tier uses
+            _maybe_stitch(spec_id, spec, student)
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"]).to(device)
     student.train()
