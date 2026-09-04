@@ -200,17 +200,39 @@ def normalize_precisions(precisions: "str | list[str]") -> list[str]:
     return [q.strip() for q in precisions if q.strip()]
 
 
+def _zip_has_parity(zip_path: Path) -> bool:
+    """A stage writes its parity block into the zip BEFORE the margins
+    report; both must be present for the stage to count as complete
+    (a standalone margin_model run produces the json without the zip
+    block, which is not shippable)."""
+    if not zip_path.exists():
+        return False
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            import yaml
+
+            meta = yaml.safe_load(zf.read("metadata.yaml"))
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile):
+        return False
+    return isinstance(meta, dict) and "parity" in meta
+
+
 def pending_precisions(
     out_dir: Path, mid: str, precisions: "str | list[str]"
 ) -> list[str]:
-    """Precision stages still to run: the margin report is the last
-    artifact a stage writes, so its presence means the stage (parity
-    block in the zip included) completed durably. Preemption restarts
-    resume at the next stage instead of redoing hours of decode."""
+    """Precision stages still to run. A stage is durably complete only
+    when BOTH its margin report exists and its zip carries the parity
+    block. Preemption restarts resume at the next stage instead of
+    redoing hours of decode."""
     return [
         p
         for p in normalize_precisions(precisions)
-        if not (out_dir / f"{mid}-margins-{p}.json").exists()
+        if not (
+            (out_dir / f"{mid}-margins-{p}.json").exists()
+            and _zip_has_parity(out_dir / f"{mid}-{p}.zip")
+        )
     ]
 
 
