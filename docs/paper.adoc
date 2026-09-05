@@ -416,6 +416,35 @@ budget is on the order of 100 A10G-hours.
 * Runtimes: `secryst` (Ruby), `secryst` (PyPI), `secryst` (npm) — identical resolution, verification, and decode.
 * Every model resolves by id from the public index: `Model.load("tha-g2p-small-1.0")` in any crystal.
 
+== Appendix: the subset-overstatement record
+
+The complete five-instance history behind Section <<section-frontier>>'s
+full-set-only rule. "Subset" is the first 300 paragraphs of the
+1,200-paragraph SadeedDiac-25 test set; every full-set figure carries
+its paired-bootstrap interval in the results log, and every run's
+label provenance is a recorded sha256.
+
+[%autowidth,cols="1,4,1,1,1"]
+|===
+|# |Comparison |Subset |Full set |Date
+
+|1 |1.0 rung vs teacher |3.66 |8.26 |2026-08-26
+|2 |scratch d384 (30M) |83.08 (poisoned-label constant; retracted) |74.68 (clean) |2026-08-29
+|3 |lite 3ep rung vs teacher |3.81 |7.44 |2026-08-31
+|4 |2.1 delta vs teacher |0.72pp |2.28pp (3.2x) |2026-08-31
+|5 |lite 6ep depth cost |0.64pp |1.21pp |2026-09-01
+|===
+
+Instance 2 is listed for completeness of the ledger's count, not as an
+inflation exhibit: its subset figure is the double-encoded-label
+constant later retracted (Section <<section-repro>>), and it sits above
+the clean-label full-set re-measurement. Instance 4 is the operative
+exhibit — the subset was within 0.22pp of claiming a strict
+teacher+0.5pp gate closure that the full set refuted by 3.2x,
+reversing a residual-attribution conclusion. Mechanism: the first 300
+paragraphs sit closer to the students' training domain; the remaining
+900 expose the generalization gap the subset hides.
+
 == References
 
 * [%hardbreaks]
