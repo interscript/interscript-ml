@@ -318,30 +318,34 @@ All rows passed the CER parity gate at release. Readings:
   (−0.47pp), and epochs (−0.25pp). What remains is GKD (on-policy
   exposure, run-012 in flight) — after which the ladder is closed.
 
-## GKD — on-policy distillation rung (REGISTERED/ARMED 2026-09-03)
+## GKD — on-policy distillation rung (COMPLETE 2026-09-05)
 
-- **Status:** REGISTERED, launch pending owner ordering (the last
-  lever with no data; TODO.substantiate/03). Implementation follows
-  this registration verbatim when launched.
-- **Hypothesis:** the client tier's remaining ~2.0pp over the teacher
-  is domain-shaped exposure: the student never trains on its own
-  decode distribution. On-policy GKD (sequences sampled from the
-  student during training, scored against the frozen r7 teacher's
-  targets/logits) attacks exactly that.
-- **Design:** spec `ara-diac-small-2-gkd`, control = run-006 verbatim
-  (30k units, identical steps/schedule/optimizer); delta = GKD loss
-  mixing — student-sampled sequences (temperature-matched to greedy
-  inference) blended into the sequence-KD objective at a fixed ratio,
-  annealed to zero over the final third.
-- **Pre-agreed gate:** adopt at <= 4.5218 full-set windowed DER;
-  honest-report band [4.5218, 4.8218); investigate if worse.
-- **Prediction (registered):** 4.30-4.65 — the E6 swap-negative says
-  register mix at constant budget is not the lever; on-policy
-  exposure is the remaining untested reading of the domain
-  attribution. Note: run-006's canonical control is 4.8218 (E4-era
-  eval); a later auto-chain re-eval printed 5.0821 for the same run —
-  the ledger's 4.8218 stays canonical; a GKD verdict compares within
-  one eval pass.
+- **Status:** COMPLETE — **GATE FAILED: 6.0036** full-set windowed DER
+  (n=1200; teacher reproduces 2.289; paired bootstrap student−teacher
+  +3.4083, CI [3.109, 3.743]). NOT ADOPTED. The registered prediction
+  (4.30-4.65) missed badly; honest-report band also breached — this
+  is the worst rung measured, +1.18pp over the 4.8218 control. Run
+  run-012-r7-muon-gkd: 10,995 steps, final CE 0.0076, nine server
+  preemptions absorbed by checkpoint-resume (no measured work lost);
+  labels sha256 e70ce991d15a8c810b83e2b5401f1410293844c623ffefa646b
+  19fb94a6180df.
+- **Hypothesis (registered):** the client tier's remaining ~2.0pp over
+  the teacher is domain-shaped exposure: the student never trains on
+  its own decode distribution. On-policy GKD attacks exactly that.
+- **Design (as run):** control run-006 verbatim (30k units, identical
+  steps/schedule/optimizer); delta = reverse-KL on student-sampled
+  sequences (every 4th step, sub-batch 2, temp 1.0, cap 1024) scored
+  by the frozen r7 teacher, ratio 0.3 annealed to zero over the final
+  third (ml #148; run id renamed run-012 in #151).
+- **Read:** the domain-exposure reading of the residual joins the
+  register readings as a THIRD negative (E6 swap 5.8057, G2b add
+  4.8231, GKD on-policy 6.0036) — the program's final datum. The
+  ladder closes: optimizer (−2.96pp), fresher teacher labels
+  (−0.47pp), and epochs (−0.25pp) are the only measured positives;
+  MTP-aux, register diversification (both directions), on-policy
+  distillation, and depth-cut all regressed or went flat. At SFT
+  convergence on clean supervision, byte-level student distillation
+  tolerates nothing but optimization and supervision quality.
 
 ## Parked
 
