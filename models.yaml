@@ -356,3 +356,16 @@ models:
       - {name: der_student_fullset, value: 5.784, source: interscript/interscript-ml docs/RESULTS.md#layerdrop-6ep}
     parity: {samples: 2480, cer_delta: 0.0589}
     license: BSD-3-Clause
+  ara-diac-small-2.1-fp16:
+    task: diacritization
+    scripts: [Arab, Arab]
+    precision: fp16
+    filename: ara-diac-small-2.1-fp16.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-small-2.1/ara-diac-small-2.1-fp16.zip
+    sha256: 395ee72137d1cdfa9cd53bf167ad0d2f5fe5cbf9a5b62f118e0c9e0fa63c972d
+    size: 706351903
+    metrics:
+      - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+      - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+    parity: {samples: 2480, cer_delta: 0.0714}
+    license: BSD-3-Clause
