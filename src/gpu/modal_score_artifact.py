@@ -25,6 +25,7 @@ IMAGE = (
         "pyarrow>=14.0",
         "pyarabic>=0.6",
         "prettytable>=3.9",
+        "tqdm>=4.66",
         "pyyaml>=6.0",
     )
     .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
