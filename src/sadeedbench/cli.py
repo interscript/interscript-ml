@@ -49,6 +49,11 @@ def _load_gold(data: str) -> list[str]:
     p = Path(data)
     if p.exists():
         return pd.read_parquet(p)["output"].tolist()
+    if "/" in data and not data.count("/") == 1:
+        raise SystemExit(
+            f"--data {data!r} is neither an existing file nor a "
+            "namespace/dataset HF id"
+        )
     import huggingface_hub
 
     snapshot = Path(
