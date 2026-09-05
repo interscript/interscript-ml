@@ -37,11 +37,24 @@ def _read_preds(path: Path, key: str) -> list[str]:
     return preds
 
 
-def _load_gold(path: Path) -> list[str]:
+def _load_gold(data: str) -> list[str]:
+    """Gold outputs from a local parquet or an HF dataset id.
+
+    A path (existing file) is read directly. Anything else is treated
+    as a Hugging Face dataset id (default split file train.parquet) and
+    resolved through huggingface_hub.snapshot_download with the local
+    cache."""
     import pandas as pd
 
-    table = pd.read_parquet(path)
-    return table["output"].tolist()
+    p = Path(data)
+    if p.exists():
+        return pd.read_parquet(p)["output"].tolist()
+    import huggingface_hub
+
+    snapshot = Path(
+        huggingface_hub.snapshot_download(data, repo_type="dataset")
+    )
+    return pd.read_parquet(snapshot / "train.parquet")["output"].tolist()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,8 +62,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     score = sub.add_parser("score", help="score a predictions file")
     score.add_argument("--preds", type=Path, required=True)
-    score.add_argument("--data", type=Path, required=True,
-                       help="SadeedDiac-25 parquet (input/output columns)")
+    score.add_argument("--data", required=True,
+                       help="parquet path or HF dataset id (Misraj/SadeedDiac-25)")
     score.add_argument("--key", default="student",
                        help="JSONL row key carrying the prediction")
     score.add_argument("--vs", type=Path, help="reference predictions file")

@@ -20,8 +20,8 @@ from sadeedbench.cli import main  # noqa: E402
 GT = ["قَوْلُهُ فَحُكْمُهَا", "مُكْتَبَّةٌ جَمِيلَةٌ"]
 
 
-def _parquet(tmp_path: Path) -> Path:
-    p = tmp_path / "bench.parquet"
+def _parquet(tmp_path: Path, name: str = "bench.parquet") -> Path:
+    p = tmp_path / name
     pd.DataFrame({"input": ["قوله فحكمها", "مكتبة جميلة"], "output": GT}).to_parquet(p)
     return p
 
@@ -64,3 +64,24 @@ def test_bootstrap_vs_reference(tmp_path: Path, capsys) -> None:
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     assert out["vs"]["delta"] < 0  # candidate (perfect) better than stripped reference
+
+
+def test_data_accepts_hf_dataset_id(monkeypatch, tmp_path, capsys) -> None:
+    # --data may name the HF dataset instead of a local parquet; the
+    # loader resolves it through huggingface_hub with a local cache
+    import sadeedbench.cli as cli
+
+    cached = _parquet(tmp_path, name="train.parquet")
+    calls = {}
+
+    def fake_snapshot(repo_id, repo_type):
+        calls["repo_id"] = repo_id
+        return str(cached.parent)
+
+    monkeypatch.setattr("huggingface_hub.snapshot_download", fake_snapshot, raising=False)
+    rc = cli.main(["score", "--preds", str(_preds(tmp_path, "p.jsonl", [
+        {"idx": i, "student": g} for i, g in enumerate(GT)])), "--data", "Misraj/SadeedDiac-25"])
+    assert rc == 0
+    assert calls["repo_id"] == "Misraj/SadeedDiac-25"
+    out = json.loads(capsys.readouterr().out)
+    assert out["der_ce"] == 0.0
