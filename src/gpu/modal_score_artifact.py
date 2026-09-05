@@ -83,7 +83,11 @@ def score(zip_path: str, expect_sha: str = "", out: str = "") -> dict:
         stripped = strip_diacritics(src)
         pieces = []
         for w in split_windows(stripped, 1400):
-            out_text = model.translate(w, max_len=max(256, 2 * len(w)))
+            # the torch harness caps generation at 2x the window's
+            # TOKEN count; a byte-level window's tokens = its UTF-8
+            # byte count, and vocalized output needs ~2x that — a
+            # character-count cap truncates every long paragraph
+            out_text = model.translate(w, max_len=max(256, 2 * len(w.encode("utf-8"))))
             pieces.append(project_haraqat(out_text, w))
         preds.append("".join(pieces))
         if (i + 1) % 100 == 0:
