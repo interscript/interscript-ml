@@ -240,7 +240,7 @@ models:
     size: 1418516306
     metrics:
       - {name: der_teacher_fullset, value: 2.289, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
-      - {name: der_student_fullset, value: 4.8218, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
+      - {name: der_student_fullset, value: 5.0821, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
     parity: {samples: 600, cer_delta: 0.1187}
     license: BSD-3-Clause
   ara-diac-small-2.0-int8:
