@@ -521,3 +521,30 @@ levers: on-policy distillation — GKD in flight; label-distribution
 effects). G2a (2.1) remains the best student; G2b stands as the
 closing negative of the data-side program. Provenance: labels sha256
 b59e2f56 (235.0MB).
+
+## heb-diac-small-s46-layerdrop — the depth-cut does NOT transfer: 77.48 DER (2026-09-05)
+
+Item 04 (TODO.publish-client): the Arabic width/depth finding
+replicated on Hebrew — encoder 12->6 verbatim layer copy from
+pretrained ByT5-small, single variable vs run-002-s46 (same s46
+teacher, hebrew-v4 corpus, 3 epochs, logit-KD recipe). Training
+converged normally (val_loss 0.550); the full Nakdimon gate did not:
+
+| Model | DER (n=1864) |
+|---|---|
+| teacher s46 | 23.72 (reproduces exactly) |
+| full-depth student (run-002, 1.1) | 30.38 |
+| **layerdrop student (run-003)** | **77.48** — collapse |
+
+Paired delta +53.77pp [51.64, 55.92], p=0.
+
+Verdict: the "depth is the compressible axis" finding does NOT
+transfer as-is. Confound, stated honestly: the Arabic rung used
+sequence-KD (teacher labels, Muon, 6 epochs); this run used the Hebrew
+lineage's logit-KD (alpha-KL + CE) at its native 3 epochs — so the
+collapse may be recipe-dependent (depth-cut + logit-KD), not purely
+linguistic. Either way the cross-lingual generalization claim is
+closed as a negative: depth-compressibility is NOT a universal
+property of pretrained ByT5-small; it held under one recipe on one
+language. Paper B's depth paragraph is scoped accordingly (this entry
+is its counterexample).
