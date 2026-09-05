@@ -52,7 +52,7 @@ dev = [
 ]
 
 [project.scripts]
-interscript-ml = "src.cli:main"
+interscript-ml = "imf.cli:main"
 interscript-sadeed-eval = "sadeedbench.cli:main"
 
 [tool.setuptools.packages.find]
