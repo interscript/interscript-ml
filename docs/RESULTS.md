@@ -217,6 +217,7 @@ The viable path to a sub-100MB browser tier is width reduction FROM a
 pretrained ByT5-small (closed-form stitch across widths, microkimi
 protocol), not from-scratch training.
 
+[CORRECTED 2026-09-05: the 4.8218 figure below did not reproduce; the corrected 2.0 number is 5.08 (see the correction entry above).]
 ## ara-diac-small-1.0 — Arabic client tier (2026-08-24)
 
 Sequence-level KD from the r6 teacher (rababa_arabic_byt5/run-006-morph,

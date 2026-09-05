@@ -6,10 +6,12 @@ architecture and artifact size as 1.0: the **r7 canonical teacher**
 (2.2864; fresh greedy labels) and the **Muon optimizer** (E3-adopted).
 
 - 1.0 (r6 labels, AdamW): 8.26 full-set windowed DER-CE
-- 2.0 (r7 labels, Muon): **4.82** (teacher r7 in-run: 2.289)
+- 2.0 (r7 labels, Muon): **5.08** (teacher r7 in-run: 2.289; corrected
+  2026-09-05 — the first-published 4.82 did not reproduce, see
+  docs/RESULTS.md)
 
 A 42% error reduction, pre-registered as E4 (gate ≤ 6.26; prediction
-4.3–5.0 — landed at 4.82). The strict teacher+0.5pp gate is still
+4.3–5.0 — landed at 5.08 after the 2026-09-05 correction). The strict teacher+0.5pp gate is still
 missed (+2.53pp, disclosed); the E2/E3 factorial attributes the
 residual to domain coverage. Identical IMF v1 contract: dynamic fetch,
 sha256-verified, KV decode, margins JSON alongside.
