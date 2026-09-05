@@ -81,13 +81,19 @@ failing in the swap direction; G2b label-scale ADD (2026-09-04,
 verdict recorded per TODO.substantiate 04): 4.8231 — 48k total
 (+18k classical) at 6 epochs is FLAT vs the 3ep control and 0.25pp
 worse than news-only G2a (4.5701): the add neutralized the epoch
-gain, closing the domain hypothesis negative in BOTH directions.**
-The E5/E6/G2b set is the paper's data-vs-architecture exhibit:
-two levers from the frontier-LLM literature (MTP, register
-diversification — swap or add) plus the label-scale hypothesis all
-regressed or flat on byte-level student distillation — the levers
-that moved the rung were optimizer
-(E3), fresher teacher labels (E4), and epochs (G2a).
+gain, closing the domain hypothesis negative in BOTH directions; GKD
+on-policy distillation (2026-09-05, the program's final rung,
+run-012): 6.0036 — reverse-KL on student-sampled sequences scored by
+the frozen teacher is the WORST rung measured (+1.18pp over control),
+the domain-exposure reading of the residual joining the register
+readings as the third negative.**
+The E5/E6/G2b/GKD set is the paper's data-vs-architecture exhibit:
+three levers from the frontier-LLM literature (MTP, register
+diversification — swap or add, on-policy GKD) plus the label-scale
+hypothesis all regressed or flat on byte-level student distillation —
+the levers that moved the rung were optimizer
+(E3), fresher teacher labels (E4), and epochs (G2a), and nothing
+else. The program's measured ladder is closed.
 
 ### 9. Muon optimizer A/B on the memory student (E3) — LANDED 2026-08-28
 **4.8287 vs 7.5553 full-set (−2.727pp from the optimizer alone); adopt
@@ -234,6 +240,7 @@ The decomposition for paper B, every line full-set with brackets:
 | register swap (E6, 3ep) | 5.8057 | negative |
 | register add (G2b, 6ep) | 4.8231 | delta 2.37 [2.19, 2.55] |
 | MTP-aux (E5, 3ep) | 5.0853 | negative (confound disclosed) |
+| on-policy GKD (run-012) | 6.0036 | delta 3.41 [3.11, 3.74] — worst rung |
 | depth halved (lite, 6ep) | 5.784 | delta 3.25 [3.03, 3.49] |
 
 Paper-B framing: levers compose roughly additively (optimizer >>
