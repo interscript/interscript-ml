@@ -548,3 +548,36 @@ closed as a negative: depth-compressibility is NOT a universal
 property of pretrained ByT5-small; it held under one recipe on one
 language. Paper B's depth paragraph is scoped accordingly (this entry
 is its counterexample).
+
+## CORRECTION: ara-diac-small-2.0 full-set is 5.08, not 4.8218 (2026-09-05)
+
+The published 2.0 number (2026-08-30, in this ledger and the shipped
+metadata) does not reproduce. Two independent later measurements of
+the same checkpoint agree and disagree with it:
+
+| Measurement | Path | DER-CE |
+|---|---|---|
+| published (2026-08-30) | harness, in-run | 4.8218 |
+| harness re-eval (final_eval.json, bootstrap CI [2.358, 2.823]) | torch, same protocol | 5.0821 |
+| **artifact-level (this entry)** | shipped zip sha d9aa95d0 (= index pin = release bytes), windowed ONNX runtime decode, sadeedbench scoring | **5.0321-class** (5.0329) |
+
+The artifact-level measurement is the governing one: it scores the
+exact bytes users download. The 4.8218 figure is withdrawn; the 2.0
+rung's catalog number is 5.08 (harness) / 5.03 (runtime path). The
+cause of the original reading is not reconstructed; both later
+measurements postdate it and agree to 0.05pp across independent decode
+paths.
+
+Consequences, stated plainly:
+- the E4 error-reduction claim becomes 8.259 -> 5.08 (38%, not 42%)
+- the "matches the PKM arm (4.829)" statement is wrong: the vanilla
+  2.0 rung (5.08) does NOT match the PKM arm; the PKM arm was better
+  by 0.25pp at its measurement
+- frontier ordering 1.0 -> lite -> 2.0 -> 2.1 is unchanged; G2b
+  (4.8231) sits between 2.0 and 2.1 rather than above 2.0
+- every other frontier row re-verified exactly by the same
+  artifact/preds-level tooling (8.2576 / 4.5701 / 5.784 / 4.8231)
+
+Predictions for all five frontier runs publish alongside this entry
+(release frontier-predictions-v1) so the numbers above are re-derivable
+by anyone.
