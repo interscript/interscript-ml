@@ -254,12 +254,16 @@ Sections 4-6 depends on small-model feasibility.
 
 == 9. Artifacts
 
-r5/r6/r7/r8 checkpoints (rababa lineage); the windowed DER-CE
-evaluation harness with label-provenance sha256 recording; per-run
-`final_preds.jsonl` for bootstrap replication; the full measurement
-ledger (RESULTS.md) with every verdict, interval, and provenance hash.
-Paper B carries the client-tier artifacts (distilled IMF v1 zips,
-parity and margin reports, cross-runtime byte parity).
+r5/r6/r7/r8 checkpoints — released as GitHub Release
+`teachers-arabic-v1` (split archives with sha256 sidecars) together
+with the two provenance-pinned teacher-label files; the windowed
+DER-CE scoring protocol as the `interscript-sadeed-eval` CLI (PyPI:
+`interscript-ml-tools[sadeed]`); per-run `final_preds.jsonl` (Release
+`frontier-predictions-v1`) so every frontier number re-derives from
+raw predictions and the public benchmark; the full measurement ledger
+(RESULTS.md) with every verdict, interval, and provenance hash. Paper
+B carries the client-tier artifacts (distilled IMF v1 zips resolvable
+from index-v4, parity and margin reports, cross-runtime byte parity).
 
 == References
 
