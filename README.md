@@ -17,6 +17,21 @@ This repo owns three things and nothing else:
    are distilled, gated (parity written into the artifact), and released
    as index entries here.
 
+## Verify us — every number re-derives
+
+| Piece | Where |
+|---|---|
+| Benchmark | [Misraj/SadeedDiac-25](https://huggingface.co/datasets/Misraj/SadeedDiac-25) (auto-fetched) |
+| Protocol CLI | `pip install interscript-ml-tools[sadeed]` ([PyPI](https://pypi.org/project/interscript-ml-tools/)) |
+| Raw predictions, every frontier run | Release [`frontier-predictions-v1`](https://github.com/interscript/interscript-ml/releases/tag/frontier-predictions-v1) |
+| Teachers + provenance labels | Release [`teachers-arabic-v1`](https://github.com/interscript/interscript-ml/releases/tag/teachers-arabic-v1) |
+| Student artifacts | `models.yaml` (index-v4) — sha256-verified in every runtime |
+
+    interscript-sadeed-eval score --preds <file> --data Misraj/SadeedDiac-25
+
+The measurement ledger — every verdict with confidence intervals,
+corrections, and provenance hashes — is [docs/RESULTS.md](docs/RESULTS.md).
+
 ## The system
 
 ```
