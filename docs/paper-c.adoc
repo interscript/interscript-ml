@@ -30,7 +30,7 @@ browser-native weight (0.0364% argmax flips, all near-tie; KLD
 artifact size. The live surfaces: the demo at
 https://interscript.org/neural (lead artifact: the 95 MB lite tier),
 the REST surface at https://api.interscript.org, and the
-tag-pinned index channel (index-v3).
+tag-pinned index channel (index-v5).
 
 == 1. Introduction
 - the deterministic-map discipline (OGC ISC context) and why learned
@@ -86,5 +86,5 @@ tag-pinned index channel (index-v3).
   hardware for E1
 
 == 9. Artifacts
-All benchmarks, the index workflow, and the 17-model catalog are
+All benchmarks, the index workflow, and the 23-model catalog are
 public; every number in this paper regenerates from committed scripts.
