@@ -602,3 +602,27 @@ The residual is not data, not domain coverage, not an off/on-policy
 deficit. It is a property of the compression itself at this rung —
 the honest open question for the paper. On-policy stays listed in
 Paper B's future work with its measured negative attached.
+
+## Cross-runtime byte-parity is precision-scoped (2026-09-07, golden-v1)
+
+The golden matrix (12 models x 25 rows, generated from the released
+zips on x86/ORT-1.23.2) exposes the true boundary of the byte-parity
+contract, measured three ways (Python-x86 generator, Python-arm64,
+TS-arm64; ORT 1.23.2 everywhere):
+
+- **fp32-class artifacts: byte-stable.** ara-diac-1.0 reproduced
+  exactly on arm64 before the run reached the quantized models.
+- **Quantized artifacts (int8/int4): prefix-consistent,
+  stop-point-unstable.** Every divergent output is an exact PREFIX of
+  the golden (no contradictory content anywhere); the divergence is
+  exclusively WHERE decode emits EOS — the stop decision sits at a
+  near-tie on these flat distributions, and architecture-level float
+  accumulation differences (x86 container vs arm64, ORT-web vs
+  ORT-native) flip it. Same mechanism family as the beam-decode
+  pathology: likelihood ranking on near-uniform distributions.
+
+Contract, scoped and honest: **byte-identical across runtimes and
+hardware for fp32/fp16; for quantized artifacts, quality parity (the
+published per-model cer_delta gates) plus prefix-consistency.**
+golden-v1's quantized rows are reference outputs (documented
+hardware/ORT provenance), not byte-assertions.
