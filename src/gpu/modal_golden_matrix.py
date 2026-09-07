@@ -74,7 +74,10 @@ def generate(n: int = 25) -> dict:
             report[model_id] = "no test pairs known — skipped"
             continue
         pairs = []
-        for line in Path(test_path).read_text(encoding="utf-8").splitlines():
+        tp = Path(test_path)
+        if not tp.is_absolute():
+            tp = Path("/datasets") / tp
+        for line in tp.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 row = json.loads(line)
                 pairs.append(row.get("src") or row.get("input"))
