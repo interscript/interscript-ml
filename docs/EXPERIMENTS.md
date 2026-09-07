@@ -192,7 +192,7 @@ All rows passed the CER parity gate at release. Readings:
 
 ## E4 — ara-diac-small-2.0 candidate (run-006-r7-muon)
 
-- **Status:** COMPLETE (2026-08-29). **PASSED — 4.8218** full-set
+- **Status:** COMPLETE (2026-08-29). **PASSED — 4.8218** full-set [CORRECTED 2026-09-05: the figure did not reproduce; the corrected 2.0 number is 5.08 (38% reduction, not 42%)]
   windowed DER (gate ≤ 6.26; registered prediction 4.3–5.0; teacher r7
   reproduces 2.289 vs documented 2.2864). −3.44pp / 42% relative vs the
   shipped 1.0 at identical architecture and size; matches the PKM arm's
@@ -324,7 +324,7 @@ All rows passed the CER parity gate at release. Readings:
   (n=1200; teacher reproduces 2.289; paired bootstrap student−teacher
   +3.4083, CI [3.109, 3.743]). NOT ADOPTED. The registered prediction
   (4.30-4.65) missed badly; honest-report band also breached — this
-  is the worst rung measured, +1.18pp over the 4.8218 control. Run
+  is the worst rung measured, +1.43pp over the 4.5701 rung it was meant to improve (+0.92pp over the corrected 5.08 control; the pre-correction text said +1.18pp over 4.8218). Run
   run-012-r7-muon-gkd: 10,995 steps, final CE 0.0076, nine server
   preemptions absorbed by checkpoint-resume (no measured work lost);
   labels sha256 e70ce991d15a8c810b83e2b5401f1410293844c623ffefa646b
