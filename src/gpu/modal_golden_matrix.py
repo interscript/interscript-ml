@@ -44,7 +44,7 @@ SOURCES = {
     "urd-diac-1.0": ("imf/urd-diac/urd-diac-1.0-fp32.zip", "/ud-diacrit/urdu-diacrit/test.jsonl"),
     "tha-g2p-base-1.0": ("imf/tha-g2p-base/tha-g2p-base-1.0-fp32.zip", "/secryst-datasets/thai-ipa/test.jsonl"),
     "tha-g2p-small-1.0": ("imf/tha-g2p-small/tha-g2p-small-1.0-int8.zip", "/secryst-datasets/thai-ipa/test.jsonl"),
-    "fas-g2p-1.0": ("imf/fas-g2p/fas-g2p-1.0-fp32.zip", "/persian/persian_g2p/test.jsonl"),
+    "fas-g2p-1.0": ("imf/fas-g2p/fas-g2p-1.0-fp32.zip", "/persian/persian-g2p/test.jsonl"),
     "heb-diac-1.0": ("imf/heb-diac/heb-diac-1.0-fp32.zip", "nakdimon/test-imf.jsonl"),
     "heb-diac-1.1": ("imf/heb-diac/heb.zip", "nakdimon/test-imf.jsonl"),
     "heb-diac-small-1.0": ("imf/heb-diac-small/heb-diac-small-1.0-fp32.zip", "nakdimon/test-imf.jsonl"),
