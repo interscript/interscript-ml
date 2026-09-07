@@ -156,3 +156,25 @@ def test_golden_set_e2e() -> None:
     rows = [json.loads(line) for line in golden.read_text(encoding="utf-8").splitlines()]
     for row in rows:
         assert model.translate(row["input"], max_len=128) == row["output"], row["input"]
+
+
+def test_golden_matrix() -> None:
+    """golden-v1 corpus: every model's released zip must reproduce its
+    golden rows byte-identically. Set GOLDEN_DIR (release checkout);
+    each golden file maps to a model id resolved from the index."""
+    import glob
+
+    golden_dir = os.environ.get("GOLDEN_DIR")
+    if not golden_dir:
+        pytest.skip("set GOLDEN_DIR to a golden-v1 checkout")
+    files = sorted(glob.glob(str(Path(golden_dir) / "*.jsonl")))
+    assert files, "no golden files"
+    for path in files:
+        model_id = Path(path).stem
+        model = Model.load(model_id)
+        rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+        assert rows, model_id
+        for row in rows:
+            got = model.translate(row["input"], max_len=max(256, 4 * len(row["input"])))
+            assert got == row["output"], (model_id, row["input"])
+        del model
