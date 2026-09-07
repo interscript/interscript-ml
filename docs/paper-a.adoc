@@ -263,7 +263,7 @@ DER-CE scoring protocol as the `interscript-sadeed-eval` CLI (PyPI:
 raw predictions and the public benchmark; the full measurement ledger
 (RESULTS.md) with every verdict, interval, and provenance hash. Paper
 B carries the client-tier artifacts (distilled IMF v1 zips resolvable
-from index-v4, parity and margin reports, cross-runtime byte parity).
+from index-v5, parity and margin reports, cross-runtime byte parity).
 
 == References
 
