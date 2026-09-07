@@ -39,7 +39,7 @@ interscript            deterministic transliteration maps + engines
 (ruby · js · py)         │ maps that need vocalization dispatch to a
                         │ crystal through stdlib adapters (optional)
                         ▼
-secryst crystals       Ruby gem · pip install secryst · npm i secryst
+runtimes               Ruby gem secryst · pip install interscript-ml · npm i interscript
 (secryst org)          implement IMF v1 + models.yaml — nothing else
                         │
                         ▼
@@ -56,7 +56,7 @@ Dependency directions, stated once:
   a format, golden sets, and release tooling.
 - **Crystals depend only on the contract.** A crystal has zero
   interscript-core dependency — a TTS front-end can phonemize Khmer
-  with `pip install secryst` and nothing else.
+  with `pip install interscript-ml` and nothing else.
 - **Engines depend on crystals only optionally.** An engine without a
   crystal simply cannot execute maps that declare a vocalization step.
 - **Training is owned by secryst.** Teachers live in
