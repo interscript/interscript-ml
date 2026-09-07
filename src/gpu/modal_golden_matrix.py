@@ -31,17 +31,20 @@ IMAGE = (
 MODELS_VOLUME = modal.Volume.from_name("secryst-models")
 DATASETS = modal.Volume.from_name("rababa-datasets")
 SECRYST_DATASETS = modal.Volume.from_name("secryst-datasets")
+URDU_G2P = modal.Volume.from_name("urdu-g2p-datasets")
+URDU_DIAC = modal.Volume.from_name("urdu-diacrit-datasets")
+PERSIAN = modal.Volume.from_name("persian-g2p-datasets")
 
 app = modal.App("interscript-ml-golden-matrix", image=IMAGE)
 
 # index id -> volume zip path + test pairs (volume-relative)
 SOURCES = {
     "khm-latn-1.0": ("imf/khm-latn/khm-latn-1.0-fp32.zip", "/secryst-datasets/khmer-translit/test.jsonl"),
-    "urd-g2p-1.0": ("imf/urd-g2p/urd-g2p-1.0-fp32.zip", "urdu-g2p/test.jsonl"),
-    "urd-diac-1.0": ("imf/urd-diac/urd-diac-1.0-fp32.zip", "urdu-diacrit/test.jsonl"),
-    "tha-g2p-base-1.0": ("imf/tha-g2p-base/tha-g2p-base-1.0-fp32.zip", "thai-ipa/test.jsonl"),
-    "tha-g2p-small-1.0": ("imf/tha-g2p-small/tha-g2p-small-1.0-int8.zip", "thai-ipa/test.jsonl"),
-    "fas-g2p-1.0": ("imf/fas-g2p/fas-g2p-1.0-fp32.zip", None),
+    "urd-g2p-1.0": ("imf/urd-g2p/urd-g2p-1.0-fp32.zip", "/ud-g2p/urdu-g2p/test.jsonl"),
+    "urd-diac-1.0": ("imf/urd-diac/urd-diac-1.0-fp32.zip", "/ud-diacrit/urdu-diacrit/test.jsonl"),
+    "tha-g2p-base-1.0": ("imf/tha-g2p-base/tha-g2p-base-1.0-fp32.zip", "/secryst-datasets/thai-ipa/test.jsonl"),
+    "tha-g2p-small-1.0": ("imf/tha-g2p-small/tha-g2p-small-1.0-int8.zip", "/secryst-datasets/thai-ipa/test.jsonl"),
+    "fas-g2p-1.0": ("imf/fas-g2p/fas-g2p-1.0-fp32.zip", "/persian/persian_g2p/test.jsonl"),
     "heb-diac-1.0": ("imf/heb-diac/heb-diac-1.0-fp32.zip", "nakdimon/test-imf.jsonl"),
     "heb-diac-1.1": ("imf/heb-diac/heb.zip", "nakdimon/test-imf.jsonl"),
     "heb-diac-small-1.0": ("imf/heb-diac-small/heb-diac-small-1.0-fp32.zip", "nakdimon/test-imf.jsonl"),
@@ -53,7 +56,14 @@ SOURCES = {
 
 
 @app.function(cpu=8, memory=24 * 1024, timeout=4 * 3600,
-              volumes={"/outputs": MODELS_VOLUME, "/datasets": DATASETS, "/secryst-datasets": SECRYST_DATASETS})
+              volumes={
+        "/outputs": MODELS_VOLUME,
+        "/datasets": DATASETS,
+        "/secryst-datasets": SECRYST_DATASETS,
+        "/ud-g2p": URDU_G2P,
+        "/ud-diacrit": URDU_DIAC,
+        "/persian": PERSIAN,
+    })
 def generate(n: int = 25) -> dict:
     import hashlib
     import json
