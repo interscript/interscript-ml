@@ -54,9 +54,9 @@ def score(zip_path: str, expect_sha: str = "", out: str = "") -> dict:
         raise RuntimeError(f"volume zip sha {digest} != expected {expect_sha}")
 
     import pandas as pd
+    from interscript_ml import Model
 
     from harness.sadeed import project_haraqat, split_windows, strip_diacritics
-    from interscript_ml import Model
     from sadeedbench.scoring import score_predictions
 
     inputs = pd.read_parquet("/opt/rababa/data/sadeed-diac-25/train.parquet")[
@@ -96,7 +96,8 @@ def score(zip_path: str, expect_sha: str = "", out: str = "") -> dict:
                 with out_path.open("w", encoding="utf-8") as fh:
                     for j, q in enumerate(preds):
                         if j < len(preds):
-                            fh.write(json.dumps({"idx": j, "student": q}, ensure_ascii=False) + "\n")
+                            fh.write(json.dumps({"idx": j, "student": q},
+                                          ensure_ascii=False) + "\n")
                 MODELS_VOLUME.commit()
 
     gts = pd.read_parquet("/opt/rababa/data/sadeed-diac-25/train.parquet")[
