@@ -23,6 +23,7 @@ This repo owns three things and nothing else:
 |---|---|
 | Benchmark | [Misraj/SadeedDiac-25](https://huggingface.co/datasets/Misraj/SadeedDiac-25) (auto-fetched) |
 | Protocol CLI | `pip install interscript-ml-tools[sadeed]` ([PyPI](https://pypi.org/project/interscript-ml-tools/)) |
+| Python runtime | `pip install interscript-ml` ([PyPI](https://pypi.org/project/interscript-ml/)) |
 | Raw predictions, every frontier run | Release [`frontier-predictions-v1`](https://github.com/interscript/interscript-ml/releases/tag/frontier-predictions-v1) |
 | Teachers + provenance labels | Release [`teachers-arabic-v1`](https://github.com/interscript/interscript-ml/releases/tag/teachers-arabic-v1) |
 | Student artifacts | `models.yaml` (index-v5) — sha256-verified in every runtime |
