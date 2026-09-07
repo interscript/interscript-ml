@@ -12,10 +12,11 @@ trained_from: 'sequence-level KD from the r7 canonical teacher (rababa_arabic_by
   2.2864 windowed DER-CE full protocol): fresh greedy r7 labels on the same r5-units
   corpus/limits as ara-diac-small-1.0, Muon optimizer (E3-adopted), vanilla ByT5-small
   (E4, pre-registered gate <= 6.26). Checkpoint rababa-checkpoints:/rababa_arabic_distill_small/run-007-r7-muon-6ep/best.
-  The two measured wins compound: 8.259 -> 4.8218 full-set windowed DER-CE (teacher
-  reproduces 2.289 in-run vs documented 2.2864) — a 42% error reduction on the 1.0
-  release at the same architecture and artifact size. Still misses the strict teacher+0.5pp
-  gate (+2.53pp; miss disclosed); the E2/E3 factorial attributes the residual to domain
+  The two measured wins compound: 8.259 -> 5.08 full-set windowed DER-CE (teacher
+  reproduces 2.289 in-run vs documented 2.2864) — a 38% error reduction on the 1.0
+  release at the same architecture and artifact size (CORRECTED 2026-09-05: the
+  published 4.8218 did not reproduce; see RESULTS.md). Still misses the strict
+  teacher+0.5pp gate (+2.79pp; miss disclosed); the E2/E3 factorial attributes the residual to domain
   coverage.'
 metrics:
 - name: der_teacher_fullset

@@ -71,7 +71,7 @@ RL teacher polishing flat/negative ×3; microkimi bridges improve
 structure but not accuracy; teacher beam-search unnecessary for
 Arabic; per-channel int8 rejected on measurement; the 30 MiB tier
 closed as infeasible without pretraining; **E5 MTP-aux (2026-09-01):
-5.0853 vs the 4.8218 control — multi-token-prediction as a training
+5.0853 vs the control (then published 4.8218, corrected 2026-09-05 to 5.08) — multi-token-prediction as a training
 auxiliary HURT at this scale (+0.26pp), with a disclosed preemption
 confound (fresh aux head for the final 23% of steps); E6
 constant-budget register swap (2026-09-02): 5.8057 — replacing news
@@ -226,8 +226,9 @@ subset-inflation instances; the resume path now drops empty rows
 The E2/E3 factorial (3-epoch students) attributed the ~5.7pp gap as
 0.70pp capacity + 2.73pp optimizer + ~2.25pp residual "domain
 coverage." The 6-epoch rung (G2a) and the CI-carrying harness revise
-this: doubling epochs alone recovered 0.25pp full-set (4.8218 ->
-4.5701, CIs non-overlapping) — the residual was not purely domain.
+this: doubling epochs alone recovered 0.51pp full-set (corrected control
+5.08 -> 4.5701, CIs non-overlapping; the control's original 4.8218 was
+withdrawn 2026-09-05) — the residual was not purely domain.
 The decomposition for paper B, every line full-set with brackets:
 
 | lever | full-set DER | paired CI of delta |
@@ -235,7 +236,7 @@ The decomposition for paper B, every line full-set with brackets:
 | teacher r7 | 2.2864/2.2921 | — |
 | 1.0: AdamW, 3ep, r6 | 8.259 | retrofit in flight |
 | + Muon (E3) | 5.2945 | — |
-| + r7 teacher | 4.8218 | — |
+| + r7 teacher | 5.08 (corrected 2026-09-05; 4.8218 withdrawn) | — |
 | + 6 epochs (G2a) | 4.5701 | delta 2.12 [1.91, 2.35] |
 | register swap (E6, 3ep) | 5.8057 | negative |
 | register add (G2b, 6ep) | 4.8231 | delta 2.37 [2.19, 2.55] |
