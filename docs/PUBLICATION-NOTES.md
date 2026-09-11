@@ -9,10 +9,13 @@ un-landed number.
 
 ### 1. The artifact contract (IMF v1) and cross-runtime parity
 One zip, three ONNX graphs, fixed byte table, per-member SHA-256,
-byte-identical output from Ruby/Python/TypeScript; opset-14 floor for
-old consumer runtimes. Paper: sections 3–4 (section-imf). The framing
-contribution — neural models under the same discipline as
-deterministic transliteration maps.
+byte-identical output from Ruby/Python/TypeScript for fp32/fp16
+artifacts; quantized artifacts carry quality parity (per-model
+cer_delta gates) because near-tie decisions flip across hardware
+(measured 2026-09-07); opset-14 floor for old consumer runtimes.
+Paper: sections 3–4 (section-imf). The framing contribution — neural
+models under the same discipline as deterministic transliteration
+maps.
 
 ### 2. The decode-protocol correction
 Beam-4 with length normalization inflates flat byte-student PER 4.2×
