@@ -12,7 +12,7 @@ toc::[]
 
 Interoperable script conversion (OGC Abstract Standard topic _Interoperable Script Conversion Systems_) has matured for *deterministic* transliteration: authority-published romanization systems encoded as machine-readable maps that produce byte-identical output across runtimes. A complementary class of conversions — diacritization restoration, grapheme-to-phoneme conversion for scripts without a phonemic orthography, homograph disambiguation — has no authority to publish a map, because the mapping is not a rule set but a learned function. This paper presents the phonological layer of Interscript: a complete pipeline for producing, validating, and serving distilled byte-level sequence-to-sequence models under the same engineering discipline as deterministic maps.
 
-We contribute: (1) the Interscript Model Format (IMF v1), a checksummed, runtime-agnostic artifact contract that carries models across Ruby, Python, and JavaScript with byte-identical output; (2) a distillation methodology in which students are trained from frozen, independently evaluated teachers under pre-registered error budgets; (3) a measured size–quality frontier for client-tier models demonstrating that sub-100M randomly-initialized byte-level students fail catastrophically, while a pretrained 300M backbone quantized to 4 bits (193 MiB) retains full utility; and (4) a decode-protocol study showing that beam search with conventional length normalization is *counterproductive* on distilled byte-level students, inflating phoneme error rate by a factor of four relative to greedy decoding on the same artifact — a calibration artifact with implications for any evaluation of low-confidence autoregressive models.
+We contribute: (1) the Interscript Model Format (IMF v1), a checksummed, runtime-agnostic artifact contract that carries models across Ruby, Python, and JavaScript with byte-identical output at full precision and measured quality parity when quantized; (2) a distillation methodology in which students are trained from frozen, independently evaluated teachers under pre-registered error budgets; (3) a measured size–quality frontier for client-tier models demonstrating that sub-100M randomly-initialized byte-level students fail catastrophically, while a pretrained 300M backbone quantized to 4 bits (193 MiB) retains full utility; and (4) a decode-protocol study showing that beam search with conventional length normalization is *counterproductive* on distilled byte-level students, inflating phoneme error rate by a factor of four relative to greedy decoding on the same artifact — a calibration artifact with implications for any evaluation of low-confidence autoregressive models.
 
 Twelve models across four languages are released under BSD-3-Clause, every one traceable to a documented protocol. Where public benchmarks permit protocol-matched comparison, the teacher tier ranks among the best dedicated systems measured — second only to a frontier proprietary LLM on the SadeedDiac-25 Arabic diacritization leaderboard, and above the published SentenceBench homograph accuracy for Persian.
 
@@ -32,7 +32,7 @@ Our goal is to serve the second class under the guarantees of the first. This im
 |===
 |Requirement |Consequence
 
-|Byte-identical output across runtimes |A single artifact contract with per-member checksums and cross-runtime golden sets
+|Byte-identical output across runtimes (full precision) |A single artifact contract with per-member checksums and cross-runtime golden sets; quantized artifacts carry measured quality deltas instead — near-tie decisions flip across hardware
 |No training code in consumers |Self-describing zips (metadata + ONNX graphs) loadable by any runtime with a zip reader, SHA-256, and an ONNX runtime
 |Verifiable quality claims |Every metric traceable to a documented harness; metadata generated from, and checked against, a public results log
 |Old-runtime compatibility |ONNX opset pinned to 14 (the floor of the oldest supported consumer runtime)
@@ -88,8 +88,8 @@ lower error rate. Published evaluations that decode such models with
 beams risk reporting the decode, not the model.
 
 [[fig-architecture]]
-.The phonological-layer pipeline: frozen teachers, gated students, one checksummed artifact, three runtimes, byte-identical output.
-[image::paper-assets/architecture.png[The IMF v1 pipeline]] Teachers are frozen before any student trains; students pass pre-registered error budgets and a precision-aware parity gate before the artifact enters the index; three runtimes resolve the same checksummed zip and produce byte-identical output.
+.The phonological-layer pipeline: frozen teachers, gated students, one checksummed artifact, three runtimes, byte-identical output at full precision.
+[image::paper-assets/architecture.png[The IMF v1 pipeline]] Teachers are frozen before any student trains; students pass pre-registered error budgets and a precision-aware parity gate before the artifact enters the index; three runtimes resolve the same checksummed zip and produce byte-identical output at full precision (quantized artifacts: measured quality parity).
 
 == The artifact contract (IMF v1)
 [[section-imf]]
@@ -394,7 +394,7 @@ The general lesson: when a file "reads corrupt remotely and clean locally," susp
 
 *Benchmarks.* Cross-paper comparison in this space is unreliable by construction: protocols differ in evaluator, reference projection, skipped-example handling, and domain (SadeedDiac-25's own motivation). We therefore claim externally only where the full protocol is reproduced (<<section-leaderboard>>) and otherwise publish the harness itself — the Thai test set ships with this work as a citable benchmark (`benchmarks/thai-kaikki-g2p/`).
 
-*Determinism.* Byte-identical output across three runtimes is verified by golden sets generated from the reference implementation. Floating-point nondeterminism across ONNX runtime versions is not addressed beyond opset pinning; the parity gate bounds it at the artifact level.
+*Determinism.* Byte-identical output across three runtimes is verified by golden sets generated from the reference implementation, for fp32/fp16 artifacts on all hardware tested. Quantized artifacts (int8, int4) are byte-stable on like hardware but flip near-tie decisions across CPU architectures, so their guarantee is quality-level: each artifact ships its measured delta against full precision, and golden rows assert decode health rather than byte equality. Floating-point nondeterminism across ONNX runtime versions is not addressed beyond opset pinning; the parity gate bounds it at the artifact level.
 
 == Conclusion
 

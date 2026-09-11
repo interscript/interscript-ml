@@ -626,3 +626,25 @@ hardware for fp32/fp16; for quantized artifacts, quality parity (the
 published per-model cer_delta gates) plus prefix-consistency.**
 golden-v1's quantized rows are reference outputs (documented
 hardware/ORT provenance), not byte-assertions.
+
+## Speculative decode across the tier ladder: acceptance 0.9886, output-preserving (2026-09-11)
+
+The shipped artifacts form a drafter/verifier pair: ara-diac-layerdrop-1.0-int4
+(190M) drafts, ara-diac-small-2.1-int8 (300M) verifies. Measured over
+all 25 golden-v1 Arabic rows (CPU, K=8, greedy verification):
+
+- acceptance 0.9886 mean (min 0.955, median 0.991) — the int4 drafter's
+  argmax matches the int8 verifier's at ~99% of positions
+- 8.85 tokens per verifier pass (K=8 plus the bonus token on full
+  acceptance): ~9x fewer verifier invocations than token-by-token
+  decode
+- output preservation holds by construction and by measurement: every
+  exactness-checked row (18 of 25; the O(T^2) plain-path reference is
+  capped to <=600B rows) is byte-identical to the verifier's
+  plain-path greedy; plain and KV paths agreed on all checked rows
+
+Source: TODO.qwen-next/10 (DeepSeek-V4.1-Flash learnings, DSpark
+pattern), probe at scripts/probe_speculative.py. Runtime:
+interscript-ts SpeculativeModel (PR #77). The lite tier stays the
+standalone fast path; this is a middle tier — 2.1 outputs at a
+fraction of the decode calls.

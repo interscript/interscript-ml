@@ -17,9 +17,13 @@ Model Format (IMF v1) and its delivery channel: content-addressed zips
 (per-member SHA-256) resolved through a tag-pinned index with sidecar
 verification, served from release assets through a CORS front door,
 cached once per client, and executed byte-identically across
-TypeScript, Python, and Ruby runtimes. We measure the cost of this
-discipline across three tiers — node, server, and browser — and find
-it effectively free: whole-file hashing adds ~0.1 s against 7-13 s
+TypeScript, Python, and Ruby runtimes for full-precision artifacts;
+for quantized artifacts the guarantee is quality-level (per-model
+measured deltas against full precision), because near-tie decisions
+flip across hardware — a boundary we measure, not assume. We measure
+the cost of this discipline across three tiers — node, server, and
+browser — and find it effectively free: whole-file hashing adds ~0.1 s
+against 7-13 s
 session creation, verified reloads complete in ~0.4 s from cache, and
 a 202 MB int8 model runs end-to-end in a headless browser over WASM.
 Since the benchmark round, a depth-cut student (encoder 12->6,
@@ -41,7 +45,10 @@ tag-pinned index channel (index-v5).
 == 2. The artifact contract (IMF v1)
 - zip + metadata.yaml + per-member sha256; fixed ByT5 byte table
   (byte+3, trailing EOS); opset-14 floor; KV decoder graphs
-- cross-runtime parity: byte-identical decode in TS/Py/Ruby
+- cross-runtime parity, precision-scoped: fp32/fp16 byte-identical
+  decode in TS/Py/Ruby on all hardware tested; int8/int4 quality
+  parity via per-model measured deltas (near-tie flips across CPU
+  architectures, measured 2026-09-07)
 - provenance: labels sha256 recorded in every verdict; per-paragraph
   predictions saved with every evaluation
 
