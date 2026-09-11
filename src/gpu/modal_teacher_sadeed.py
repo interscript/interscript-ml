@@ -53,7 +53,6 @@ def teacher_preds() -> dict:
     import sys
 
     import pyarrow.parquet as pq
-    import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
     # Modal copies the entry file to /root/<name>.py while the repo

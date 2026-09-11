@@ -43,7 +43,7 @@ def test_headwise_equals_per_slice_vanilla() -> None:
     hw.step()
 
     vanilla = Muon(slices, lr=0.01, momentum=0.95)
-    for p, g in zip(slices, slice_grads):
+    for p, g in zip(slices, slice_grads, strict=True):
         p.grad = g.clone()
     vanilla.step()
 
@@ -114,7 +114,8 @@ def test_split_parameters_unchanged_when_headwise_unused() -> None:
     group kind, it does not touch the default split."""
     named = [
         ("shared.weight", torch.zeros(3, 4, requires_grad=True)),
-        ("encoder.block.0.layer.1.DenseReluDense.wi_0.weight", torch.zeros(4, 3, requires_grad=True)),
+        ("encoder.block.0.layer.1.DenseReluDense.wi_0.weight",
+         torch.zeros(4, 3, requires_grad=True)),
         ("encoder.block.0.layer.0.layer_norm.weight", torch.zeros(3, requires_grad=True)),
     ]
     muon, adamw = split_parameters(named)
