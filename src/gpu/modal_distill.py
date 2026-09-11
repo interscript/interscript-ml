@@ -1078,13 +1078,24 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
             named += list(mtp_named(mtp_head))
         muon_params, adamw_params = split_parameters(named)
+        headwise = []
+        if spec.get("headwise_muon"):
+            from gpu.muon import qk_named
+
+            headwise = [p for _, p in qk_named(named)]
+            headwise_ids = {id(p) for p in headwise}
+            muon_params = [p for p in muon_params if id(p) not in headwise_ids]
         optimizer = Muon(
             muon_params, lr=float(spec.get("muon_lr", 0.01)),
             momentum=0.95, weight_decay=0.01,
         )
+        if headwise:
+            heads = int(spec.get("student_config", {}).get("num_heads", 6))
+            optimizer.add_headwise_group(headwise, heads=heads)
         optimizer.add_adamw_group(adamw_params, lr=1e-4, weight_decay=0.0)
         print(
             f"[{spec_id}] muon: {len(muon_params)} matrix / "
+            f"{len(headwise)} headwise q/k / "
             f"{len(adamw_params)} embedding-like params",
             flush=True,
         )
