@@ -96,12 +96,18 @@ cross-runtime nor cross-hardware studies cover:
   drafting, batched verification) — acceptance figures are
   framing-relative and must disclose the framing
 
-Contract consequence: our quantized quality-parity guarantee is
-framing-scoped (the framing is part of the protocol that a cer_delta
-gate pins). The proposed structural fix is static activation scales
-(quantize_static with calibration over both framings), which removes
-the per-run scale computation entirely — pre-registered as
-TODO.impl/11 with framing-equality as the gate.
+Contract consequence, measured to its endpoints: framing stability is
+a property of the RUNTIME DISTRIBUTION, not the graph. The same
+single-vs-batched test passes 480/480 under the Python build at fp32,
+dynamic-int8, AND static-int8 — and fails under onnxruntime-node at
+every precision including fp32 (89-101/485). The proposed static-scale
+fix (calibrated quantize_static) does not repair it: the node build's
+kernels differ across batch shapes at float precision, before
+quantization enters. Shipped paths are single-framing by construction,
+so byte parity as published is unaffected; framing becomes a parity
+variable precisely when a runtime mixes batch shapes (speculative
+decode, batched serving) — and acceptance or parity figures measured
+under one framing do not transfer to another.
 
 == 6. Reproducibility discipline
 - subset-overstatement: five instances, up to 3.2x inflation
