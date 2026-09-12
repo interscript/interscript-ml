@@ -76,6 +76,33 @@ tag-pinned index channel (index-v5).
 - controlled probe matrix isolates the head; fp32 head = 36x fewer
   flips at +0.4% size; now the export default + release gate
 
+=== 5.1 Decode framing is a parity axis (measured 2026-09-12)
+
+Dynamically quantized graphs compute activation scales per fed
+tensor at runtime (ONNX DynamicQuantizeLinear). Decode framing — how
+many tokens share one decoder invocation — is therefore a parity
+variable ON THE SAME machine, runtime, and artifact, which neither
+cross-runtime nor cross-hardware studies cover:
+
+- batched (K-token) vs single-step feeds: KV values diverge ~0.03 per
+  element where the fp32 cache agrees to ~1e-6; inner-position argmax
+  flips are routine on near-uniform output distributions
+- the batched-framing greedy is a materially different decode: a
+  drafter==verifier pair self-agreed on only 33/66 positions; the
+  int4->int8 tier's batched-verifier output dropped a word on a
+  canonical row
+- speculative-decode acceptance measured 0.99 under uniform
+  plain-path framing but 0.46 under runtime framing (single-step
+  drafting, batched verification) — acceptance figures are
+  framing-relative and must disclose the framing
+
+Contract consequence: our quantized quality-parity guarantee is
+framing-scoped (the framing is part of the protocol that a cer_delta
+gate pins). The proposed structural fix is static activation scales
+(quantize_static with calibration over both framings), which removes
+the per-run scale computation entirely — pre-registered as
+TODO.impl/11 with framing-equality as the gate.
+
 == 6. Reproducibility discipline
 - subset-overstatement: five instances, up to 3.2x inflation
 - full-set-only rule; paired sentence-level bootstrap CIs on every
