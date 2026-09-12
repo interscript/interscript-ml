@@ -713,3 +713,18 @@ acceptance. The technique's domain is fp-class artifacts or serving
 paths with consistent framing. The playground tier was pulled
 accordingly; the runtime keeps SpeculativeModel as measurement
 infrastructure with the constraint documented.
+
+## r6+r7 weight soup: same-basin, no free lunch — 2.4188 (2026-09-12)
+
+50/50 weight average of the two measured Arabic teachers (580M,
+run-006-morph and run-007-news), scored under the windowed protocol
+on all 1200 rows: **2.4188** vs r6's 2.5997 and r7's 2.289. Per
+domain: classical 1.38 (r7 1.36), news 3.31 (r7 3.21), wiki 2.66
+(r7 2.08) — strictly between the parents everywhere; r7 remains the
+best available teacher and the supervision choice is unchanged.
+
+Two conclusions: (a) the checkpoints are same-basin (the soup is a
+functional model, confirming linear connectivity between the two
+teacher lineages — model-soup mechanics apply), and (b) at this pair
+and scale the soup buys nothing over the better parent. The axis
+closes negative; recorded so it is not re-derived.
