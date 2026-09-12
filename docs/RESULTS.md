@@ -648,3 +648,68 @@ pattern), probe at scripts/probe_speculative.py. Runtime:
 interscript-ts SpeculativeModel (PR #77). The lite tier stays the
 standalone fast path; this is a middle tier — 2.1 outputs at a
 fraction of the decode calls.
+
+## Speculative wall-clock on CPU: the first implementation is SLOWER (2026-09-12)
+
+Follow-up measurement to the acceptance entry (bench:
+interscript-ts/scripts/bench-speculative.mts, 5 golden rows, warm,
+arm64 CPU / ORT-native):
+
+| path | total s | tokens/s |
+|---|---|---|
+| 2.1 int8 plain (KV greedy) | 19.8 | 67 |
+| lite int4 plain (KV greedy) | 61.5 | 22 |
+| 2.1 via speculative | 113.8 | 12 |
+
+Acceptance held at the bench (0.9880, matching the probe's 0.9886) —
+the acceptance math is sound. The wall-clock is not, for two measured
+reasons:
+
+1. **Both speculative paths rebuild KV from zero every block** — the
+   drafter re-prefills [PAD]+prefix per block and the verifier runs the
+   full sequence with zero pasts per review: O(T^2) against the plain
+   path's O(T). This is an implementation defect, not a property of
+   the method; the production design carries pasts across blocks.
+2. **int4 decode is slower than int8 on this CPU** (61.5s vs 19.8s for
+   the plain paths): ORT's CPU int4 path (MatMulNBits decompression)
+   loses to the int8 kernels on arm64 — the drafter is the expensive
+   model here, inverting the small-drafter premise on this hardware.
+
+Consequence for positioning: the tier's published claims ("~9x fewer
+verifier invocations", output-preserving) stand; no wall-clock speedup
+is claimed anywhere, and none should be until the KV-carrying
+implementation is measured. On hardware with fast int4 (or GPU
+verifier batches) the cost model inverts in the tier's favor.
+
+## Decode framing is a third parity axis on dynamic-int8 artifacts (2026-09-12)
+
+The KV-carrying rewrite of the runtime's speculative decode exposed a
+mechanism the cross-hardware study (2026-09-07) did not cover:
+
+**Dynamic-int8 ONNX graphs compute activation quantization scales per
+fed tensor.** Decode framing — how many tokens share one decoder call
+— therefore changes the numerics materially, on the SAME machine, same
+runtime, same artifact:
+
+- batched feed (K tokens with pasts) vs single-step feed: present
+  values differ up to ~0.03 per element (fp32 KV would be ~1e-6);
+  inner-position argmax flips are routine
+- the batched-framing greedy is a DIFFERENT DECODE than the
+  single-step one: drafter==verifier self-acceptance measured 33/66
+  despite identical final strings via self-correction; the
+  int4->int8 pair's batched-verifier output lost a word
+  ("امُ عليكم" vs "السلام عليكم")
+- measured pair acceptance under runtime framing (single-step
+  drafting vs batched verification): **0.4614**, vs the probe's
+  0.9886 measured under uniform plain-path framing — the probe
+  number is framing-relative, and the runtime number is the real one
+
+Wall-clock (arm64 CPU, warm, 5 golden rows): plain 2.1 int8 21.4s;
+lite int4 75.7s (int4 CPU kernels lose to int8 — MatMulNBits); the
+O(T) speculative pair 155.4s at 0.46 acceptance. Verdict: **the
+speculative tier is not viable on quantized CPU artifacts** — the
+int4 drafter is the expensive model AND framing divergence collapses
+acceptance. The technique's domain is fp-class artifacts or serving
+paths with consistent framing. The playground tier was pulled
+accordingly; the runtime keeps SpeculativeModel as measurement
+infrastructure with the constraint documented.
