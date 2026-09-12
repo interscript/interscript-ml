@@ -88,20 +88,22 @@ class Decoder:
 
 
 def greedy(dec: Decoder, hidden, batch: int) -> list[int]:
-    """Greedy decode driven with `batch`-token feeds: position i's
-    prediction comes from a call fed the `batch` tokens ending at i.
-    batch=1 is the classic incremental loop; batch=8 is the speculative
-    verification framing."""
-    argmax, pasts = dec.split(dec.run([PAD_ID], hidden, None))
+    """Greedy decode driven with `batch`-token feeds. The window ranges
+    over the FULL consumed sequence ([PAD] + emitted tokens): each
+    token's prediction comes from a call fed the `batch` tokens ending
+    at it, with the KV covering everything before them — the judge
+    call's presents cover exactly the consumed sequence, so the cache
+    never rebuilds from a window alone (the earlier versions dropped
+    the PAD prefix and degenerated). batch=1 is the classic incremental
+    loop; batch=8 is the speculative-verification framing."""
+    seq = [PAD_ID]
+    argmax, pasts = dec.split(dec.run(seq, hidden, None))
     traj = [argmax]
     while len(traj) < STEPS and traj[-1] != EOS_ID:
-        window = traj[-batch:]
-        out = dec.run(window, hidden, Decoder.trim(pasts, len(pasts[next(iter(pasts))]) if pasts else 0))
-        argmax, _ = dec.split(out)
-        # rebuild pasts through honest incremental steps (the cache must
-        # reflect every consumed token, mirroring a real runtime)
-        for tok in window:
-            _, pasts = dec.split(dec.run([tok], hidden, pasts))
+        window = seq[-batch:]
+        out = dec.run(window, hidden, Decoder.trim(pasts, len(seq) - len(window)))
+        argmax, pasts = dec.split(out)
+        seq.append(argmax)
         traj.append(argmax)
     return traj
 
@@ -196,7 +198,10 @@ def main() -> None:
     static = Decoder(session(static_path))
 
     test_rows = rows[:5]
-    for name, dec in (("fp32", fp32), ("static-int8", static)):
+    with zipfile.ZipFile(DYNAMIC_INT8_ZIP) as zf:
+        dyn_bytes = zf.read("decoder-kv.onnx")
+    dynamic = Decoder(session(dyn_bytes))
+    for name, dec in (("fp32", fp32), ("dynamic-int8", dynamic), ("static-int8", static)):
         same = total = 0
         drift = 0
         for text in test_rows:
@@ -210,10 +215,7 @@ def main() -> None:
             drift += sum(1 for a, b in zip(single, ref) if a != b)
         print(f"{name}: framing single==batched {same}/{total}; drift-vs-fp32 {drift}/{total}")
 
-    # speed vs the shipped dynamic int8
-    with zipfile.ZipFile(DYNAMIC_INT8_ZIP) as zf:
-        dyn_bytes = zf.read("decoder-kv.onnx")
-    dynamic = Decoder(session(dyn_bytes))
+    # speed: dynamic vs static
     for name, dec in (("dynamic-int8", dynamic), ("static-int8", static)):
         t0 = time.time()
         toks = 0
