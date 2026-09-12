@@ -752,3 +752,37 @@ Arabic adapted-init collapses under the strong one). The lite tier
 remains run-009 (5.78); init-source closes negative and the depth
 axis now reads 2-of-3 negative. Remaining architecture lever:
 TODO.impl/10 (lexical memory), gated as before.
+
+## Framing completes as a distribution×precision matrix (2026-09-12, final)
+
+The same single-vs-batched greedy test (5 golden rows x 96 steps, same
+machine, ORT 1.23 everywhere), run to its endpoints:
+
+| runtime | precision | single==batched |
+|---|---|---|
+| Python ORT | fp32 | 480/480 |
+| Python ORT | dynamic int8 | 480/480 |
+| Python ORT | static int8 | 480/480 |
+| onnxruntime-node | fp32 | **101/485** |
+| onnxruntime-node | dynamic int8 | 97/485 |
+| onnxruntime-node | static int8 | 89/485 |
+
+The framing instability is NOT a quantization property: the node build
+diverges across batch shapes at fp32, and static activation scales
+(pre-computed into the graph — TODO.impl/11's proposed fix) do not
+repair it. It is a property of the onnxruntime-node kernel paths
+(multi-token inputs take numerically different code paths than
+single-token inputs), absent from the Python build at every precision.
+
+Contract consequences, final form:
+- cross-FRAMING parity holds under the Python reference at all
+  precisions and does not hold under onnxruntime-node at ANY precision
+- the shipped TS runtime is unaffected in practice: every shipped path
+  (translate, worker, CLI) is single-framing; framing becomes a
+  parity variable exactly when a runtime mixes batch shapes
+  (speculative decode, batched serving) — which is why the speculative
+  tier degraded and was pulled
+- static int8 remains a POSITIVE byproduct: quality-clean vs fp32 on
+  this sample (0/480 drift) and ~8% faster than dynamic on CPU —
+  candidate for the export path on its own merits, decided by
+  full-set quality, not framing
