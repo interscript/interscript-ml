@@ -1,11 +1,14 @@
-"""Modal probe: teacher-only SadeedDiac-25 predictions (TODO.qwen-next/10 §2).
+"""Modal probe: teacher-only SadeedDiac-25 predictions (TODO.impl/06,
+the seed-soup freebie; originally TODO.qwen-next/10 §2).
 
-Runs the canonical teacher (r6 = run-006-morph) over the benchmark
-under the published windowed protocol and writes per-paragraph
-predictions to the checkpoints volume, so per-domain DER slicing can
-be done offline (r7's slice comes from run-007's teacher column).
+Runs a teacher over the benchmark under the published windowed
+protocol and writes per-paragraph predictions to the checkpoints
+volume. With --soup-both, two checkpoints are weight-averaged 50/50
+first (same-basin model soup; garbage output means different basins
+and the probe closes negative on its own).
 
     modal run --detach src/gpu/modal_teacher_sadeed.py
+    modal run --detach src/gpu/modal_teacher_sadeed.py --soup-both
 """
 
 from __future__ import annotations
@@ -36,7 +39,9 @@ IMAGE = (
 CHECKPOINTS = modal.Volume.from_name("rababa-checkpoints")
 
 TEACHER = "/checkpoints/rababa_arabic_byt5/run-006-morph/best"
+SOUP_PARTNER = "/checkpoints/rababa_arabic_byt5/run-007-news/best"
 OUT = "/checkpoints/probes/r6_sadeed_preds.jsonl"
+OUT_SOUP = "/checkpoints/probes/r67_soup_sadeed_preds.jsonl"
 
 app = modal.App("interscript-ml-teacher-sadeed", image=IMAGE)
 
@@ -48,7 +53,7 @@ app = modal.App("interscript-ml-teacher-sadeed", image=IMAGE)
     timeout=2 * 3600,
     volumes={"/checkpoints": CHECKPOINTS},
 )
-def teacher_preds() -> dict:
+def teacher_preds(soup_both: bool = False) -> dict:
     import json
     import sys
 
@@ -63,7 +68,19 @@ def teacher_preds() -> dict:
     from harness.sadeed import strip_diacritics, windowed_paragraphs
 
     tok = AutoTokenizer.from_pretrained("google/byt5-small")
-    teacher = AutoModelForSeq2SeqLM.from_pretrained(TEACHER).to("cuda").eval()
+    teacher_path = SOUP_PARTNER if soup_both else TEACHER
+    out_path = OUT_SOUP if soup_both else OUT
+    teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path)
+    if soup_both:
+        partner = AutoModelForSeq2SeqLM.from_pretrained(TEACHER)
+        soup = {
+            name: (teacher.state_dict()[name] + partner.state_dict()[name]) / 2
+            for name in teacher.state_dict()
+        }
+        del partner
+        teacher.load_state_dict(soup)
+        del soup
+    teacher = teacher.to("cuda").eval()
     teacher.generation_config.max_length = 100_000
 
     table = pq.read_table("/opt/rababa/data/sadeed-diac-25/train.parquet")
@@ -71,7 +88,7 @@ def teacher_preds() -> dict:
 
     preds = windowed_paragraphs(teacher, tok, inputs, window=1400)
 
-    out = Path(OUT)
+    out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         for i, (src, pred) in enumerate(zip(inputs, preds, strict=True)):
@@ -80,9 +97,9 @@ def teacher_preds() -> dict:
                 + "\n"
             )
     CHECKPOINTS.commit()
-    return {"rows": len(preds), "out": OUT}
+    return {"rows": len(preds), "out": str(out_path), "souped": soup_both}
 
 
 @app.local_entrypoint()
-def main() -> None:
-    print(teacher_preds.remote())
+def main(soup_both: bool = False) -> None:
+    print(teacher_preds.remote(soup_both=soup_both))
