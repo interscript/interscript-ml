@@ -728,3 +728,27 @@ functional model, confirming linear connectivity between the two
 teacher lineages — model-soup mechanics apply), and (b) at this pair
 and scale the soup buys nothing over the better parent. The axis
 closes negative; recorded so it is not re-derived.
+
+## ara-diac-small-lite2 — trained-init depth cut is WORSE: 7.1402 (2026-09-12)
+
+The lite cell's one untested variable was the layer-drop INIT SOURCE
+(TODO.impl/04): run-009 (5.78) drops from generic pretrained
+byt5-small; lite2 drops the same layers from the TRAINED 2.1 student,
+then runs the identical 6-epoch sequence-KD distill (canonical r7
+labels, sha e70ce991; teacher re-scores 2.2921 on the same run).
+
+Result: **7.1402** full-set (n=1200), paired-bootstrap gap to teacher
+4.29pp [3.83, 4.78]. The trained init is 1.36pp WORSE than the
+generic init, not better.
+
+Reading: generic pretraining keeps encoder layers redundant and
+interchangeable, so every-other-layer deletion survives; task
+adaptation prunes that redundancy — the layers become co-specialized,
+and deleting half of a co-adapted stack breaks more learned
+computation. Depth compression on this family survives on generic
+init and degrades on adapted init, from either direction (the Hebrew
+layerdrop collapsed from generic init under a weaker recipe; the
+Arabic adapted-init collapses under the strong one). The lite tier
+remains run-009 (5.78); init-source closes negative and the depth
+axis now reads 2-of-3 negative. Remaining architecture lever:
+TODO.impl/10 (lexical memory), gated as before.
