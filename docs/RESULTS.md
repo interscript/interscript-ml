@@ -786,3 +786,22 @@ Contract consequences, final form:
   this sample (0/480 drift) and ~8% faster than dynamic on CPU —
   candidate for the export path on its own merits, decided by
   full-set quality, not framing
+
+## Static-int8 full-set gate: 4.6241 — quality-clean, +8% CPU speed (2026-09-12)
+
+The static-activation artifact (TODO.impl/11's byproduct: quantize_static
+over 365 real decode feeds, MatMul-only, head fp32, QUInt8 acts,
+remainder addressing) scored under the windowed protocol on all 1200
+rows: **4.6241** vs the shipped dynamic int8's 4.5701 — a +0.054pp
+delta, the same order as artifact-vs-checkpoint drift (the 2.0
+artifact measured 5.0329 vs the checkpoint's 5.08). Together with the
+framing matrix's speed leg (+8% tok/s vs dynamic on CPU: 78 vs 72),
+static int8 clears quality and wins speed.
+
+Decision state: the RE-EXPORT of all quantized artifacts through the
+static path (modal_export gains the calibration stage; index-v6;
+golden rows regenerate) is a release-scale operation and carries a
+release-scale bar: re-run this gate with --out so the delta ships
+with a paired-bootstrap CI. The point estimate stands recorded; the
+export path change is small and the calibration corpus recipe is in
+scripts/static_int8_experiment.py.
