@@ -584,6 +584,84 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
     }
 
 
+@app.function(
+    cpu=8,
+    memory=32 * 1024,
+    timeout=5 * 3600,
+    volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
+)
+def export_int8_static(model_id: str, limit: int = 0) -> dict:
+    """Build the static-activation int8 artifact (TODO.impl/11's
+    positive branch): fp32 encoder + static-int8 decoder, calibrated on
+    the model's own eval pairs across BOTH decode framings.
+
+    The MEASURED composition (scored 4.6241 full-set vs dynamic 4.5701,
+    +8% CPU decode): the fp32 encoder keeps the artifact server-sized;
+    a browser-sized int8-encoder + static-decoder composition needs its
+    own gate run before it ships. Lands as {mid}-int8static.zip; the
+    release swap is a version decision."""
+    import re
+    import sys
+    import tempfile
+    import zipfile
+    from pathlib import Path
+
+    sys.path.insert(0, "/root/interscript-ml/src")
+    from imf.export import (
+        collect_decode_calibration,
+        head_matmul_names,
+        quantize_int8_static,
+        refresh_member_shas,
+    )
+
+    spec = MODELS[model_id]
+    test_path = Path(spec["test_volume"]) / spec["test_data"]
+    pairs = _load_pairs(test_path)[: limit or None]
+
+    out_dir = Path("/outputs/imf") / model_id
+    meta_path = Path("/root/interscript-ml", spec["metadata"])
+    mid = re.search(r"^id:\s*(\S+)", meta_path.read_text(encoding="utf-8"), re.M).group(1)
+    fp32_zip = out_dir / f"{mid}-fp32.zip"
+    if not fp32_zip.exists():
+        raise RuntimeError(f"{fp32_zip.name} missing on the volume")
+
+    import onnxruntime as ort
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        with zipfile.ZipFile(fp32_zip) as zf:
+            zf.extract("encoder.onnx", tmp)
+            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
+            zf.extract(dec, tmp)
+        opts = ort.SessionOptions()
+        opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+        enc_sess = ort.InferenceSession(str(tmp / "encoder.onnx"), opts)
+        dec_sess = ort.InferenceSession(str(tmp / dec), opts)
+        calibration = collect_decode_calibration(enc_sess, dec_sess, [s for s, _ in pairs])
+        print(f"[{model_id}] calibration: {len(calibration)} feeds", flush=True)
+        dec_static = tmp / dec.replace(".onnx", "-static.onnx")
+        quantize_int8_static(
+            tmp / dec, dec_static, calibration,
+            nodes_to_exclude=head_matmul_names(tmp / dec),
+        )
+        new_zip = out_dir / f"{mid}-int8static.zip"
+        with zipfile.ZipFile(fp32_zip) as src, zipfile.ZipFile(
+            new_zip, "w", zipfile.ZIP_DEFLATED
+        ) as dst:
+            for member in src.namelist():
+                if member == "metadata.yaml":
+                    meta = src.read(member).decode("utf-8")
+                    meta = re.sub(r"^precision:\s*\S+", "precision: int8-static", meta, flags=re.M)
+                    meta = re.sub(r"^id:\s*\S+", f"id: {mid}-int8static", meta, flags=re.M)
+                    dst.writestr(member, meta)
+                elif member == dec:
+                    dst.writestr(member, dec_static.read_bytes())
+                else:
+                    dst.writestr(member, src.read(member))
+        refresh_member_shas(new_zip)
+    return {"artifact": str(new_zip), "calibration": len(calibration)}
+
+
 @app.local_entrypoint()
 def rebuild_int8(model: str, limit: int = 0) -> None:
     print(rebuild_int8_head32.remote(model, limit))
@@ -618,3 +696,8 @@ def zip_meta(model_id: str, precision: str) -> dict:
 def zmeta(model: str, precisions: str = "fp32,fp16,int8") -> None:
     for precision in precisions.split(","):
         print(precision, zip_meta.remote(model, precision))
+@app.local_entrypoint()
+def static(model_id: str, limit: int = 0) -> None:
+    print(export_int8_static.remote(model_id, limit))
+
+
