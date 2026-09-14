@@ -523,3 +523,115 @@ def export_zips(
             )
     return zips
 
+
+
+def collect_decode_calibration(
+    enc_sess, dec_sess, texts: list[str], steps: int = 64,
+) -> list[dict]:
+    """Decoder feeds across framings for static activation calibration:
+    prefills, incremental single-token steps, and 8-token windows —
+    the shapes whose scales must hold (the framing axis). Mirrors
+    scripts/static_int8_experiment.py, which measured the recipe."""
+    import numpy as np
+
+    EOS_ID, PAD_ID = 1, 0
+    encode = encode_bytes
+
+    past_names = [i.name for i in dec_sess.get_inputs() if i.name.startswith("past_")]
+    meta = {i.name: i for i in dec_sess.get_inputs()}
+    present_of = {
+        o.name.replace("present_", "past_"): o.name
+        for o in dec_sess.get_outputs()
+        if o.name.startswith("present_")
+    }
+
+    def run(tokens, hidden, pasts):
+        feed = {
+            "input_ids": np.array([tokens], dtype=np.int64),
+            "encoder_hidden_states": hidden,
+        }
+        for n in past_names:
+            feed[n] = pasts.get(n) if pasts else np.zeros(
+                (1, meta[n].shape[1], 0, meta[n].shape[3]), dtype=np.float32
+            )
+        out = dec_sess.run(None, feed)
+        names = [o.name for o in dec_sess.get_outputs()]
+        return dict(zip(names, out, strict=True))
+
+    def split(out):
+        return int(np.argmax(out["logits"][0, -1])), {
+            k: out[v] for k, v in present_of.items()
+        }
+
+    def trim(pasts, n):
+        return {k: v[:, :, :n, :].copy() for k, v in pasts.items()}
+
+    samples: list[dict] = []
+
+    def record(tokens, hidden, pasts):
+        feed = {"input_ids": np.array([tokens], dtype=np.int64),
+                "encoder_hidden_states": hidden}
+        for n in past_names:
+            feed[n] = pasts.get(n) if pasts else np.zeros(
+                (1, meta[n].shape[1], 0, meta[n].shape[3]), dtype=np.float32
+            )
+        samples.append(feed)
+
+    for text in texts:
+        ids = encode(text)
+        hidden = enc_sess.run(None, {"input_ids": np.array([ids], dtype=np.int64)})[0]
+        tok, pasts = split(run([PAD_ID], hidden, None))
+        record([PAD_ID], hidden, None)
+        window = []
+        for _ in range(steps):
+            window.append(tok)
+            record([tok], hidden, pasts)
+            tok, pasts = split(run([tok], hidden, pasts))
+            if tok == EOS_ID:
+                break
+            if len(window) == 8:
+                seq_len = next(iter(pasts.values())).shape[2]
+                record(window, hidden, trim(pasts, max(seq_len - len(window), 0)))
+                window = []
+    return samples
+
+
+def quantize_int8_static(
+    src: Path | str, dst: Path | str, calibration: list[dict],
+    nodes_to_exclude: list[str] | None = None,
+) -> Path:
+    """fp32 -> static-int8 (calibrated QUInt8 activations, MatMul-only,
+    head fp32). Activation scales live in the graph — the export-side
+    half of TODO.impl/11: quality-clean at full set (4.6241 vs dynamic
+    4.5701) and +8% CPU decode speed. Note the measured composition:
+    fp32 encoder + static decoder; an int8-encoder + static-decoder
+    (browser-size) composition needs its own gate run before shipping.
+    """
+    from onnxruntime.quantization import (
+        CalibrationDataReader,
+        QuantFormat,
+        QuantType,
+        quantize_static,
+    )
+
+    class _Reader(CalibrationDataReader):
+        def __init__(self, data):
+            self.data = list(data)
+
+        def get_next(self):
+            return self.data.pop(0) if self.data else None
+
+        def rewind(self):
+            pass  # one pass; the corpus is the calibration set
+
+    quantize_static(
+        str(src),
+        str(dst),
+        calibration_data_reader=_Reader(calibration),
+        quant_format=QuantFormat.QOperator,
+        activation_type=QuantType.QUInt8,
+        weight_type=QuantType.QInt8,
+        op_types_to_quantize=["MatMul"],
+        nodes_to_exclude=nodes_to_exclude or [],
+    )
+    return Path(dst)
