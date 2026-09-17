@@ -805,3 +805,22 @@ release-scale bar: re-run this gate with --out so the delta ships
 with a paired-bootstrap CI. The point estimate stands recorded; the
 export path change is small and the calibration corpus recipe is in
 scripts/static_int8_experiment.py.
+
+## Static-int8 release bar met: the paired CI (2026-09-17)
+
+Both artifacts scored full-set with per-row predictions saved
+(dynamic 4.5619; static 4.5952 — its second run, inside the drift
+band with the first's 4.6241). Sentence-level paired bootstrap
+(seed 42, n=1000, the campaign's standard) on the per-item DER delta:
+
+**static − dynamic = +2.71pp, CI95 [−1.54, +7.11] (n=1195)** — the
+interval crosses zero: not separated. Micro aggregates differ by
+0.03pp; the macro point is dominated by short rows where a few haraqat
+swings are a large per-sentence percentage.
+
+Verdict by the standing rule: static and dynamic are
+quality-indistinguishable at our measurement power, and static
+carries +8% CPU decode speed. The re-export decision (index-v6,
+golden regen, browser-size composition gated separately) is now fully
+informed; the export path is one command (modal_export::static,
+merged in PR #217).
