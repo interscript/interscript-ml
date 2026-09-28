@@ -824,3 +824,22 @@ carries +8% CPU decode speed. The re-export decision (index-v6,
 golden regen, browser-size composition gated separately) is now fully
 informed; the export path is one command (modal_export::static,
 merged in PR #217).
+
+## Static matrix completed: composition B (int8 enc) at 4.6045 (2026-09-17)
+
+The browser-size premise corrected itself on measurement: the static
+decoder graph (QOperator + casts) is LARGER than dynamic — composition
+B (int8-dynamic encoder + static decoder) lands at 491 MiB vs the
+shipped dynamic int8's 264 MiB. Static trades SIZE for SPEED; it is
+the CPU-speed tier, not a browser play. Quality completes cleanly:
+
+| composition | encoder | decoder | size | full-set DER |
+|---|---|---|---|---|
+| shipped dynamic | int8 | int8 (dynamic acts) | 264 MiB | 4.5619 / 4.5701 |
+| static A | fp32 | int8 (static acts) | 1.17 GiB | 4.5952 / 4.6241 |
+| static B | int8 | int8 (static acts) | 491 MiB | **4.6045** |
+
+The int8 encoder costs ~0.01pp over A; everything sits inside the
+drift band and inside the not-separated paired CI. Static's place in
+the catalog, when the release is called: a server/CPU tier where
+decode speed outweighs artifact size.
