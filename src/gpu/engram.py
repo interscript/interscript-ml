@@ -106,3 +106,54 @@ class Engram(nn.Module):
             "table_scale": scale.reshape(1),
             "proj_fp16": self.proj.weight.detach().half(),
         }
+
+
+def attach_engram(model, layer: int = 3, entries: int = 1 << 21, dim: int = 32):
+    """Attach ONE Engram to the student's encoder: computes byte-n-gram
+    addresses from input_ids and adds the looked-up memory to the
+    hidden states leaving encoder block `layer` (0-based). The
+    projection is zero-initialized — the attached model is functionally
+    identical to the backbone at step 0 (the PKM rule).
+
+    The module rides on the model's input_ids: it re-encodes them from
+    the ids tensor each forward, so no dataloader change is needed."""
+
+    eng = Engram(model.config.d_model, entries=entries, dim=dim)
+    block = model.encoder.block[layer]
+
+    def hook(_module, args, output):
+        input_ids = model._engram_ids
+        if input_ids is None:
+            return output
+        memory = eng(input_ids)
+        hidden = output[0] if isinstance(output, tuple) else output
+        return (hidden + memory, *output[1:]) if isinstance(output, tuple) else hidden + memory
+
+    # capture input_ids per forward: the encoder sees them first
+    orig_forward = model.encoder.forward
+
+    def encoder_forward(input_ids=None, **kw):
+        model._engram_ids = input_ids
+        return orig_forward(input_ids=input_ids, **kw)
+
+    model.encoder.forward = encoder_forward
+    block.register_forward_hook(hook)
+    model._engram = eng
+    base = sum(p.numel() for p in model.parameters())
+    print(
+        f"[engram] attached at encoder block {layer}: "
+        f"+{sum(p.numel() for p in eng.parameters()) / 1e6:.1f}M params "
+        f"on a {base / 1e6:.0f}M model",
+        flush=True,
+    )
+    return model
+
+
+def engram_param_split(model):
+    """(table_params, other_params) of the attached module — the table
+    pairs with the Sinkhorn-balanced update, the projection stays on
+    its optimizer."""
+    eng = getattr(model, "_engram", None)
+    if eng is None:
+        return [], []
+    return [eng.table.weight], [eng.proj.weight]

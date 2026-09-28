@@ -326,6 +326,10 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
             _maybe_stitch(spec_id, spec, student)
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(spec["student_init"]).to(device)
+    if spec.get("engram"):
+        from gpu.engram import attach_engram
+
+        attach_engram(student, **spec["engram"])
     student.train()
 
     class Pairs(Dataset):
@@ -427,6 +431,11 @@ def distill(spec_id: str, epochs: int = 3, alpha: float = 0.5, temperature: floa
             loss.backward()
             torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
             optimizer.step()
+            # the Engram table rides its own update rule (Sinkhorn-
+            # balanced), stepped beside the main optimizer
+            table_opt = getattr(optimizer, "_engram_table_opt", None)
+            if table_opt is not None:
+                table_opt.step()
             scheduler.step()
             optimizer.zero_grad()
             step += 1
@@ -745,6 +754,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         from gpu.pkm import inject_pkm
 
         inject_pkm(student, **spec["pkm"])
+    if spec.get("engram"):
+        _ensure_src_path()
+        from gpu.engram import attach_engram
+
+        attach_engram(student, **spec["engram"])
     mtp_head = None
     if spec.get("mtp_aux"):
         _ensure_src_path()
@@ -1078,6 +1092,14 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
             named += list(mtp_named(mtp_head))
         muon_params, adamw_params = split_parameters(named)
+        sinkhorn_tables = []
+        if spec.get("engram"):
+            from gpu.engram import engram_param_split
+
+            tables, projs = engram_param_split(student)
+            sinkhorn_tables = tables
+            proj_ids = {id(p) for p in projs}
+            muon_params = [p for p in muon_params if id(p) not in proj_ids]
         headwise = []
         if spec.get("headwise_muon"):
             from gpu.muon import qk_named
@@ -1092,6 +1114,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         if headwise:
             heads = int(spec.get("student_config", {}).get("num_heads", 6))
             optimizer.add_headwise_group(headwise, heads=heads)
+        if sinkhorn_tables:
+            from gpu.sinkhorn_update import SinkhornUpdate
+
+            table_opt = SinkhornUpdate(sinkhorn_tables, lr=float(spec.get("engram_lr", 5e-4)))
+            optimizer._engram_table_opt = table_opt  # stepped alongside
         optimizer.add_adamw_group(adamw_params, lr=1e-4, weight_decay=0.0)
         print(
             f"[{spec_id}] muon: {len(muon_params)} matrix / "
@@ -1189,6 +1216,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             loss.backward()
             torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
             optimizer.step()
+            # the Engram table rides its own update rule (Sinkhorn-
+            # balanced), stepped beside the main optimizer
+            table_opt = getattr(optimizer, "_engram_table_opt", None)
+            if table_opt is not None:
+                table_opt.step()
             scheduler.step()
             optimizer.zero_grad()
             step += 1
