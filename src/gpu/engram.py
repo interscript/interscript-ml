@@ -157,3 +157,51 @@ def engram_param_split(model):
     if eng is None:
         return [], []
     return [eng.table.weight], [eng.proj.weight]
+
+
+def load_student_with_engram(path, engram_cfg: dict):
+    """Load an Engram student saved with ``save_pretrained``: the
+    vanilla class drops the injected parameters (the PKM lesson —
+    evaluating without the table scores a backbone missing a component
+    it trained with). Attach first, then load the full state strictly;
+    raises if any engram parameter is missing from the checkpoint."""
+    from transformers import AutoModelForSeq2SeqLM
+
+    student = AutoModelForSeq2SeqLM.from_pretrained(path)
+    attach_engram(student, **engram_cfg)
+    import glob
+
+    sd = None
+    for pattern in ("model.safetensors", "model*.safetensors", "pytorch_model.bin"):
+        hits = glob.glob(str(path / pattern))
+        if hits:
+            if hits[0].endswith(".bin"):
+                sd = torch.load(hits[0], map_location="cpu", weights_only=True)
+            else:
+                from safetensors.torch import load_file
+
+                sd = load_file(hits[0])
+            break
+    if sd is None:
+        raise FileNotFoundError(f"no weights under {path}")
+    result = student.load_state_dict(sd, strict=False)
+    if result.unexpected_keys:
+        raise RuntimeError(f"unexpected keys: {result.unexpected_keys}")
+    # T5 ties the byte embedding: save_pretrained writes it once as
+    # shared.weight, so the encoder/decoder/lm_head aliases report
+    # missing while actually covered
+    tied = {
+        "encoder.embed_tokens.weight",
+        "decoder.embed_tokens.weight",
+        "lm_head.weight",
+    }
+    fresh = [k for k in result.missing_keys if k.startswith("_engram.")]
+    other = [
+        k for k in result.missing_keys
+        if not k.startswith("_engram.") and k not in tied
+    ]
+    if other:
+        raise RuntimeError(f"missing non-engram keys: {other}")
+    for k in fresh:
+        print(f"[engram-load] WARNING fresh param: {k}", flush=True)
+    return student

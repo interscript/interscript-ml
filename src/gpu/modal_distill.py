@@ -515,9 +515,16 @@ def evaluate(spec_id: str = "heb-diac-small", limit: int = 0) -> dict:
     teacher = AutoModelForSeq2SeqLM.from_pretrained(
         Path("/checkpoints") / spec["teacher"], attn_implementation="eager"
     ).to(device, dtype=torch.float16).eval()
-    student = AutoModelForSeq2SeqLM.from_pretrained(
-        Path("/checkpoints") / spec["out"] / "best"
-    ).to(device, dtype=torch.float16).eval()
+    if spec.get("engram"):
+        from gpu.engram import load_student_with_engram
+
+        student = load_student_with_engram(
+            Path("/checkpoints") / spec["out"] / "best", spec["engram"]
+        ).to(device, dtype=torch.float16).eval()
+    else:
+        student = AutoModelForSeq2SeqLM.from_pretrained(
+            Path("/checkpoints") / spec["out"] / "best"
+        ).to(device, dtype=torch.float16).eval()
 
     pairs = []
     for line in (Path("/datasets") / "nakdimon" / "test-imf.jsonl").read_text(
@@ -625,9 +632,14 @@ def evaluate_per(spec_id: str, limit: int = 0) -> dict:
     teacher_tok = AutoTokenizer.from_pretrained(teacher_path)
     teacher = AutoModelForSeq2SeqLM.from_pretrained(teacher_path).to("cuda").eval()
     student_tok = AutoTokenizer.from_pretrained("google/byt5-small")
-    student = (
-        AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
-    )
+    if spec.get("engram"):
+        from gpu.engram import load_student_with_engram
+
+        student = load_student_with_engram(student_path, spec["engram"]).to("cuda").eval()
+    else:
+        student = (
+            AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
+        )
 
     pairs = []
     for line in test_path.read_text(encoding="utf-8").splitlines():
@@ -1316,6 +1328,10 @@ def evaluate_der(spec_id: str, window: int = 1400, limit: int = 0) -> dict:
         from gpu.pkm import load_student_with_pkm
 
         student = load_student_with_pkm(student_path, spec["pkm"]).to("cuda").eval()
+    elif spec.get("engram"):
+        from gpu.engram import load_student_with_engram
+
+        student = load_student_with_engram(student_path, spec["engram"]).to("cuda").eval()
     else:
         student = AutoModelForSeq2SeqLM.from_pretrained(str(student_path)).to("cuda").eval()
     # custom students carry T5's default max_length=20; windowed inputs
