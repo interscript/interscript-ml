@@ -1110,8 +1110,11 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
 
             tables, projs = engram_param_split(student)
             sinkhorn_tables = tables
-            proj_ids = {id(p) for p in projs}
-            muon_params = [p for p in muon_params if id(p) not in proj_ids]
+            # the table rides SinkhornUpdate only — split_parameters
+            # would otherwise also hand it to Muon (double-stepped;
+            # observed in the run-013-engram wiring)
+            side_ids = {id(p) for p in tables + projs}
+            muon_params = [p for p in muon_params if id(p) not in side_ids]
         headwise = []
         if spec.get("headwise_muon"):
             from gpu.muon import qk_named
@@ -1119,6 +1122,13 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             headwise = [p for _, p in qk_named(named)]
             headwise_ids = {id(p) for p in headwise}
             muon_params = [p for p in muon_params if id(p) not in headwise_ids]
+        sinkhorn_embed = []
+        if spec.get("sinkhorn_embed"):
+            from gpu.muon import embed_named
+
+            sinkhorn_embed = [p for _, p in embed_named(named)]
+            embed_ids = {id(p) for p in sinkhorn_embed}
+            adamw_params = [p for p in adamw_params if id(p) not in embed_ids]
         optimizer = Muon(
             muon_params, lr=float(spec.get("muon_lr", 0.01)),
             momentum=0.95, weight_decay=0.01,
@@ -1126,15 +1136,19 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         if headwise:
             heads = int(spec.get("student_config", {}).get("num_heads", 6))
             optimizer.add_headwise_group(headwise, heads=heads)
-        if sinkhorn_tables:
+        if sinkhorn_tables or sinkhorn_embed:
             from gpu.sinkhorn_update import SinkhornUpdate
 
-            table_opt = SinkhornUpdate(sinkhorn_tables, lr=float(spec.get("engram_lr", 5e-4)))
+            table_opt = SinkhornUpdate(
+                sinkhorn_tables + sinkhorn_embed,
+                lr=float(spec.get("sinkhorn_lr", spec.get("engram_lr", 2.6e-4))),
+            )
             optimizer._engram_table_opt = table_opt  # stepped alongside
         optimizer.add_adamw_group(adamw_params, lr=1e-4, weight_decay=0.0)
         print(
             f"[{spec_id}] muon: {len(muon_params)} matrix / "
             f"{len(headwise)} headwise q/k / "
+            f"{len(sinkhorn_embed)} sinkhorn-embed / "
             f"{len(adamw_params)} embedding-like params",
             flush=True,
         )

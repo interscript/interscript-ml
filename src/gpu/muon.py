@@ -153,6 +153,30 @@ class Muon(torch.optim.Optimizer):
             p.addcdiv_(exp_avg / bias_c1, denom, value=-group["lr"])
 
 
+def _is_embedding_like(name: str, p) -> bool:
+    return (
+        p.ndim < 2
+        or "embed_tokens" in name
+        or name == "shared.weight"  # T5 tied byte embedding (transformers 5.x)
+        or "lm_head" in name
+        or "relative_attention" in name
+        or "memory.values" in name
+        or "memory.k1" in name
+        or "memory.k2" in name
+    )
+
+
+def embed_named(named_params):
+    """The 2D embedding-like tensors (tied embedding, prediction heads,
+    memory tables) — SinkhornUpdate's surface: rows are token identity,
+    columns features. 1D params (layer norms) are excluded; they have
+    no row/column structure to balance."""
+    return [
+        (name, p) for name, p in named_params
+        if p.requires_grad and p.ndim >= 2 and _is_embedding_like(name, p)
+    ]
+
+
 def split_parameters(named_params):
     """The standard split: orthogonalizable 2D hidden weights vs
     embedding-like tensors (1D params, embeddings, tied head, relative
@@ -161,17 +185,7 @@ def split_parameters(named_params):
     for name, p in named_params:
         if not p.requires_grad:
             continue
-        embedding_like = (
-            p.ndim < 2
-            or "embed_tokens" in name
-            or name == "shared.weight"  # T5 tied byte embedding (transformers 5.x)
-            or "lm_head" in name
-            or "relative_attention" in name
-            or "memory.values" in name
-            or "memory.k1" in name
-            or "memory.k2" in name
-        )
-        (adamw if embedding_like else muon).append(p)
+        (adamw if _is_embedding_like(name, p) else muon).append(p)
     return muon, adamw
 
 

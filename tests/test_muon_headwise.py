@@ -14,7 +14,7 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from gpu.muon import Muon, qk_named, split_parameters  # noqa: E402
+from gpu.muon import Muon, embed_named, qk_named, split_parameters  # noqa: E402
 
 
 def _grad_like(shape, seed):
@@ -121,3 +121,45 @@ def test_split_parameters_unchanged_when_headwise_unused() -> None:
     muon, adamw = split_parameters(named)
     assert [p.shape for p in muon] == [torch.Size([4, 3])]
     assert [p.shape for p in adamw] == [torch.Size([3, 4]), torch.Size([3])]
+
+
+def test_embed_named_selects_2d_embedding_like_only() -> None:
+    """The Sinkhorn surface: 2D tensors with token-row structure (tied
+    embedding, prediction heads). 1D layer norms stay with AdamW; 2D
+    hidden matrices are not embedding-like."""
+    named = [
+        ("shared.weight", torch.zeros(259, 4, requires_grad=True)),
+        ("lm_head.weight", torch.zeros(259, 4, requires_grad=True)),
+        ("encoder.block.0.layer.0.layer_norm.weight",
+         torch.zeros(4, requires_grad=True)),
+        ("encoder.block.0.layer.1.DenseReluDense.wi_0.weight",
+         torch.zeros(8, 4, requires_grad=True)),
+        ("encoder.embed_tokens.weight", torch.zeros(259, 4, requires_grad=True)),
+    ]
+    assert {n for n, _ in embed_named(named)} == {
+        "shared.weight", "lm_head.weight", "encoder.embed_tokens.weight",
+    }
+
+
+def test_embed_named_agrees_with_split_parameters() -> None:
+    """MECE: every 2D param split_parameters routes to AdamW that
+    embed_named claims must be exactly embed_named's set — rerouting
+    them cannot strand or double-count a tensor."""
+    named = [
+        ("shared.weight", torch.zeros(259, 4, requires_grad=True)),
+        ("decoder.lm_head.weight", torch.zeros(259, 4, requires_grad=True)),
+        ("encoder.block.0.layer.0.layer_norm.weight",
+         torch.zeros(4, requires_grad=True)),
+        ("encoder.block.0.layer.1.DenseReluDense.wi_0.weight",
+         torch.zeros(8, 4, requires_grad=True)),
+        ("encoder.block.0.layer.0.SelfAttention.q.weight",
+         torch.zeros(4, 4, requires_grad=True)),
+        ("memory.values", torch.zeros(8, 4, requires_grad=True)),
+        ("encoder.block.0.layer.0.EncDecAttention.relative_attention_bias.weight",
+         torch.zeros(8, 4, requires_grad=True)),
+    ]
+    muon, adamw = split_parameters(named)
+    claimed = {id(p) for _, p in embed_named(named)}
+    adamw_2d = [p for p in adamw if p.ndim == 2]
+    assert {id(p) for p in adamw_2d} == claimed
+    assert not (claimed & {id(p) for p in muon})
