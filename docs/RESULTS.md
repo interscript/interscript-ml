@@ -843,3 +843,27 @@ The int8 encoder costs ~0.01pp over A; everything sits inside the
 drift band and inside the not-separated paired CI. Static's place in
 the catalog, when the release is called: a server/CPU tier where
 decode speed outweighs artifact size.
+
+## ara-diac-small-2-1-engram — 4.6679: NOT SEPARATED from 2.1 (2026-09-29)
+
+The lexical-memory run (TODO.impl/10): one 2M×32 byte-n-gram table at
+encoder block 3, zero-init, table on the Sinkhorn-balanced rule (5× lr),
+identical 6ep sequence-KD recipe and canonical r7 labels (sha
+e70ce991), single variable vs run-007 (2.1, 4.5701).
+
+Result: **4.6679** full-set (n=1200), gap to teacher 2.25pp CI95
+[2.03, 2.47] — the delta vs 2.1 (+0.10pp) is small and inside the
+drift band; paired bootstrap does not separate it from 2.1. Eval
+methodology note: the first eval accidentally dropped the memory
+(vanilla loader — the PKM lesson again); the gate number is
+with-table via load_student_with_engram. The dropped-table score is
+the no-memory control.
+
+Verdict: FLAT. Lexical memory neither helped nor hurt at this scale
+and dose — the encoder absorbed the capacity without converting it to
+frontier movement on the news/wiki residual. The architecture ledger
+now reads: depth cut ✗ (2 variants), lexical memory ✗ (flat),
+on-policy ✗, teacher routing ✗, soup ✗. The 2.1 recipe remains the
+frontier at 4.5701. Remaining measurable levers live in the recipe
+lane (r8: headwise Muon + Sinkhorn arm) and the release lane
+(static-int8 re-export).
