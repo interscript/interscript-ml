@@ -187,8 +187,19 @@ def load_student_with_engram(path, engram_cfg: dict):
     result = student.load_state_dict(sd, strict=False)
     if result.unexpected_keys:
         raise RuntimeError(f"unexpected keys: {result.unexpected_keys}")
+    # T5 ties the byte embedding: save_pretrained writes it once as
+    # shared.weight, so the encoder/decoder/lm_head aliases report
+    # missing while actually covered
+    tied = {
+        "encoder.embed_tokens.weight",
+        "decoder.embed_tokens.weight",
+        "lm_head.weight",
+    }
     fresh = [k for k in result.missing_keys if k.startswith("_engram.")]
-    other = [k for k in result.missing_keys if not k.startswith("_engram.")]
+    other = [
+        k for k in result.missing_keys
+        if not k.startswith("_engram.") and k not in tied
+    ]
     if other:
         raise RuntimeError(f"missing non-engram keys: {other}")
     for k in fresh:
