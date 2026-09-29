@@ -590,33 +590,40 @@ def rebuild_int8_head32(model_id: str, limit: int = 0) -> dict:
     timeout=5 * 3600,
     volumes={**CHECKPOINT_VOLUMES, **DATASET_VOLUMES, "/outputs": MODELS_VOLUME},
 )
-def export_int8_static(model_id: str, limit: int = 0) -> dict:
-    """Build the static-activation int8 artifact (TODO.impl/11's
-    positive branch): fp32 encoder + static-int8 decoder, calibrated on
-    the model's own eval pairs across BOTH decode framings.
+def export_int8_static(model_id: str, limit: int = 0, calibration: int = 5) -> dict:
+    """Build and gate the static-activation int8 artifact (TODO.impl/11's
+    positive branch). Composition: dynamic-int8 encoder + static-int8
+    decoder — measured 4.6045 full-set (vs dynamic 4.5701, not
+    separated) with +8% CPU decode speed, at 491 MiB. Calibration walks
+    the model's own fp32 decode over a small slice of eval inputs
+    (scripts/static_int8_experiment.py's recipe: 5 rows, framing-
+    diverse feeds).
 
-    The MEASURED composition (scored 4.6241 full-set vs dynamic 4.5701,
-    +8% CPU decode): the fp32 encoder keeps the artifact server-sized;
-    a browser-sized int8-encoder + static-decoder composition needs its
-    own gate run before it ships. Lands as {mid}-int8static.zip; the
-    release swap is a version decision."""
-    import re
+    Gates, identical to rebuild_int8_head32: CER parity written into
+    the zip, margin analysis, confident-flip budget. Lands as
+    {mid}-int8static.zip; publication is a version decision."""
     import sys
-    import tempfile
-    import zipfile
     from pathlib import Path
 
     sys.path.insert(0, "/root/interscript-ml/src")
-    from imf.export import (
-        collect_decode_calibration,
-        head_matmul_names,
-        quantize_int8_static,
-        refresh_member_shas,
-    )
 
     spec = MODELS[model_id]
+    checkpoint = Path(spec["volume"]) / spec["checkpoint"]
     test_path = Path(spec["test_volume"]) / spec["test_data"]
-    pairs = _load_pairs(test_path)[: limit or None]
+
+    from imf.export import build_int8_static_zip, load_byte_seq2seq
+    from imf.parity import (
+        reference_decode,
+        run_margin_analysis,
+        run_parity,
+        write_margin_report,
+        write_parity,
+    )
+
+    model = load_byte_seq2seq(checkpoint)
+    pairs = _load_pairs(test_path)
+    if limit:
+        pairs = pairs[:limit]
 
     out_dir = Path("/outputs/imf") / model_id
     meta_path = Path("/root/interscript-ml", spec["metadata"])
@@ -625,41 +632,42 @@ def export_int8_static(model_id: str, limit: int = 0) -> dict:
     if not fp32_zip.exists():
         raise RuntimeError(f"{fp32_zip.name} missing on the volume")
 
-    import onnxruntime as ort
+    new_zip = build_int8_static_zip(
+        model, fp32_zip, [src for src, _ in pairs[:calibration]],
+        out_dir / f"{mid}-int8static.zip",
+    )
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        with zipfile.ZipFile(fp32_zip) as zf:
-            zf.extract("encoder.onnx", tmp)
-            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
-            zf.extract(dec, tmp)
-        opts = ort.SessionOptions()
-        opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-        enc_sess = ort.InferenceSession(str(tmp / "encoder.onnx"), opts)
-        dec_sess = ort.InferenceSession(str(tmp / dec), opts)
-        calibration = collect_decode_calibration(enc_sess, dec_sess, [s for s, _ in pairs])
-        print(f"[{model_id}] calibration: {len(calibration)} feeds", flush=True)
-        dec_static = tmp / dec.replace(".onnx", "-static.onnx")
-        quantize_int8_static(
-            tmp / dec, dec_static, calibration,
-            nodes_to_exclude=head_matmul_names(tmp / dec),
+    reference = reference_decode(
+        model,
+        [src for src, _ in pairs],
+        max_len=128,
+        resume_path=out_dir / f"{mid}-int8static-reference.jsonl",
+    )
+    report = run_parity(model, new_zip, pairs, max_len=128, reference=reference)
+    if not report.passed:
+        raise RuntimeError(f"parity gate FAILED for {new_zip.name}: {report}")
+    write_parity(new_zip, report)
+    margins = run_margin_analysis(model, new_zip, pairs, max_len=128)
+    write_margin_report(margins, out_dir / f"{mid}-int8static-margins.json")
+    confident = margins.flip_rate * (1 - margins.flip_low_margin_share)
+    if confident > 0.01:
+        raise RuntimeError(
+            f"margin gate FAILED for {new_zip.name}: {confident:.2%} confident flips"
         )
-        new_zip = out_dir / f"{mid}-int8static.zip"
-        with zipfile.ZipFile(fp32_zip) as src, zipfile.ZipFile(
-            new_zip, "w", zipfile.ZIP_DEFLATED
-        ) as dst:
-            for member in src.namelist():
-                if member == "metadata.yaml":
-                    meta = src.read(member).decode("utf-8")
-                    meta = re.sub(r"^precision:\s*\S+", "precision: int8-static", meta, flags=re.M)
-                    meta = re.sub(r"^id:\s*\S+", f"id: {mid}-int8static", meta, flags=re.M)
-                    dst.writestr(member, meta)
-                elif member == dec:
-                    dst.writestr(member, dec_static.read_bytes())
-                else:
-                    dst.writestr(member, src.read(member))
-        refresh_member_shas(new_zip)
-    return {"artifact": str(new_zip), "calibration": len(calibration)}
+    MODELS_VOLUME.commit()
+    return {
+        "model": model_id, "zip": new_zip.name,
+        "parity": {"samples": report.samples, "cer_delta": report.cer_delta},
+        "margins": {"flip_rate": margins.flip_rate, "kld": margins.kld_mean,
+                    "low_share": margins.flip_low_margin_share,
+                    "confident_flip_rate": round(confident, 6)},
+        "size_bytes": new_zip.stat().st_size,
+    }
+
+
+@app.local_entrypoint()
+def static(model_id: str, limit: int = 0, calibration: int = 5) -> None:
+    print(export_int8_static.remote(model_id, limit, calibration))
 
 
 @app.local_entrypoint()
@@ -696,8 +704,5 @@ def zip_meta(model_id: str, precision: str) -> dict:
 def zmeta(model: str, precisions: str = "fp32,fp16,int8") -> None:
     for precision in precisions.split(","):
         print(precision, zip_meta.remote(model, precision))
-@app.local_entrypoint()
-def static(model_id: str, limit: int = 0) -> None:
-    print(export_int8_static.remote(model_id, limit))
 
 

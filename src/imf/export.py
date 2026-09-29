@@ -525,6 +525,89 @@ def export_zips(
 
 
 
+def build_int8_static_zip(
+    model,
+    fp32_zip: Path | str,
+    calibration_texts: list[str],
+    out_zip: Path | str,
+) -> Path:
+    """Dynamic-int8 encoder + static-int8 decoder in one zip — the
+    browser-size composition measured in TODO.impl/11 (4.6045 full-set
+    vs dynamic 4.5701, not separated; +8% CPU decode). Calibration walks
+    the model's own fp32 decode over ``calibration_texts`` across
+    framings (prefill, single steps, 8-token windows). Metadata
+    precision becomes ``int8``: PRECISIONS is closed, so the static
+    recipe is carried by the zip name and the gate by the value.
+
+    Graph-only work; gates (parity, margins) are the caller's."""
+    import tempfile
+    import zipfile
+    from dataclasses import replace as dc_replace
+
+    import onnxruntime as ort
+    import yaml
+
+    from imf.pack import _to_dict
+    from imf.schema import ModelMetadata
+
+    fp32_zip, out_zip = Path(fp32_zip), Path(out_zip)
+    out_zip.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        with zipfile.ZipFile(fp32_zip) as zf:
+            zf.extract("encoder.onnx", tmp)
+            dec = "decoder-kv.onnx" if "decoder-kv.onnx" in zf.namelist() else "decoder.onnx"
+            zf.extract(dec, tmp)
+            meta_text = zf.read("metadata.yaml").decode("utf-8")
+
+        opts = ort.SessionOptions()
+        opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+        enc_sess = ort.InferenceSession(str(tmp / "encoder.onnx"), opts)
+        dec_sess = ort.InferenceSession(str(tmp / dec), opts)
+
+        # scales must hold on the shapes the runtime actually feeds;
+        # the fp32 decode supplies real hidden states and cache lengths
+        calibration = collect_decode_calibration(
+            enc_sess, dec_sess, calibration_texts
+        )
+        print(f"  calibration: {len(calibration)} feeds", flush=True)
+
+        enc_q = tmp / "encoder-dyn.onnx"
+        quantize_int8(tmp / "encoder.onnx", enc_q)
+        dec_q = tmp / dec.replace(".onnx", "-static.onnx")
+        quantize_int8_static(
+            tmp / dec, dec_q, calibration,
+            nodes_to_exclude=head_matmul_names(tmp / dec),
+        )
+
+        metadata = dc_replace(
+            ModelMetadata.from_yaml(meta_text), precision="int8"
+        )
+        with zipfile.ZipFile(fp32_zip) as src, zipfile.ZipFile(
+            out_zip, "w", zipfile.ZIP_DEFLATED
+        ) as dst:
+            for name in src.namelist():
+                if name == "metadata.yaml":
+                    dst.writestr(
+                        name,
+                        yaml.safe_dump(
+                            _to_dict(metadata), sort_keys=False, allow_unicode=True
+                        ),
+                    )
+                elif name == "encoder.onnx":
+                    dst.writestr(name, enc_q.read_bytes())
+                elif name == dec:
+                    dst.writestr(name, dec_q.read_bytes())
+                else:
+                    dst.writestr(name, src.read(name))
+
+    # re-quantized graphs replaced members; the internal sha table must
+    # refresh or strict validation (and write_parity) rejects the zip
+    refresh_member_shas(out_zip)
+    return out_zip
+
+
 def collect_decode_calibration(
     enc_sess, dec_sess, texts: list[str], steps: int = 64,
 ) -> list[dict]:

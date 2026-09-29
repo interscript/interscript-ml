@@ -189,3 +189,67 @@ def test_refresh_member_shas_after_member_replacement(zips: dict[str, Path]) -> 
     with zipfile.ZipFile(path) as after_zf:
         assert after_zf.read("encoder.onnx") == tampered
         assert after_zf.read("decoder.onnx") == members["decoder.onnx"]
+
+
+# ---------------------------------------------------------------------------
+# int8-static: calibrated-activation decoder (TODO.impl/11's positive
+# branch) — dynamic-int8 encoder + static-int8 decoder composition.
+
+
+@pytest.fixture(scope="module")
+def static_zip(
+    zips: dict[str, Path], reference_model, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """The release sequence end-to-end: build, gate, write parity."""
+    from imf.export import build_int8_static_zip
+    from imf.parity import run_parity, write_parity
+
+    path = build_int8_static_zip(
+        reference_model,
+        zips["fixture-1.0-fp32.zip"],
+        TEXTS,
+        tmp_path_factory.mktemp("static") / "fixture-1.0-int8static.zip",
+    )
+    report = run_parity(
+        reference_model, path, [(t, t) for t in TEXTS] * 170, max_len=MAX_LEN
+    )
+    assert report.passed, report
+    write_parity(path, report)
+    return path
+
+
+def test_static_zip_declares_int8_and_validates_strict(static_zip: Path) -> None:
+    """The closed PRECISIONS set has no 'int8-static': the recipe lives
+    in the zip name, the gate (int8's 2pp cer_delta limit) in the value."""
+    strict = validate_zip(static_zip, strict=True)
+    assert strict.ok, strict.errors
+    with zipfile.ZipFile(static_zip) as zf:
+        meta = yaml.safe_load(zf.read("metadata.yaml"))
+    assert meta["precision"] == "int8"
+
+
+def test_static_zip_graphs_use_both_quant_recipes(static_zip: Path) -> None:
+    """Encoder: dynamic int8 (MatMulInteger). Decoder: static
+    QOperator (QLinearMatMul) with calibrated activation scales."""
+    import onnx
+
+    with zipfile.ZipFile(static_zip) as zf:
+        enc_ops = {n.op_type for n in onnx.load(zf.open("encoder.onnx")).graph.node}
+        dec_ops = {n.op_type for n in onnx.load(zf.open("decoder-kv.onnx")).graph.node}
+    assert "MatMulInteger" in enc_ops
+    assert "QLinearMatMul" in dec_ops
+
+
+def test_static_zip_keeps_head_matmul_fp32(static_zip: Path, zips: dict[str, Path]) -> None:
+    """The head-fp32 rule applies to the static recipe unchanged."""
+    import onnx
+
+    from imf.export import _head_matmul_names
+
+    with zipfile.ZipFile(zips["fixture-1.0-fp32.zip"]) as zf:
+        heads = _head_matmul_names(onnx.load(zf.open("decoder-kv.onnx")).graph)
+    assert heads
+    with zipfile.ZipFile(static_zip) as zf:
+        nodes = {n.name: n for n in onnx.load(zf.open("decoder-kv.onnx")).graph.node}
+    for head in heads:
+        assert head in nodes and nodes[head].op_type == "MatMul", head
