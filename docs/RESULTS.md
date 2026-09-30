@@ -867,3 +867,27 @@ on-policy ✗, teacher routing ✗, soup ✗. The 2.1 recipe remains the
 frontier at 4.5701. Remaining measurable levers live in the recipe
 lane (r8: headwise Muon + Sinkhorn arm) and the release lane
 (static-int8 re-export).
+
+## ara-diac-small-int8static-2.1 — the gated static-int8 artifact SHIPS (2026-09-30)
+
+The TODO.impl/11 positive branch, released. Composition B (dynamic-int8
+encoder + static-int8 decoder, calibrated QUInt8 activations, head fp32),
+built from the verified release fp32 bytes (the volume staging copy had
+torn; repaired from the release asset) with the full WO03 gate stack run
+locally on the banked 2,480-reference:
+
+| gate | value | limit |
+|---|---|---|
+| parity cer_delta | **0.1038pp** (2,480 samples) | 2.0pp (int8) |
+| flip rate | 0.0324% | — |
+| **confident flips** | **0.000000** | ≤1% |
+| size | 491 MiB (515,362,212 B) | — |
+
+Zero confident-position flips — the cleanest margin report any artifact
+has produced. Published as release tag `ara-diac-small-int8static-2.1`
+(id variant rides the slug; canonical asset
+`ara-diac-small-int8static-2.1-int8.zip`), indexed on **index-v6**,
+runtime shipped in **npm 5.5.1** (registry pin + tests), golden fixture
+on golden-v1, site dep bumped, tag-protection rulesets active on both
+repos. The CPU-speed tier of the static recipe is now shippable
+infrastructure.
