@@ -219,13 +219,17 @@ def static_zip(
 
 
 def test_static_zip_declares_int8_and_validates_strict(static_zip: Path) -> None:
-    """The closed PRECISIONS set has no 'int8-static': the recipe lives
-    in the zip name, the gate (int8's 2pp cer_delta limit) in the value."""
+    """Precision stays `int8` (closed PRECISIONS set — the recipe is the
+    zip name, the gate int8's 2pp limit) and the id carries the
+    -int8static suffix: publish_model derives the canonical filename
+    from id+precision, so without the suffix the static asset would
+    clobber the shipped dynamic-int8 one."""
     strict = validate_zip(static_zip, strict=True)
     assert strict.ok, strict.errors
     with zipfile.ZipFile(static_zip) as zf:
         meta = yaml.safe_load(zf.read("metadata.yaml"))
     assert meta["precision"] == "int8"
+    assert meta["id"] == "fixture-int8static-1.0"
 
 
 def test_static_zip_graphs_use_both_quant_recipes(static_zip: Path) -> None:

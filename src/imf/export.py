@@ -536,8 +536,11 @@ def build_int8_static_zip(
     vs dynamic 4.5701, not separated; +8% CPU decode). Calibration walks
     the model's own fp32 decode over ``calibration_texts`` across
     framings (prefill, single steps, 8-token windows). Metadata
-    precision becomes ``int8``: PRECISIONS is closed, so the static
-    recipe is carried by the zip name and the gate by the value.
+    precision becomes ``int8`` (PRECISIONS is closed; the gate is
+    int8's 2pp limit) and the id gains an ``-int8static`` suffix:
+    published filenames derive from id+precision, so without the
+    slug variant this artifact publishes under, it would clobber the
+    dynamic-int8 asset (filenames derive from id+precision).
 
     Graph-only work; gates (parity, margins) are the caller's."""
     import tempfile
@@ -581,8 +584,13 @@ def build_int8_static_zip(
             nodes_to_exclude=head_matmul_names(tmp / dec),
         )
 
+        base_meta = ModelMetadata.from_yaml(meta_text)
+        # ids must end in major.minor (schema contract), so the variant
+        # rides inside the slug: {slug}-int8static-{version}
+        base_slug, _, base_version = base_meta.id.rpartition("-")
         metadata = dc_replace(
-            ModelMetadata.from_yaml(meta_text), precision="int8"
+            base_meta, precision="int8",
+            id=f"{base_slug}-int8static-{base_version}",
         )
         with zipfile.ZipFile(fp32_zip) as src, zipfile.ZipFile(
             out_zip, "w", zipfile.ZIP_DEFLATED
