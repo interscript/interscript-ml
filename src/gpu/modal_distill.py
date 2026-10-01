@@ -1321,7 +1321,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                         t_hs[L].float(), b_hs[L].float(), ride["lam"]
                     ) @ ride["W"][L].T
                     m = masked_mse(
-                        s_out.encoder_hidden_states[:sub][L].float(), tgt, am[:sub]
+                        s_out.encoder_hidden_states[L][:sub].float(), tgt, am[:sub]
                     )
                     mse_total = m if mse_total is None else mse_total + m
                 if ride["beta"] is None:
