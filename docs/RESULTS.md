@@ -891,3 +891,23 @@ runtime shipped in **npm 5.5.1** (registry pin + tests), golden fixture
 on golden-v1, site dep bumped, tag-protection rulesets active on both
 repos. The CPU-speed tier of the static recipe is now shippable
 infrastructure.
+
+## Recipe arms verdict — headwise Muon SEPARATED-NEGATIVE, Sinkhorn embeddings FLAT (2026-10-01)
+
+The DeepSeek-V4.1-Flash optimizer levers, measured single-variable off
+the 2.1 recipe (run-007, 4.5701; canonical r7 labels e70ce991; teacher
+2.2890 reproduced exactly in both runs; full 1,200-para windowed
+protocol):
+
+| arm | DER-CE | paired Δ vs 2.1 | CI95 | verdict |
+|---|---|---|---|---|
+| headwise Muon (run-014) | 4.8164 | **+0.2267pp** | [+0.016, +0.411], p=0.017 | **NEGATIVE — separated** |
+| Sinkhorn embeddings (run-015) | 4.5547 | −0.0903pp | [−0.267, +0.069], p=0.858 | FLAT — not separated |
+
+Head-wise Muon (positive at DeepSeek's 671B scale, sec 2.5) is
+significantly HARMFUL on a 300M byte-student distillation — a clean
+scale-boundary data point. The Sinkhorn-balanced embedding update
+(Alg. 1) is indistinguishable from AdamW on the tied tables. **2.1
+remains the frontier student.** The TODO.impl recipe ledger is now
+fully measured: every optimizer/architecture lever is closed; the only
+frontier mover on record is data-side (teacher r5→r6→r7).
