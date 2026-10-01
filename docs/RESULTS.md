@@ -947,3 +947,28 @@ Four findings enter the record:
   concrete teacher-side data lever for the next teacher rung
   (TODO.sota-2026/01); also confirms the field's morphology work
   targets LLM evaluation rather than text-diacritization SOTA.
+
+## Student-side lever family closed; seed-variance caveat recorded (2026-10-01)
+
+The residual ledger, complete: corpus scale ✗, register mix ✗ (both
+directions), on-policy GKD ✗ (6.0036), PKM memory (real, −0.70pp),
+epochs (−0.25pp), headwise Muon ✗ (separated-negative), Sinkhorn
+embeddings ✗ (flat), engram lexical memory ✗ (flat). The 2026-09-30
+literature sweep surfaced no student-side method that escapes the
+closure — the current on-policy wave (MAESTRO 2609.37510, RIDE
+2609.36484, Fisher-sparsity 2609.36262, sparse supervision 2609.04565)
+targets reasoning-trajectory distribution shift that a deterministic
+dense-label task does not have.
+
+Standing rule: **no further GPU spend on student-side levers without a
+pre-registered mechanism novel to this ledger.** Frontier experiments
+continue teacher-side (TODO.sota-2026/01) and via the kill-gated RIDE
+direction probe (TODO.sota-2026/05) — the only student-side item with
+a cheap probe before any training compute.
+
+Caveat (per 2608.27729): every arm verdict above is a single training
+seed; the paired between-students bootstrap resamples predictions, not
+seeds. The headwise-Muon separated-negative (+0.2267pp, p=0.017) is
+directionally consistent for its size class, but the seed axis is
+unmeasured. Future arms run multi-seed or carry this caveat. Ship
+decisions are unaffected — the base recipe shipped on its own merits.
