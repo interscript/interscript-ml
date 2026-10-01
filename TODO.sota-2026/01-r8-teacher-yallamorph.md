@@ -1,6 +1,8 @@
 # 01 — r8 teacher: run-009-yallamorph (YallaMorph/CamelMorph aux stream)
 
-Status: SPECIFIED (2026-10-01) — not launched
+Status: TRAINING IN FLIGHT (launched 2026-10-01 18:07, app ap-f1R8ChDikMKUGyBuJGO6;
+26,289 steps on A100-80GB; supervisor /tmp/r9-supervisor.sh v4 relaunches on
+kill-storm deaths — training is checkpoint-resumable and EVAL_DONE-idempotent)
 Literature basis: YallaMorph (arXiv 2609.10153, EMNLP 2026) — 663,804
 controlled morphological-generation instances over 4,795 lemmas,
 constructed from CamelMorph MSA via CAMeL Tools. The GitHub repo ships
@@ -44,16 +46,31 @@ Recipe = r7 verbatim (train_arabic_r7.py) + one new aux stream:
 
 ## Steps
 
-1. [ ] Clone CAMeL-Lab/YallaMorph; extract xlsx samples as the
+1. [x] Clone CAMeL-Lab/YallaMorph; extract xlsx samples as the
        validation set for our generated forms.
-2. [ ] Data build: camel-tools + camel_data MSA; generate paradigm
-       pairs; validate forms against YallaMorph samples (match rate
-       reported); dedupe; cap 300k aux lines; volume put to
-       /datasets/yallamorph-aux/lines.txt.
-3. [ ] TDD the line builder (pure function: feature dict → line pair).
-4. [ ] train_arabic_r9_yallamorph.py (r7 copy + stream M + gates).
-5. [ ] Launch `modal run --detach` (retry-loop supervisor per
-       [[modal-always-detach]]).
+2. [x] Data build: camel-tools 1.5.7 + **Camel Morph MSA v1.0**
+       (LREC-COLING 2024, CC BY 4.0 — the resource YallaMorph was
+       constructed from; camel_data's calima-msa-r13 CANNOT generate
+       mood/command forms — use the camel_morph repo DB). Key
+       interface lesson: generation must be UNDERSPECIFIED (pos +
+       proclitic variant only); fully-specified requests silently
+       reject cells with unmarked features (1st person gen='u').
+       13,000 lemmas (YallaMorph sample in-DB: v 513 / n 1,862 /
+       adj 594 + inventory top-up, seed 42) → 4,735,166 raw pairs →
+       300,000 lines (60/40 verb/nominal), 29MB, on volume
+       /datasets/yallamorph-aux/ (lines.txt + DONE + README).
+       Validation vs YallaMorph few-shot gold: **38/52 exact**;
+       residual divergence = proclitic-chain conventions
+       (hamzat-istifham أَلِـ, sin/lam stacking) + DB-version lemma
+       gaps — not incorrect forms.
+3. [x] TDD the line builder (build_yallamorph_aux.py, 12 tests
+       green; rababa PR #104).
+4. [x] train_arabic_r9_yallamorph.py (r7 copy + MORPH stream + gates;
+       rababa PR #104). Mix verified in launch logs: anchor=586,505,
+       news-mix=50,003, morph-used=197,169, **aux-share 25.00%**.
+5. [x] Launch `modal run --detach` (+ supervisor; one double-launch
+       incident from `modal app list` name truncation — grep prefix
+       "rababa-ara", dupes stopped, volume verified clean).
 6. [ ] ID gate: windowed zero-skip SadeedDiac-25 full 1,200-para DER
        ≤ 2.389 (r7 2.2864 + 0.1 tolerance).
 7. [ ] OOD gate: eval_wikinews_multiref improves over 17.3794/11.8273.

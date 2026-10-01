@@ -1,6 +1,6 @@
 # 05 — RIDE-style SFT-residual extrapolation: probe-first arm
 
-Status: SPECIFIED (2026-10-01) — probe only; training arm gated on probe
+Status: PROBE PASSED (2026-10-01) — training arm spec'd below, launch pending owner call
 Literature basis: RIDE (arXiv 2609.36484) — extrapolate the
 teacher-over-base residual directly in representation space:
 student hidden states regressed toward
@@ -41,13 +41,49 @@ residual extrapolation of an SFT delta.
 
 ## Steps
 
-1. [ ] TDD pure computation: `residual_directions(h_base, h_teacher)`
-       and cosine sim on synthetic tensors (tests first, watch fail).
-2. [ ] Modal probe script (two models × 200 units × 2 domains;
-       A100 minutes, not hours).
-3. [ ] Run probe; write verdict + per-layer cosine table here.
-4. [ ] Gate decision: close, or spec the training arm separately.
+1. [x] TDD pure computation: `residual_directions(h_base, h_teacher)`
+       and cosine sim on synthetic tensors (7/7 green,
+       rababa/test_ride_probe_math.py).
+2. [x] Modal probe script (rababa/probe_ride_direction.py; A10G,
+       ~8 min, app ap-LePMpScA3RA8EN6TLDP2vN).
+3. [x] Run probe; verdict + per-layer cosine table below.
+4. [x] Gate decision: **TRANSFER** — training arm spec'd below.
 
-## Result
+## Result (measured 2026-10-01)
 
-(to be written only from measured numbers)
+Per-layer cos(d_classical, d_news), 200 units per domain, mean-pooled
+encoder hidden states, run-006-morph vs run-007-news:
+
+```
+L00 +0.9414  L01 +0.9513  L02 +0.9199  L03 +0.9002  L04 +0.8765
+L05 +0.8696  L06 +0.8593  L07 +0.7734  L08 +0.5931  L09 +0.4521
+L10 +0.2145  L11 -0.0015  L12 -0.1086  L13 -0.0842  L14 +0.0167
+L15 +0.1624  L16 +0.1971  L17 +0.2387  L18 +0.2775
+max +0.9513 >= 0.5  ->  TRANSFER
+```
+
+Reading: the r7-over-r6 SFT residual is strongly domain-general in
+early/mid encoder layers (L0–L8: 0.59–0.95) and idiosyncratic deep
+(L11+ ≈ noise). The news-mix fine-tune moved surface/orthographic
+processing in a direction that transfers to classical text — the
+RIDE displacement premise holds where representations are shared.
+Artefact: rababa-checkpoints:/ride_probe_r6_r7.json.
+
+## Training-arm spec (gated on this probe; launch = owner decision)
+
+The closure rule (TODO 03) permits this arm: it is a mechanism novel
+to the ledger (representation-space displacement; all prior student
+levers were loss/data/optimizer-side) and now has a measured transfer
+premise.
+
+- Infra: feature-regression aux loss in modal_distill — teacher/base
+  hidden states must be cached per layer subset. Restrict to L0–L8
+  (probe: only these transfer; deep-layer displacement would inject
+  domain idiosyncrasy).
+- Target: h_t' = h_teacher + λ(h_teacher − h_base), λ ∈ {0.5, 1.0}.
+- Loss: L = CE(labels) + β·MSE(h_student[L0-8], h_t'[L0-8]),
+  β tuned so MSE term ≈ 10% of total at start (pre-registration).
+- Single-variable off the 2.1 recipe (run-007 data, teacher labels,
+  Muon, seed 42); adopt gate ≥ 0.3pp DER improvement (E4-style bar).
+- Est. build: teacher/base hidden-state dump (one-off Modal job,
+  ~1h A100) + trainer loss path + spec; run cost ≈ one 2.1-recipe arm.
