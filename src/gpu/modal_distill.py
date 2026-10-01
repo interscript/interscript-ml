@@ -1246,6 +1246,10 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         print(f"[{spec_id}] resume training from step-{step}", flush=True)
 
     if ride is not None:
+        # displacement needs the teacher resident on cuda for both the
+        # ridge fit and every training step (labeling offloads it)
+        teacher.to("cuda")
+        teacher.eval()
         # Ridge map per selected layer: teacher hidden space -> the
         # student's INITIAL hidden space (linearity preserves the
         # displacement through the projection). Fit on the first
