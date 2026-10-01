@@ -911,3 +911,39 @@ scale-boundary data point. The Sinkhorn-balanced embedding update
 remains the frontier student.** The TODO.impl recipe ledger is now
 fully measured: every optimizer/architecture lever is closed; the only
 frontier mover on record is data-side (teacher r5→r6→r7).
+
+## 2026-09-30 arXiv sweep — no new competitor; our premises externally validated
+
+Monthly sweep (window Aug 26 → Sep 30, 2026: distillation, byte-level
+modeling, diacritization, optimizer literature). Competitive position
+unchanged: **no new text-only Arabic diacritization system appeared on
+SadeedDiac-25** — the field's Arabic-diacritization energy moved to the
+speech modality (KSAA-2026 Task 2 winner, 23.26% WER, speech input:
+not protocol-comparable). r7 (2.2864) remains the best dedicated model
+measured under our protocol; only Claude-3.7-Sonnet's published 1.3941
+sits above it.
+
+Four findings enter the record:
+
+- **arXiv 2609.12303 (Meta/FAIR), "Breaking the Token Ceiling"** —
+  first large-scale distillation × tokenization study (~1B params, up
+  to 1T bytes): distilled *byte* students start worse but surpass
+  token students with compute (predicted +4% asymptote, 6× data
+  efficiency, 256-symbol vocab eliminates top-k logit truncation).
+  Independent scaling-law validation of the byte-student lineage we
+  ship.
+- **arXiv 2609.37510, MAESTRO** — teacher intervention in on-policy
+  distillation injects off-policy load; always-on intervention is the
+  worst point of the axis. Mechanistic account of our measured GKD
+  negative (6.0036); corroborates closing the on-policy lever without
+  a re-run.
+- **arXiv 2608.27729, "Below the Noise Floor"** — per-seed σ
+  2.8–48.7pp in small-model KD; single-seed gains below ~5pp are
+  unresolvable; 3/7 KD variants collapse bimodally. Validates our
+  full-set + paired-bootstrap discipline and motivates the
+  seed-variance caveat recorded in the next entry.
+- **arXiv 2609.10153, YallaMorph (EMNLP 2026)** — 663,804 controlled
+  Arabic morphological-generation instances (CamelMorph MSA). The
+  concrete teacher-side data lever for the next teacher rung
+  (TODO.sota-2026/01); also confirms the field's morphology work
+  targets LLM evaluation rather than text-diacritization SOTA.
