@@ -126,5 +126,10 @@ under one framing do not transfer to another.
   hardware for E1
 
 == 9. Artifacts
-All benchmarks, the index workflow, and the 23-model catalog are
+All benchmarks, the index workflow, and the model catalog are
 public; every number in this paper regenerates from committed scripts.
+The static-int8 composition ships in the catalog as
+`ara-diac-small-int8static-2.1` (491 MiB): calibrated QUInt8
+activations with an int8-dynamic encoder, gated at cer_delta 0.1038pp
+over 2,480 parity samples with zero confident-position flips — the
+first artifact to clear the margin budget without residue.
