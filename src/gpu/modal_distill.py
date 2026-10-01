@@ -1280,9 +1280,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                     s_hs = student.encoder(
                         input_ids=b_ids, attention_mask=b_am, output_hidden_states=True
                     ).hidden_states
+                    # mask-flatten to real positions: batches have
+                    # variable T, so keep (N_real, D) rows only
+                    keep = b_am.bool()
                     for L in ride["layers"]:
-                        Ht[L].append(t_hs[L].float().cpu())
-                        Hs[L].append(s_hs[L].float().cpu())
+                        Ht[L].append(t_hs[L][keep].float().cpu())
+                        Hs[L].append(s_hs[L][keep].float().cpu())
             student.train()
             alpha = float(ride_cfg.get("ridge_alpha", 1.0))
             ride["W"] = {
