@@ -789,6 +789,46 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             f"sub={gkd_cfg.get('sample_sub', 2)} cap={gkd_cfg.get('sample_cap', 1024)}",
             flush=True,
         )
+    ride_cfg = spec.get("ride_aux")
+    ride = None
+    if ride_cfg:
+        # RIDE displacement arm (TODO.sota-2026/05; probe passed
+        # 2026-10-01: r7-r6 residual direction domain-general L0-L8).
+        # Regress student encoder hiddens toward ridge-projected
+        # h_t + lam*(h_t - h_b) from frozen teacher (r7) and base (r6).
+        _ensure_src_path()
+        from gpu.ride import displaced_targets, fit_ridge, masked_mse
+
+        base_path = str(
+            Path(VOLUME_MOUNTS[ride_cfg.get("base_volume", teacher_vol)]) / ride_cfg["base"]
+        )
+        base_tok = AutoTokenizer.from_pretrained(base_path)
+        base = (
+            AutoModelForSeq2SeqLM.from_pretrained(base_path)
+            .to("cuda", dtype=torch.float16)
+            .eval()
+        )
+        for p in base.parameters():
+            p.requires_grad_(False)
+        sample = "الْعَرَبِيَّةُ byte-parity 123"
+        ids_s = student_tok(sample).input_ids
+        for name, tok in (("teacher", teacher_tok), ("base", base_tok)):
+            if tok(sample).input_ids != ids_s:
+                raise RuntimeError(f"ride_aux: {name} tokenizer differs from student byte table")
+        ride = {
+            "base": base,
+            "layers": [int(x) for x in ride_cfg.get("layers", list(range(9)))],
+            "lam": float(ride_cfg.get("lam", 1.0)),
+            "beta_frac": float(ride_cfg.get("beta_frac", 0.1)),
+            "sub": int(ride_cfg.get("sub", 4)),
+            "beta": None,
+            "W": None,
+        }
+        print(
+            f"[{spec_id}] ride_aux: base={ride_cfg['base']} "
+            f"layers={ride['layers']} lam={ride['lam']} sub={ride['sub']}",
+            flush=True,
+        )
     student.train()
 
     class Pairs(Dataset):
@@ -1205,12 +1245,89 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
             scheduler.step()
         print(f"[{spec_id}] resume training from step-{step}", flush=True)
 
+    if ride is not None:
+        # Ridge map per selected layer: teacher hidden space -> the
+        # student's INITIAL hidden space (linearity preserves the
+        # displacement through the projection). Fit on the first
+        # fit_batches batches, no grad, before any training step.
+        from gpu.ride import fit_ridge as _fit_ridge
+
+        ride_state_path = ckpts[-1] / "ride.pt" if ckpts else None
+        if ride_state_path is not None and ride_state_path.exists():
+            st = torch.load(ride_state_path, map_location="cpu", weights_only=True)
+            ride["W"] = {int(L): w.to("cuda") for L, w in st["W"].items()}
+            ride["beta"] = st["beta"]
+            print(f"[{spec_id}] ride resumed (beta={ride['beta']:.3e})", flush=True)
+        else:
+            it = iter(train_loader)
+            Ht = {L: [] for L in ride["layers"]}
+            Hs = {L: [] for L in ride["layers"]}
+            student.eval()
+            with torch.no_grad():
+                for _ in range(int(ride_cfg.get("fit_batches", 16))):
+                    try:
+                        b_ids, b_am, _lbl = next(it)
+                    except StopIteration:
+                        break
+                    b_ids, b_am = b_ids.to("cuda"), b_am.to("cuda")
+                    t_hs = teacher.encoder(
+                        input_ids=b_ids, attention_mask=b_am, output_hidden_states=True
+                    ).hidden_states
+                    s_hs = student.encoder(
+                        input_ids=b_ids, attention_mask=b_am, output_hidden_states=True
+                    ).hidden_states
+                    for L in ride["layers"]:
+                        Ht[L].append(t_hs[L].float().cpu())
+                        Hs[L].append(s_hs[L].float().cpu())
+            student.train()
+            alpha = float(ride_cfg.get("ridge_alpha", 1.0))
+            ride["W"] = {
+                L: _fit_ridge(torch.cat(Ht[L]), torch.cat(Hs[L]), alpha=alpha).to("cuda")
+                for L in ride["layers"]
+            }
+            print(f"[{spec_id}] ride ridge fit on {len(Ht[ride['layers'][0]])} batches", flush=True)
+
     for _ in range(epochs):
         for ids, am, labels in train_loader:
             if step >= total_steps:
                 break
             ids, am, labels = ids.to("cuda"), am.to("cuda"), labels.to("cuda")
-            if mtp_head is not None:
+            if ride is not None:
+                s_out = student(
+                    input_ids=ids, attention_mask=am, labels=labels,
+                    output_hidden_states=True,
+                )
+                loss = s_out.loss
+                sub = ride["sub"]
+                with torch.no_grad():
+                    t_hs = teacher.encoder(
+                        input_ids=ids[:sub], attention_mask=am[:sub],
+                        output_hidden_states=True,
+                    ).hidden_states
+                    b_hs = ride["base"].encoder(
+                        input_ids=ids[:sub], attention_mask=am[:sub],
+                        output_hidden_states=True,
+                    ).hidden_states
+                mse_total = None
+                for L in ride["layers"]:
+                    tgt = displaced_targets(
+                        t_hs[L].float(), b_hs[L].float(), ride["lam"]
+                    ) @ ride["W"][L].T
+                    m = masked_mse(
+                        s_out.encoder_hidden_states[:sub][L].float(), tgt, am[:sub]
+                    )
+                    mse_total = m if mse_total is None else mse_total + m
+                if ride["beta"] is None:
+                    ride["beta"] = (
+                        ride["beta_frac"] * loss.detach() / (mse_total.detach() + 1e-12)
+                    ).item()
+                    print(
+                        f"[{spec_id}] ride beta calibrated: {ride['beta']:.3e} "
+                        f"(mse0={float(mse_total):.3f})",
+                        flush=True,
+                    )
+                loss = loss + ride["beta"] * mse_total
+            elif mtp_head is not None:
                 beta = float(spec["mtp_aux"].get("beta", 0.15))
                 s_out = student(
                     input_ids=ids, attention_mask=am, labels=labels,
@@ -1270,6 +1387,12 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
                 (ck / "labels.sha").write_text(labels_digest)
                 torch.save(student.state_dict(), ck / "student.pt")
                 torch.save(optimizer.state_dict(), ck / "optim.pt")
+                if ride is not None and ride["beta"] is not None:
+                    torch.save(
+                        {"W": {L: w.cpu() for L, w in ride["W"].items()},
+                         "beta": ride["beta"]},
+                        ck / "ride.pt",
+                    )
                 CHECKPOINTS.commit()
                 SECRYST_CHECKPOINTS.commit()
                 PERSIAN_CHECKPOINTS.commit()
