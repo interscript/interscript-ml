@@ -1,6 +1,6 @@
 # 05 — RIDE-style SFT-residual extrapolation: probe-first arm
 
-Status: PROBE PASSED (2026-10-01) — training arm spec'd below, launch pending owner call
+Status: CLOSED — arm measured SEPARATED-NEGATIVE (2026-10-02)
 Literature basis: RIDE (arXiv 2609.36484) — extrapolate the
 teacher-over-base residual directly in representation space:
 student hidden states regressed toward
@@ -71,10 +71,7 @@ Artefact: rababa-checkpoints:/ride_probe_r6_r7.json.
 
 ## Training-arm spec (gated on this probe; launch = owner decision)
 
-The closure rule (TODO 03) permits this arm: it is a mechanism novel
-to the ledger (representation-space displacement; all prior student
-levers were loss/data/optimizer-side) and now has a measured transfer
-premise.
+*(Executed 2026-10-01 under "Proceed all" — run-016-ride, PR #233.)*
 
 - Infra: feature-regression aux loss in modal_distill — teacher/base
   hidden states must be cached per layer subset. Restrict to L0–L8
@@ -87,3 +84,29 @@ premise.
   Muon, seed 42); adopt gate ≥ 0.3pp DER improvement (E4-style bar).
 - Est. build: teacher/base hidden-state dump (one-off Modal job,
   ~1h A100) + trainer loss path + spec; run cost ≈ one 2.1-recipe arm.
+
+## Arm result (measured 2026-10-02) — SEPARATED-NEGATIVE, arm CLOSED
+
+run-016-ride: the 2.1 recipe verbatim (r7 labels, Muon, 6 epochs,
+seed 42) + encoder-hidden regression toward ridge-projected displaced
+targets (λ=1.0, layers 0–8, β auto-calibrated 3.576e-05 = 10% of CE
+at start, ridge fit on 16 batches of mask-flattened positions;
+ride.pt checkpointed). Training converged normally (CE 0.57→0.29 over
+13,026 steps); teacher reproduced at 2.2921 on the same eval.
+
+| measure | value |
+|---|---|
+| student DER-CE (full 1,200) | **5.8627** |
+| vs 2.1 rung 4.5701 | **+1.3926pp [1.156, 1.646], p=0.0** — separated |
+| delta vs teacher | 3.5038 [3.222, 3.792] |
+
+**Verdict: NEGATIVE — decisively.** The direction-transferability
+probe passed (max cos 0.9513), the premise was mechanistically sound,
+training was healthy — and the outcome still hurt by 1.4pp. Reading:
+domain-general direction is necessary but not sufficient; regressing
+a 300M byte student's encoder toward ridge-projected 580M targets
+DISPLACES representations the decoder relies on, competing with the
+CE objective rather than sharpening it. This is ledger row #9 and the
+strongest test of the closure rule to date: the one student-side arm
+with a measured mechanistic premise still failed. The student-side
+residual is closed on evidence, not exhaustion. No further arms.
