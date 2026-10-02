@@ -972,3 +972,33 @@ seeds. The headwise-Muon separated-negative (+0.2267pp, p=0.017) is
 directionally consistent for its size class, but the seed axis is
 unmeasured. Future arms run multi-seed or carry this caveat. Ship
 decisions are unaffected — the base recipe shipped on its own merits.
+
+## RIDE displacement arm — SEPARATED-NEGATIVE; student-side ledger closed on evidence (2026-10-02)
+
+The one student-side lever that passed a mechanistic probe still
+failed at the outcome. Probe (2026-10-01): the r7−r6 SFT residual
+direction is domain-general in encoder layers 0–8 (cos 0.94/0.95/0.92
+… decaying to noise L11+; max 0.9513 vs the 0.5 kill bar). Arm
+(run-016-ride): the 2.1 recipe verbatim + encoder-hidden regression
+toward ridge-projected displaced targets
+h_t + λ(h_t − h_b) (λ=1.0, layers 0–8, frozen r7 teacher + r6 base
+both resident, β auto-calibrated to 10% of CE at start — 3.576e-05).
+Training converged normally (CE 0.57→0.29, 13,026 steps); teacher
+reproduced at 2.2921.
+
+| measure | value |
+|---|---|
+| run-016 DER-CE (full 1,200) | **5.8627** |
+| paired Δ vs 2.1 (4.5701) | **+1.3926pp [1.156, 1.646], p=0.0** |
+| Δ vs teacher | 3.5038 [3.222, 3.792] |
+
+Reading: a domain-general direction is necessary but not sufficient —
+regressing a 300M byte student's encoder toward ridge-projected 580M
+targets displaces representations the decoder relies on, competing
+with the CE objective instead of sharpening it. Ledger row #9; the
+residual is now closed **on evidence, not exhaustion**: corpus scale,
+register mix, on-policy GKD, PKM memory, epochs, headwise Muon,
+Sinkhorn embeddings, engram memory, and representation displacement
+(the only arm with a measured mechanistic premise) have all been run
+to verdict. The frontier mover remains teacher-side data only —
+run-009-yallamorph (TODO.sota-2026/01) is the active lever.
