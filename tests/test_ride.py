@@ -4,7 +4,10 @@ import unittest
 from pathlib import Path
 import sys
 
-import torch
+import pytest
+
+pytest.importorskip("torch")
+import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
