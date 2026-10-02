@@ -1,8 +1,8 @@
 """Tests for the RIDE displacement-arm math (TODO.sota-2026/05)."""
 
+import sys
 import unittest
 from pathlib import Path
-import sys
 
 import pytest
 
@@ -23,7 +23,8 @@ class TestDisplacedTargets(unittest.TestCase):
     def test_lambda_one_extrapolates(self):
         h_t = torch.tensor([[2.0, 4.0]])
         h_b = torch.tensor([[0.0, 0.0]])
-        self.assertTrue(torch.equal(displaced_targets(h_t, h_b, lam=1.0), torch.tensor([[4.0, 8.0]])))
+        got = displaced_targets(h_t, h_b, lam=1.0)
+        self.assertTrue(torch.equal(got, torch.tensor([[4.0, 8.0]])))
 
     def test_fractional_lambda(self):
         h_t = torch.tensor([[3.0]])
