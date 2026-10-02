@@ -1,8 +1,6 @@
 # 01 — r8 teacher: run-009-yallamorph (YallaMorph/CamelMorph aux stream)
 
-Status: TRAINING IN FLIGHT (launched 2026-10-01 18:07, app ap-f1R8ChDikMKUGyBuJGO6;
-26,289 steps on A100-80GB; supervisor /tmp/r9-supervisor.sh v4 relaunches on
-kill-storm deaths — training is checkpoint-resumable and EVAL_DONE-idempotent)
+Status: CLOSED — VERIFIED NEGATIVE on both surfaces (2026-10-02); r7 stays canonical
 Literature basis: YallaMorph (arXiv 2609.10153, EMNLP 2026) — 663,804
 controlled morphological-generation instances over 4,795 lemmas,
 constructed from CamelMorph MSA via CAMeL Tools. The GitHub repo ships
@@ -71,12 +69,41 @@ Recipe = r7 verbatim (train_arabic_r7.py) + one new aux stream:
 5. [x] Launch `modal run --detach` (+ supervisor; one double-launch
        incident from `modal app list` name truncation — grep prefix
        "rababa-ara", dupes stopped, volume verified clean).
-6. [ ] ID gate: windowed zero-skip SadeedDiac-25 full 1,200-para DER
-       ≤ 2.389 (r7 2.2864 + 0.1 tolerance).
-7. [ ] OOD gate: eval_wikinews_multiref improves over 17.3794/11.8273.
-8. [ ] Canonical replacement only if ID improves outright; else record
-       as ablation. Student distillation from r9 only after canonical
-       call.
+6. [x] ID gate: windowed zero-skip SadeedDiac-25 full 1,200-para DER
+       ≤ 2.389 (r7 2.2864 + 0.1 tolerance) — **FAILED: 2.4895**.
+7. [x] OOD gate: WikiNews-2024 multi-ref — **FAILED: 17.4265/12.1093**
+       vs r7's 17.3794/11.8273 (worse on both axes; no trade).
+8. [x] Canonical call: **r7 stays canonical.** run-009 recorded as
+       ablation. No student distillation from r9.
+
+## Result (measured 2026-10-02) — NEGATIVE, first negative teacher-side result
+
+| surface | r9 | r7 | verdict |
+|---|---|---|---|
+| SadeedDiac-25 Total DER (CE) | 2.4895 | 2.2864 | +0.20pp worse — gate fail |
+| Morph DER | 1.5054 | 1.3343 | worse |
+| WikiNews-2024 WER / DER | 17.4265 / 12.1093 | 17.3794 / 11.8273 | worse on both |
+
+**Mechanism (data-backed):** the aux corpus's vocalization convention
+is far denser than the benchmark's — marks per 100 letters: fatha
+43.0 vs 28.4 (1.5×), damma 11.9 vs 7.1 (1.7×), shadda 8.6 vs 4.3
+(2.0×), tanwīn 0.3 vs 2.0 (nearly absent). CamelMorph paradigm forms
+are fully-explicit isolated words; SadeedDiac-style text is partially
+vocalized running text. At 25% dose, the aux stream taught convention
+drift, not morphology: the teacher over-marks the plain stream.
+
+**Lesson (refines the knowledge-injection template):** r6's qalsadi
+aux worked because it was running text IN benchmark convention; r9's
+paradigm tables were out-of-context AND differently-conventioned.
+Knowledge injection is delivery-vehicle-sensitive. A future teacher
+lever from lexical resources must be rendered into benchmark-
+convention running text (e.g. lexically-guided text selection from
+the corpus, not paradigm tables).
+
+The lineage: r5→r6→r7 all-positive; r9 first negative. Teacher-side
+levers are NOT closed (r7's news mix remains the proven axis), but
+this instantiation is dead: no re-run, no dose tuning, no convention
+normalization retry — recorded and closed.
 
 ## Gates / risks
 

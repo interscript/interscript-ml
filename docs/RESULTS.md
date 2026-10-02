@@ -1002,3 +1002,26 @@ Sinkhorn embeddings, engram memory, and representation displacement
 (the only arm with a measured mechanistic premise) have all been run
 to verdict. The frontier mover remains teacher-side data only —
 run-009-yallamorph (TODO.sota-2026/01) is the active lever.
+
+## run-009-yallamorph teacher — NEGATIVE on both surfaces; r7 stays canonical (2026-10-02)
+
+The 2026-09-30 sweep's identified teacher-side lever (YallaMorph/
+CamelMorph morphological paradigm aux, 25% dose, r7-init) measured
+**worse on both surfaces**: SadeedDiac-25 windowed zero-skip DER
+2.4895 (r7: 2.2864 — gate bar 2.389 failed) and WikiNews-2024
+multi-ref 17.4265/12.1093 WER/DER (r7: 17.3794/11.8273) — no ID
+improvement and no OOD trade. **r7 remains canonical**; run-009 is
+recorded as the lineage's first negative teacher-side result.
+
+Mechanism, data-backed: the paradigm corpus's vocalization convention
+is 1.5–2.0× denser than benchmark text (fatha 43.0 vs 28.4, damma
+11.9 vs 7.1, shadda 8.6 vs 4.3 marks per 100 letters; tanwīn nearly
+absent) and its forms are isolated words rather than running text.
+At 25% dose the aux stream injected convention drift — the teacher
+over-marks the plain stream — instead of morphology. The knowledge-
+injection template survives with a sharper edge: r6's aux worked as
+running text in benchmark convention; delivery vehicle matters as
+much as the knowledge. Paradigm-table aux is closed (no dose tuning,
+no convention-normalization retry recorded as future work; a lexical
+lever, if ever revisited, must be rendered into benchmark-convention
+running text). The frontier mover on record remains the r7 news mix.
