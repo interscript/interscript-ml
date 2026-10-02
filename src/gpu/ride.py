@@ -22,7 +22,9 @@ def displaced_targets(h_teacher: torch.Tensor, h_base: torch.Tensor, lam: float)
     return h_teacher + lam * (h_teacher - h_base)
 
 
-def masked_mse(pred: torch.Tensor, target: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+def masked_mse(
+    pred: torch.Tensor, target: torch.Tensor, attention_mask: torch.Tensor
+) -> torch.Tensor:
     """Mean squared error over kept positions and all dims.
 
     pred/target: (B, T, D); attention_mask: (B, T), 1 = kept.
