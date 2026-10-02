@@ -797,7 +797,7 @@ def distill_sequence(spec_id: str, epochs: int = 3) -> dict:
         # Regress student encoder hiddens toward ridge-projected
         # h_t + lam*(h_t - h_b) from frozen teacher (r7) and base (r6).
         _ensure_src_path()
-        from gpu.ride import displaced_targets, fit_ridge, masked_mse
+        from gpu.ride import displaced_targets, masked_mse
 
         base_path = str(
             Path(VOLUME_MOUNTS[ride_cfg.get("base_volume", teacher_vol)]) / ride_cfg["base"]
