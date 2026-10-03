@@ -165,3 +165,16 @@ def test_resolve_parts_rejects_corrupt_part(tmp_path: Path) -> None:
             resolve("tiny-1.0", index_url=str(index_path))
     finally:
         os.environ.pop("SECRYST_CACHE", None)
+
+
+def test_default_index_url_pins_current_release() -> None:
+    # exact pin: raw.githubusercontent is NEVER a data channel (the
+    # contract is GitHub Releases + sha256 sidecar). Bump this test
+    # WITH the registry constant, never ahead of it.
+    from interscript_ml.registry import DEFAULT_INDEX_URL
+
+    assert DEFAULT_INDEX_URL == (
+        "https://github.com/interscript/interscript-ml"
+        "/releases/download/index-v6/models-index.yaml"
+    )
+    assert "raw.githubusercontent" not in DEFAULT_INDEX_URL
