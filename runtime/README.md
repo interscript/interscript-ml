@@ -1,4 +1,11 @@
-# interscript-ml (Python runtime)
+# interscript-ml (Python runtime) — SUPERSEDED by `secryst`
+
+> **Deprecated.** The canonical Python crystal is
+> [`secryst`](https://pypi.org/project/secryst/) (same code, same
+> IMF v1 contract, same SECRYST_INDEX/SECRYST_CACHE env vars) —
+> `pip install secryst` instead. This package remains published for
+> provenance; `runtime/` in this repo is the frozen origin of the
+> crystal family (golden-owner history in the secryst-py README).
 
 The reference Python runtime for **IMF v1** model zips — the phonological
 layer of Interscript. The Ruby (secryst gem) and TypeScript
