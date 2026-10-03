@@ -1,6 +1,6 @@
 # 04 — WO (queued, unscheduled): plane-factorized char-level masked diffusion
 
-Status: ENTERED (2026-10-03, owner: "make it work - ultimately the best SOTA") — in build
+Status: RUNG GATE CLEARED (2026-10-04) — teacher-tier phase in flight
 
 ## Entry design decision (2026-10-03)
 
@@ -70,3 +70,22 @@ lacunae / re-segments / **accentuates** / punctuates. Beats Ithaca
 4. Entry criteria: (a) 01 (run-009) lands and re-ranks the teacher
    frontier; (b) owner authorizes a new architecture line; (c) a
    decode-parity design exists for non-AR models (IMF v2 question).
+
+
+## Results (measured)
+
+**run-017 (v1, 350k units, 1 epoch, K=4):** full-set Total DER
+4.7615 / Morph 3.0530 — 0.19pp off the 4.5701 rung. Grid (subset,
+labeled): quality monotonically improving 3.295→2.991→2.934 across
+checkpoints (UNDERtrained, not overfit); K flat 2/4/8.
+
+**run-018 (v2, 551k units uncapped, 2 epochs, K=2):** full-set
+**Total DER 3.5905 / Morph 2.2149** — the 4.5701 rung gate CLEARED by
+0.98pp (21% relative error reduction). ONNX int8 artifact: 219 MB
+(-45% vs the shipped 491 MB seq2seq int8static) and 1,145 ms/window
+on the same machine where the shipped artifact takes 3,459 ms (-67%).
+**The plane model is the new on-device frontier on all three axes.**
+Gap to the teacher tier (2.2864): 1.30pp.
+
+**Teacher-tier phase (run-019):** same recipe on the ByT5-LARGE
+encoder — the SOTA-dedicated gate (beat 2.2864) is the target.
