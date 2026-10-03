@@ -1025,3 +1025,24 @@ much as the knowledge. Paradigm-table aux is closed (no dose tuning,
 no convention-normalization retry recorded as future work; a lexical
 lever, if ever revisited, must be rendered into benchmark-convention
 running text). The frontier mover on record remains the r7 news mix.
+
+## run-018 plane v2 — the 4.5701 rung CLEARED: new on-device frontier on all axes (2026-10-04)
+
+The plane-factorized encoder (Stoicheia WO, TODO.sota-2026/04) at its
+second configuration clears the student rung decisively:
+
+| model | full-set DER | int8 size | CPU ms/window |
+|---|---|---|---|
+| ara-diac-small-2.1 (shipped) | 4.5701 | 491 MB | 3,459 |
+| **plane v2 (run-018, K=2)** | **3.5905** | **219 MB** | **1,145** |
+| r7 teacher | 2.2864 | — | — |
+
+−0.98pp DER (−21% relative), −45% size, −67% latency — all three
+on-device axes at once. v1→v2 came from the grid's evidence: uncapped
+corpus (551,431 units), 2 epochs, K=2 (K flat across 2/4/8; the
+parallel-refinement depth is not where quality lives — bidirectional
+conditioning is). Architecture: ByT5-small encoder + diacritic-plane
+embedding + per-position haraqat classification; Mask-Predict
+self-conditioning; one ONNX graph, host-side K-pass loop, no KV
+cache. Morph DER 2.2149. Teacher-tier phase (ByT5-large encoder,
+run-019) attacks the 2.2864 SOTA-dedicated gate next.
