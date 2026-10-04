@@ -1046,3 +1046,15 @@ embedding + per-position haraqat classification; Mask-Predict
 self-conditioning; one ONNX graph, host-side K-pass loop, no KV
 cache. Morph DER 2.2149. Teacher-tier phase (ByT5-large encoder,
 run-019) attacks the 2.2864 SOTA-dedicated gate next.
+
+## run-019 plane-large — 3.0078: beats Gemini-Flash, SOTA gate open at 1 epoch (2026-10-04)
+
+ByT5-LARGE plane encoder (~1.3B), 551k units, 1 epoch, K=2: full-set
+Total DER **3.0078** / Morph 1.8486. The teacher gate (r7 2.2864) not
+cleared (+0.72pp), but the model passes Gemini-Flash-2.0 (3.1926) —
+the dedicated podium is now r7 2.2864, plane-large 3.0078, plane v2
+3.5905. The 1-epoch budget is half of run-018's recipe (the epoch
+effect measured −1.17pp at the small tier); the teacher's three-
+generation curriculum lineage (r5→r6→r7) also remains un-matched by
+any single run. Two arms follow: epoch-2 extension and r7-label
+distillation into the plane architecture.
