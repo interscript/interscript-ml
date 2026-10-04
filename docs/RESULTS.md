@@ -1058,3 +1058,17 @@ effect measured −1.17pp at the small tier); the teacher's three-
 generation curriculum lineage (r5→r6→r7) also remains un-matched by
 any single run. Two arms follow: epoch-2 extension and r7-label
 distillation into the plane architecture.
+
+## run-020 plane-distill — label-limited distillation loses to raw-text scale (2026-10-05)
+
+Arm B of the plane-large verdict follow-up: ByT5-small plane encoder
+trained on r7 teacher labels (29,322 unique pairs ×6, 3 epochs) scores
+full-set **Total DER 4.4462 / Morph 2.8620**. Two clean readings:
+(a) on MATCHED teacher-label supervision the plane architecture beats
+the seq2seq student (4.4462 vs 4.5701 — architecture advantage
+confirmed independent of supervision); (b) label-limited distillation
+loses to raw-text diversity at scale (run-018's 551k unique units →
+3.5905) — for the plane family the lever is unique-data volume, not
+supervision source. A full-corpus teacher labeling pass (~15-20h GPU)
+is the conditional distill follow-up, only if the epoch-2 arm falls
+short of the 2.2864 gate.
