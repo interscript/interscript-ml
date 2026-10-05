@@ -101,3 +101,17 @@ def render_card(model_id: str, entry: dict, variants: list[str],
         "index revision.",
     ]
     return "\n".join(lines) + "\n"
+
+
+def ensure_repo(api, repo: str) -> None:
+    """create_repo, tolerating an existing repo (org create-rights may be
+    restricted while contents-write on the existing repo still works)."""
+    from huggingface_hub.utils import HfHubHTTPError
+
+    try:
+        api.create_repo(repo, repo_type="model", private=False, exist_ok=True)
+    except HfHubHTTPError as e:
+        try:
+            api.repo_info(repo, repo_type="model")
+        except Exception:
+            raise e from None

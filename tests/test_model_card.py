@@ -67,3 +67,44 @@ class TestRenderCard(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestEnsureRepo(unittest.TestCase):
+    def _api(self, create_raises=None, exists=False):
+        class Api:
+            def create_repo(self, repo, repo_type, private, exist_ok):
+                if create_raises:
+                    raise create_raises
+                self.created = True
+
+            def repo_info(self, repo, repo_type):
+                if exists:
+                    return object()
+                raise LookupError("not found")
+
+        a = Api()
+        if create_raises:
+            a.created = False
+        return a
+
+    def test_existing_repo_creates_nothing(self):
+        import httpx
+        from huggingface_hub.utils import HfHubHTTPError
+
+        err = HfHubHTTPError("403 Forbidden: no rights", request=httpx.Request("POST", "http://x"),
+                             response=httpx.Response(403, request=httpx.Request("POST", "http://x")))
+        api = self._api(create_raises=err, exists=True)
+        from model_card import ensure_repo
+        ensure_repo(api, "interscript/ara-diac-2.0")
+        self.assertFalse(getattr(api, "created", False))
+
+    def test_missing_repo_reraises(self):
+        import httpx
+        from huggingface_hub.utils import HfHubHTTPError
+
+        err = HfHubHTTPError("403", request=httpx.Request("POST", "http://x"),
+                             response=httpx.Response(403, request=httpx.Request("POST", "http://x")))
+        from model_card import ensure_repo
+        api = self._api(create_raises=err, exists=False)
+        with self.assertRaises(HfHubHTTPError):
+            ensure_repo(api, "interscript/ara-diac-2.0")

@@ -81,9 +81,10 @@ def main() -> None:
     if not token:
         raise SystemExit("HF_TOKEN not set (fine-grained, write-scoped to the repo)")
     from huggingface_hub import HfApi
+    from model_card import ensure_repo
 
     api = HfApi(token=token)
-    api.create_repo(repo, repo_type="model", private=False, exist_ok=True)
+    ensure_repo(api, repo)
     api.upload_file(path_or_fileobj=card.encode("utf-8"),
                     path_in_repo="README.md", repo_id=repo, repo_type="model")
     api.upload_file(path_or_fileobj=str(args.zip),
