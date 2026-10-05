@@ -8,7 +8,7 @@ alone. The index remains the single source of truth for numbers.
 
 from __future__ import annotations
 
-HF_ORG = "riboseinc"
+HF_ORG = "interscript"
 
 _LANG_BY_PREFIX = {
     "ara": "ar", "heb": "he", "fas": "fa", "tha": "th", "urd": "ur",

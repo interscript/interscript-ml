@@ -26,11 +26,11 @@ VARIANTS = ["ara-diac-2.0-int8"]
 
 class TestHfRepo(unittest.TestCase):
     def test_repo_is_org_plus_index_id(self):
-        self.assertEqual(hf_repo_for("ara-diac-2.0"), "riboseinc/ara-diac-2.0")
+        self.assertEqual(hf_repo_for("ara-diac-2.0"), "interscript/ara-diac-2.0")
 
     def test_variant_ids_keep_their_own_repo(self):
         self.assertEqual(hf_repo_for("ara-diac-small-2.1-int8"),
-                         "riboseinc/ara-diac-small-2.1-int8")
+                         "interscript/ara-diac-small-2.1-int8")
 
 
 class TestRenderCard(unittest.TestCase):
