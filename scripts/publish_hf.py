@@ -58,6 +58,13 @@ def main() -> None:
     card = render_card(args.id, entry, variants_of(args.id, index),
                        body=curated_body(args.id))
     zipped = args.zip.read_bytes()
+    want = entry.get("sha256")
+    if want:
+        import hashlib
+
+        got = hashlib.sha256(zipped).hexdigest()
+        if got != want:
+            raise SystemExit(f"artifact sha256 mismatch: got {got[:16]}…, index wants {want[:16]}… — refusing to publish")
 
     print(f"repo:      {repo}")
     print(f"artifact:  {args.zip} ({len(zipped)} bytes; index sha256 "
