@@ -32,8 +32,10 @@ class TestAssemble(unittest.TestCase):
     def _entry(self, base: str, sha: str) -> dict:
         return {
             "parts": [
-                {"url": f"{base}/x.part-00", "sha256": hashlib.sha256(PART_A).hexdigest(), "size": len(PART_A)},
-                {"url": f"{base}/x.part-01", "sha256": hashlib.sha256(PART_B).hexdigest(), "size": len(PART_B)},
+                {"url": f"{base}/x.part-00", "sha256": hashlib.sha256(PART_A).hexdigest(),
+                    "size": len(PART_A)},
+                {"url": f"{base}/x.part-01", "sha256": hashlib.sha256(PART_B).hexdigest(),
+                    "size": len(PART_B)},
             ],
             "sha256": sha,
             "filename": "x-1.0.zip",
