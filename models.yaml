@@ -395,3 +395,17 @@ models:
       - {name: der_total_greedy, value: 3.5905, source: interscript/interscript-ml docs/RESULTS.md#run-018-plane-v2}
       - {name: der_morph_greedy, value: 2.2149, source: interscript/interscript-ml docs/RESULTS.md#run-018-plane-v2}
     license: BSD-3-Clause
+  ara-diac-plane-large-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    kind: plane
+    precision: int8
+    filename: ara-diac-plane-large-1.0.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-plane-large-1.0/ara-diac-plane-large-1.0.zip
+    sha256: a66df2e12ddc935e8ab59836fd45486f17ac40b764c1619c03b2b0e191608a52
+    size: 866052488
+    metrics:
+      - {name: der_total_greedy, value: 2.7397, source: interscript/interscript-ml docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
+      - {name: der_morph_greedy, value: 1.6717, source: interscript/interscript-ml docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
+      - {name: wer_total_greedy, value: 8.6083, source: interscript/interscript-ml docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
+    license: BSD-3-Clause
