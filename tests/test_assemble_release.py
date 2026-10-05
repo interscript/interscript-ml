@@ -59,6 +59,24 @@ class TestAssemble(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sha256"):
             assemble(self._entry(base, self.bad_sha), out)
 
+    def test_single_url_entry_assembles_and_verifies(self):
+        base = self._serve(_files_handler({"x-1.0.zip": self.whole}))
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        out = Path(d.name) / "x.zip"
+        entry = {"url": f"{base}/x-1.0.zip", "sha256": self.sha, "filename": "x-1.0.zip"}
+        assemble(entry, out)
+        self.assertEqual(out.read_bytes(), self.whole)
+
+    def test_single_url_entry_sha_mismatch_rejected(self):
+        base = self._serve(_files_handler({"x-1.0.zip": self.whole}))
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        out = Path(d.name) / "x.zip"
+        entry = {"url": f"{base}/x-1.0.zip", "sha256": self.bad_sha, "filename": "x-1.0.zip"}
+        with self.assertRaisesRegex(ValueError, "sha256"):
+            assemble(entry, out)
+
     def test_part_sha_mismatch_rejected(self):
         parts = {"x.part-00": b"X" * 1024, "x.part-01": PART_B}
         base = self._serve(_files_handler(parts))

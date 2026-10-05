@@ -29,6 +29,8 @@ def _download(url: str, expected_sha: str, label: str) -> bytes:
 def assemble(entry: dict, out: Path, index_dir: Path | None = None) -> Path:
     parts = entry.get("parts") or []
     chunks: list[bytes] = []
+    if not parts and entry.get("url"):
+        chunks = [_download(entry["url"], entry.get("sha256", ""), entry["url"].rsplit("/", 1)[-1])]
     for p in parts:
         name = p["url"].rsplit("/", 1)[-1]
         chunks.append(_download(p["url"], p["sha256"], name))
