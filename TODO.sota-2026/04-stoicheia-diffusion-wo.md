@@ -89,3 +89,21 @@ Gap to the teacher tier (2.2864): 1.30pp.
 
 **Teacher-tier phase (run-019):** same recipe on the ByT5-LARGE
 encoder — the SOTA-dedicated gate (beat 2.2864) is the target.
+
+**run-019 epoch-2 (final, 2026-10-05):** full-set **Total DER 2.7397
+/ Morph 1.6717** (epoch-1: 3.0078/1.8486). SOTA-dedicated gate (2.2864)
+NOT cleared — +0.45pp — and the per-epoch gain curve (−1.17 small,
+−0.27 here) makes a third epoch unfavorable. Podium: r7 2.2864 >
+plane-large-e2 2.7397 > plane-large 3.0078 > Gemini-Flash 3.1926.
+Teacher-tier phase CLOSED on evidence: the plane architecture's edge is
+the on-device frontier (run-018), not the teacher tier. The conditional
+run-020 full-corpus labeling pass is likewise closed (its trigger was
+"only if epoch-2 falls short" — it did; but its own reading stands:
+unique-data volume is the lever, and the frontier model run-018 already
+holds the efficient tier).
+
+**WO status: ENTERED, executed, closed.** Deliverables shipped:
+haraqat_planes.py (byte-exact split/render), run-017/018/019/020
+verdicts, secryst-py PlaneModel runtime (PR merged), ONNX export path.
+Open packaging: plane v2/large artifact zips + index entries + HF
+publish (after this verdict).

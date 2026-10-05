@@ -1072,3 +1072,20 @@ loses to raw-text diversity at scale (run-018's 551k unique units →
 supervision source. A full-corpus teacher labeling pass (~15-20h GPU)
 is the conditional distill follow-up, only if the epoch-2 arm falls
 short of the 2.2864 gate.
+
+## run-019 epoch-2 — 2.7397: second epoch closes a third of the gap, SOTA gate still open (2026-10-05)
+
+The epoch-2 extension of plane-large scores full-set **Total DER
+2.7397 / Morph 1.6717 / Total WER 8.6083** — down from 3.0078/1.8486
+at 1 epoch (−0.27pp, −9%). The dedicated podium becomes r7 2.2864,
+plane-large-e2 2.7397, plane-large 3.0078: still ahead of Gemini-Flash
+(3.1926), still behind the teacher (+0.45pp). A third epoch is not
+scheduled — the per-epoch gain (−1.17pp small tier, −0.27pp here) is
+shrinking faster than the 0.45pp gap.
+
+Process note: the first epoch-2 eval was invalid — it resumed from the
+epoch-1 eval progress file, found every window already "saved", and
+re-scored epoch-1 predictions (bit-identical 3.0078). Fixed by a
+per-marker progress file (EVAL_DONE_E2B) and re-run in full; the
+number above is the corrected measurement. The 2026-10-04 epoch-1
+verdict was a fresh eval and is unaffected.
