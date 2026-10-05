@@ -43,7 +43,7 @@ class TestAssemble(unittest.TestCase):
 
     def test_assembles_parts_in_order_and_verifies_sha(self):
         parts = {"x.part-00": PART_A, "x.part-01": PART_B}
-        base = self._serve(_files_handler(parts))
+        base = _serve(_files_handler(parts))
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
         out = Path(d.name) / "x.zip"
@@ -52,7 +52,7 @@ class TestAssemble(unittest.TestCase):
 
     def test_sha_mismatch_rejected(self):
         parts = {"x.part-00": PART_A, "x.part-01": PART_B}
-        base = self._serve(_files_handler(parts))
+        base = _serve(_files_handler(parts))
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
         out = Path(d.name) / "x.zip"
@@ -61,7 +61,7 @@ class TestAssemble(unittest.TestCase):
 
     def test_part_sha_mismatch_rejected(self):
         parts = {"x.part-00": b"X" * 1024, "x.part-01": PART_B}
-        base = self._serve(_files_handler(parts))
+        base = _serve(_files_handler(parts))
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
         out = Path(d.name) / "x.zip"
@@ -100,6 +100,56 @@ def _tmpdir():
         yield Path(d.name)
     finally:
         d.cleanup()
+
+
+
+def _serve(handler):
+    server = HTTPServer(("127.0.0.1", 0), handler)
+    Thread(target=server.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{server.server_address[1]}"
+
+
+def _tmpdir_path():
+    import tempfile
+
+    d = tempfile.TemporaryDirectory()
+    _CLEANUP.append(d)
+    return Path(d.name)
+
+
+_CLEANUP: list = []
+
+
+class TestAssembleSingleUrl(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+
+        self.whole = b"S" * 900
+        self.sha = hashlib.sha256(self.whole).hexdigest()
+
+    def test_single_url_entry(self):
+        parts = {"ara-diac-small-1.0-fp32.zip": self.whole}
+        base = _serve(_files_handler(parts))
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        out = Path(d.name) / "x.zip"
+        entry = {
+            "url": f"{base}/ara-diac-small-1.0-fp32.zip",
+            "sha256": self.sha,
+            "filename": "ara-diac-small-1.0-fp32.zip",
+        }
+        assemble(entry, out)
+        self.assertEqual(out.read_bytes(), self.whole)
+
+    def test_single_url_sha_mismatch(self):
+        parts = {"x.zip": b"WRONG"}
+        base = _serve(_files_handler(parts))
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        out = Path(d.name) / "x.zip"
+        entry = {"url": f"{base}/x.zip", "sha256": self.sha, "filename": "x.zip"}
+        with self.assertRaisesRegex(ValueError, "sha256"):
+            assemble(entry, out)
 
 
 if __name__ == "__main__":
