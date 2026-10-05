@@ -7,8 +7,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
 
-import yaml
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from assemble_release import assemble  # noqa: E402
