@@ -1,0 +1,44 @@
+name: hf-publish
+
+# Publish a models.yaml entry to the Hugging Face org mirror
+# (interscript/<id>): assembles the release artifact from index parts
+# (sha256-verified), generates the model card, uploads both.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: model id from models.yaml (e.g. ara-diac-2.0)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install huggingface_hub pyyaml
+      - name: assemble artifact from index parts
+        env:
+          MODEL_ID: ${{ inputs.id }}
+        run: |
+          python - "$MODEL_ID" << 'PY'
+          import sys, yaml
+          from pathlib import Path
+          sys.path.insert(0, "scripts")
+          from assemble_release import assemble
+          mid = sys.argv[1]
+          index = yaml.safe_load(Path("models.yaml").read_text())["models"]
+          entry = index[mid]
+          out = assemble(entry, Path("artifact.zip"))
+          print("assembled", out)
+          PY
+      - name: publish to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MODEL_ID: ${{ inputs.id }}
+        run: python scripts/publish_hf.py --id "$MODEL_ID" --zip artifact.zip
