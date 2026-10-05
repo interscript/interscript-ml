@@ -97,7 +97,7 @@ def render_card(model_id: str, entry: dict, variants: list[str],
         "and published through the [interscript-ml](https://github.com/interscript/interscript-ml) "
         "distribution contract (models.yaml index, sha256-verified release assets, "
         "parity-gated artifacts). The canonical download channel is GitHub Releases; "
-        f"this repository is the Hugging Face mirror of the same bytes, pinned to the "
-        f"index revision.",
+        "this repository is the Hugging Face mirror of the same bytes, pinned to the "
+        "index revision.",
     ]
     return "\n".join(lines) + "\n"
