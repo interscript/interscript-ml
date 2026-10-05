@@ -64,7 +64,9 @@ def main() -> None:
 
         got = hashlib.sha256(zipped).hexdigest()
         if got != want:
-            raise SystemExit(f"artifact sha256 mismatch: got {got[:16]}…, index wants {want[:16]}… — refusing to publish")
+            raise SystemExit(
+                f"artifact sha256 mismatch: got {got[:16]}…, index wants {want[:16]}…"
+                " — refusing to publish")
 
     print(f"repo:      {repo}")
     print(f"artifact:  {args.zip} ({len(zipped)} bytes; index sha256 "
