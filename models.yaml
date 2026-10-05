@@ -382,3 +382,16 @@ models:
       - {name: der_student_fullset, value: 4.5701, source: interscript/interscript-ml docs/RESULTS.md#run-006-r7-muon}
     parity: {samples: 2480, cer_delta: 0.1038}
     license: BSD-3-Clause
+  ara-diac-plane-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    kind: plane
+    precision: int8
+    filename: ara-diac-plane-1.0.zip
+    url: https://github.com/interscript/interscript-ml/releases/download/ara-diac-plane-1.0/ara-diac-plane-1.0.zip
+    sha256: 1310204e36acc4fcbb988e9f9c46cf6422e7ea3860bd467fb469ea0ad4d39ef3
+    size: 219076965
+    metrics:
+      - {name: der_total_greedy, value: 3.5905, source: interscript/interscript-ml docs/RESULTS.md#run-018-plane-v2}
+      - {name: der_morph_greedy, value: 2.2149, source: interscript/interscript-ml docs/RESULTS.md#run-018-plane-v2}
+    license: BSD-3-Clause
