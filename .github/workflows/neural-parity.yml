@@ -1,0 +1,63 @@
+name: neural-parity
+
+# Cross-runtime parity on the neural golden corpus (golden-v2+).
+# Quantized contract: per-row agreement >= 99.5%, corpus >= 99.9%.
+# Python is the reference (golden generator); ruby and ts run the same
+# sets. The ts plane leg lands with the ts plane runtime port.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "model id (plane family)"
+        required: true
+        default: ara-diac-plane-1.0
+
+permissions:
+  contents: read
+
+jobs:
+  ruby:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: false
+      - run: git clone --depth 1 https://github.com/interscript/interscript-ruby /tmp/rt
+      - name: run the golden set
+        working-directory: /tmp/rt
+        run: |
+          bundle install --jobs 4
+          mkdir -p /tmp/golden && curl -sL "https://github.com/interscript/interscript-models/releases/download/golden-v2/${MODEL}.jsonl" -o /tmp/golden/set.jsonl
+          curl -sL "https://github.com/interscript/interscript-models/releases/download/${MODEL}/${MODEL}.zip" -o /tmp/model.zip
+          SECRYST_E2E_ZIP=/tmp/model.zip SECRYST_GOLDEN=/tmp/golden/set.jsonl SECRYST_E2E_PLANE=1 SKIP_JS=1 SKIP_PYTHON=1 bundle exec rspec spec/interscript/ml/golden_spec.rb
+        env:
+          MODEL: ${{ inputs.model }}
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: git clone --depth 1 https://github.com/interscript/interscript-py /tmp/py
+      - name: regenerate byte-exact from the reference
+        working-directory: /tmp/py
+        run: |
+          pip install -e ".[ml]"
+          curl -sL "https://github.com/interscript/interscript-models/releases/download/${MODEL}/${MODEL}.zip" -o /tmp/model.zip
+          curl -sL "https://github.com/interscript/interscript-models/releases/download/golden-v2/${MODEL}.jsonl" -o /tmp/set.jsonl
+          python - << 'PY'
+          import json, os
+          from pathlib import Path
+          from interscript.ml.plane import PlaneModel
+          m = PlaneModel.from_zip(Path("/tmp/model.zip").read_bytes())
+          rows = [json.loads(l) for l in open("/tmp/set.jsonl") if l.strip()]
+          for r in rows:
+              assert m.translate(r["input"]) == r["output"], r["input"][:60]
+          PY
+        env:
+          MODEL: ${{ inputs.model }}
