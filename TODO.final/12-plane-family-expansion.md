@@ -1,6 +1,6 @@
 # 12 — Plane family expansion (Hebrew nikud, Urdu)
 
-**Status: pending (architecture proven).** The plane factorization is
+**Status: SPECS READY, NOT STARTED** — Urdu arm PAUSED (new corpus arriving per owner 2026-10-06).
 language-agnostic; corpora already sit in the data layer (hewiki,
 rababa-hebrew-distilled, urdu corpora).
 
