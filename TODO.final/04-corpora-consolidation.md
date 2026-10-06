@@ -1,6 +1,6 @@
 # 04 — rababa-* corpora family consolidation
 
-**Status: pending.** 11 corpus/data repos in the interscript org
+**Status: DONE** (2026-10-06) — the corpus repos were already merge-origins (README-documented); all 10 rababa-* repos archived as historical snapshots; secryst org data repos archived. Modal volumes remain the live data channel.
 (rababa-farsi, -urdu, -urdu-corpus, -persian-corpus, -tashkeela-full,
 -hebrew-distilled, -hewiki, -arwiki, -tashkeela, -sefaria) plus
 rababa-models and data-* in the secryst org.

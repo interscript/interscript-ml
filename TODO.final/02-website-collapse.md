@@ -1,6 +1,6 @@
 # 02 — Website collapse: one site, one model page
 
-**Status: pending.** interscript.org/ml is live but predates the plane
+**Status: DONE** (2026-10-06) — /ml current (plane rows, HF links, index-v8 counts, PR #207 on interscript.github.io); secryst.github.io redirects to it (PR #8).
 family and flagship leaderboard; secryst.github.io still serves its own
 zoo — two model pages exist (split-brain confirmed).
 

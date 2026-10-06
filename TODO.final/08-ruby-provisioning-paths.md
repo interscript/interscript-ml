@@ -1,6 +1,6 @@
 # 08 — Ruby ML provisioning path migration
 
-**Status: pending.** The ported Interscript::ML::Provisioning still
+**Status: DONE** (2026-10-06, PR #795) — user-local interscript-ml write paths, legacy fallback, TDD.
 writes secryst-named paths (/var/lib/secryst, ~/.local/share/secryst).
 
 ## Steps (TDD)

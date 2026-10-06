@@ -1,6 +1,6 @@
 # 07 — Release hub cleanup (interscript/interscript)
 
-**Status: pending.** The hub now works (gem 3.0.0 via OIDC) but clones
+**Status: DONE** (2026-10-06, PR #11) — bootstrap drops dead js/python targets; TODO dirs stay (docs/ is a symlink).
 dead repos and carries campaign TODO dirs.
 
 ## Steps

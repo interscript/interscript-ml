@@ -1,6 +1,6 @@
 # 06 — Legacy repo archival
 
-**Status: pending.** Open-but-dead repos dilute the org.
+**Status: DONE** (2026-10-06) — 21 repos archived (11 secryst org + 10 rababa-* origins). EXCEPTIONS: interscript-js is an AUTO-SYNCED MIRROR of interscript-ts (do not archive); -py-mvp/-ts-old were already archived; crystalseq has no repo at that name.
 
 ## List (verify each is truly dead before archiving)
 - interscript/interscript-js (dead name; hub still clones it — see 07)

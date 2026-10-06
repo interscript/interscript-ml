@@ -1,6 +1,6 @@
 # 09 — interscript-ml → interscript-models (+ index-v8)
 
-**Status: owner direction agreed (plural form recommended to mirror
+**Status: DONE** (2026-10-06) — repo renamed; index-v8 cut with canonical URLs; runtime pins shipped: npm 5.6.1, gem 3.0.1, py on main (debuts at pip unblock). Old pins work via rename redirect (verified 200).
 interscript-maps).** The repo is the model catalog/contract layer; the
 "ml" name misleads (it is the STABLE side, not the ML code).
 

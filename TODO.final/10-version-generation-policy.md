@@ -1,6 +1,6 @@
 # 10 — Version-generation policy across runtimes
 
-**Status: owner decision pending.** The same runtime generation ships
+**Status: DONE** (2026-10-06, PR #250) — option A documented in docs/VERSIONING.md.
 as npm 5.6.0 / gem 3.0.0 / pip 0.1.0(stale) — three major lines for one
 product.
 

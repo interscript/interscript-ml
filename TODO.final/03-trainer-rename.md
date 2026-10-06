@@ -1,6 +1,6 @@
 # 03 — rababa → interscript-train
 
-**Status: owner-approved direction; execution pending.** The trainer
+**Status: DONE** (2026-10-06) — repo renamed, remotes + live refs updated; secryst-train archived (its Thai-era training already lives in this repo's tasks + Modal volumes).
 absorbed all languages (Arabic/Hebrew/Urdu + plane + evals); the
 Arabic-specific name is the last incoherence.
 
