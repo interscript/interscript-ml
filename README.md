@@ -1,4 +1,4 @@
-# interscript-ml
+# interscript-models
 
 The **contract** for Interscript's phonological layer — the normative
 definition of what a "hidden reading" model is, and the zoo that
@@ -24,8 +24,8 @@ This repo owns three things and nothing else:
 | Benchmark | [Misraj/SadeedDiac-25](https://huggingface.co/datasets/Misraj/SadeedDiac-25) (auto-fetched) |
 | Protocol CLI | `pip install interscript-ml-tools[sadeed]` ([PyPI](https://pypi.org/project/interscript-ml-tools/)) |
 | Python runtime | `pip install secryst` ([PyPI](https://pypi.org/project/secryst/)) |
-| Raw predictions, every frontier run | Release [`frontier-predictions-v1`](https://github.com/interscript/interscript-ml/releases/tag/frontier-predictions-v1) |
-| Teachers + provenance labels | Release [`teachers-arabic-v1`](https://github.com/interscript/interscript-ml/releases/tag/teachers-arabic-v1) |
+| Raw predictions, every frontier run | Release [`frontier-predictions-v1`](https://github.com/interscript/interscript-models/releases/tag/frontier-predictions-v1) |
+| Teachers + provenance labels | Release [`teachers-arabic-v1`](https://github.com/interscript/interscript-models/releases/tag/teachers-arabic-v1) |
 | Student artifacts | `models.yaml` (index-v5) — sha256-verified in every runtime |
 
     interscript-sadeed-eval score --preds <file> --data Misraj/SadeedDiac-25
@@ -44,7 +44,7 @@ secryst crystals       Ruby gem · pip install secryst · npm i secryst
 (secryst org)          implement IMF v1 + models.yaml — nothing else
                         │
                         ▼
-interscript-ml  ◄────── models/zips resolve through this index
+interscript-models  ◄────── models/zips resolve through this index
 (THIS repo)     ──────► golden sets: crystals diffed against each other
 
 secryst-train          teachers (arabic · persian · urdu + hebrew docs);
@@ -53,7 +53,7 @@ secryst-train          teachers (arabic · persian · urdu + hebrew docs);
 
 Dependency directions, stated once:
 
-- **interscript-ml depends on nothing.** It is the contract: an index,
+- **interscript-models depends on nothing.** It is the contract: an index,
   a format, golden sets, and release tooling.
 - **Crystals depend only on the contract.** A crystal has zero
   interscript-core dependency — a TTS front-end can phonemize Khmer
@@ -69,7 +69,7 @@ Dependency directions, stated once:
 
 | repo | role |
 |---|---|
-| [interscript/interscript-ml](https://github.com/interscript/interscript-ml) | this — contract + zoo |
+| [interscript/interscript-models](https://github.com/interscript/interscript-models) | this — contract + zoo |
 | [secryst/secryst](https://github.com/secryst/secryst) | Ruby crystal (the original, est. 2020) |
 | [secryst/secryst-py](https://github.com/secryst/secryst-py) | Python crystal — reference, owns golden generation |
 | [secryst/secryst-ts](https://github.com/secryst/secryst-ts) | TypeScript crystal (npm `secryst`) |
