@@ -75,7 +75,7 @@ Dependency directions, stated once:
 | [secryst/secryst-ts](https://github.com/secryst/secryst-ts) | TypeScript crystal (npm `secryst`) |
 | [secryst/secryst.github.io](https://www.secryst.org) | the crystals' documentation site |
 | [secryst/secryst-train](https://github.com/secryst/secryst-train) | training monorepo — **secryst-owned teachers** |
-| [interscript/rababa](https://github.com/interscript/rababa) · [rababa-farsi](https://github.com/interscript/rababa-farsi) · [rababa-urdu](https://github.com/interscript/rababa-urdu) | archived origins of the train monorepo (full history merged there) |
+| [interscript/interscript-train](https://github.com/interscript/interscript-train) · [rababa-farsi](https://github.com/interscript/rababa-farsi) · [rababa-urdu](https://github.com/interscript/rababa-urdu) | archived origins of the train monorepo (full history merged there) |
 
 `runtime/` in this repo is the **frozen origin** of the Python crystal —
 kept for provenance; live code and releases are in secryst-py.
