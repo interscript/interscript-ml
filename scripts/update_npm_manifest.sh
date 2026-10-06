@@ -35,7 +35,7 @@ manifest_path = Path("npm/models/manifest.json")
 data = json.loads(manifest_path.read_text(encoding="utf-8"))
 
 # Pull checksums from the GH Release API
-api = f"repos/interscript/interscript-ml/releases/tags/{tag}"
+api = f"repos/interscript/interscript-models/releases/tags/{tag}"
 release = json.loads(subprocess.check_output(["gh", "api", api], text=True))
 
 assets = {}
@@ -44,7 +44,7 @@ for asset in release.get("assets", []):
     if name.endswith(".sha256"):
         # Download the sidecar to read the digest
         digest = subprocess.check_output(
-            ["gh", "release", "download", tag, "--repo", "interscript/interscript-ml",
+            ["gh", "release", "download", tag, "--repo", "interscript/interscript-models",
              "--pattern", name, "--output", "-"], text=True
         ).strip().split()[0]
         base = name[:-len(".sha256")]

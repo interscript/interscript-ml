@@ -94,7 +94,7 @@ def render_card(model_id: str, entry: dict, variants: list[str],
         "## Provenance",
         "",
         "Trained in the [Secryst training monorepo](https://github.com/secryst/secryst-train) "
-        "and published through the [interscript-ml](https://github.com/interscript/interscript-ml) "
+        "and published through the [interscript-ml](https://github.com/interscript/interscript-models) "
         "distribution contract (models.yaml index, sha256-verified release assets, "
         "parity-gated artifacts). The canonical download channel is GitHub Releases; "
         "this repository is the Hugging Face mirror of the same bytes, pinned to the "

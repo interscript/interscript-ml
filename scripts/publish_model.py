@@ -37,7 +37,7 @@ from imf.validator import validate_zip  # noqa: E402
 
 # GitHub hard-caps release assets at 2,147,483,648 bytes; split well below.
 SPLIT_THRESHOLD = 2_000_000_000
-DEFAULT_REPO = "interscript/interscript-ml"
+DEFAULT_REPO = "interscript/interscript-models"
 
 
 def canonical_filename(meta: dict) -> str:

@@ -66,7 +66,7 @@ jobs:
       - run: |
           python -m pip install --upgrade pip
           pip install -e "./runtime[dev]"
-      - name: interscript-ml runtime tests (tiny-graph zips, golden e2e)
+      - name: interscript-models runtime tests (tiny-graph zips, golden e2e)
         run: python -m pytest runtime/tests -v
 
   metrics-provenance:
