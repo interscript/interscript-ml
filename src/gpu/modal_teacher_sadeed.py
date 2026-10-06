@@ -29,7 +29,7 @@ IMAGE = (
     )
     .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
     .add_local_dir(
-        "/Users/mulgogi/src/interscript/rababa/data/sadeed-diac-25",
+        "/Users/mulgogi/src/interscript/interscript-train/data/sadeed-diac-25",
         "/opt/rababa/data/sadeed-diac-25",
         copy=True,
     )

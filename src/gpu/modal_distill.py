@@ -42,12 +42,12 @@ IMAGE = (
     .env({"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir(str(REPO_ROOT), "/root/interscript-ml", copy=True)
     .add_local_file(
-        "/Users/mulgogi/src/interscript/rababa/sadeed_evaluator.py",
+        "/Users/mulgogi/src/interscript/interscript-train/sadeed_evaluator.py",
         "/opt/rababa/sadeed_evaluator.py",
         copy=True,
     )
     .add_local_dir(
-        "/Users/mulgogi/src/interscript/rababa/data/sadeed-diac-25",
+        "/Users/mulgogi/src/interscript/interscript-train/data/sadeed-diac-25",
         "/opt/rababa/data/sadeed-diac-25",
         copy=True,
     )
