@@ -1089,3 +1089,25 @@ re-scored epoch-1 predictions (bit-identical 3.0078). Fixed by a
 per-marker progress file (EVAL_DONE_E2B) and re-run in full; the
 number above is the corrected measurement. The 2026-10-04 epoch-1
 verdict was a fresh eval and is unaffected.
+
+## run-021 heb-plane — 12.48% nakdimon DER: the plane family generalizes, seq2seq student beaten at 3.96pp (2026-10-07)
+
+First Hebrew plane model (TODO.final 12): the Arabic run-018 recipe
+applied unchanged — ByT5-small encoder + plane embedding + per-position
+head, K=2 mask-predict, 2 epochs — over the v4 combined corpus (50,303
+units, 135 order-preserving nikud classes). Nakdimon test, greedy,
+seq2seq_der (the exact heb-diac-1.1 protocol): **DER 12.48%** vs the
+shipped seq2seq student's 16.44 — the dedicated on-device economics
+(219 MB-class int8, parallel K-pass) now beat the larger seq2seq at
+Hebrew too.
+
+Process note: the first reported verdict was 32.64% — a harness bug,
+not a model bug. Window stitching joined with single spaces, collapsing
+the corpus's double spaces and shifting every unit after the first
+anomaly; per-example analysis (balanced missing/extra, divergent text
+in worst rows) isolated it, and re-derivation from cached window
+predictions with exact separator re-attachment gives 12.48% with zero
+reconstruction mismatches. Same lesson as run-019's E2: every verdict
+number earns a mechanism check before it enters the ledger. nikud
+cluster order is preserved as written (the corpus has no uniform canon:
+בְּ is sheva-then-dagesh; שָׁ is dot-then-qamats).
