@@ -1144,3 +1144,29 @@ framing: the gap is register/reading-selection, deeper than OOV, and
 closes only with in-register gold supervision — which is why the
 teacher-labeled news mix in r7 moved in-domain DER but not this number.
 Never quote QCRI's 2.70 against our numbers without this paragraph.
+
+## WO03 Thai hybrid tier — dictionary fast-path beats the neural model on BOTH axes (2026-10-07)
+
+FastThaiG2P (arXiv 2608.12814) response built as specced in TODO.sota/03:
+Kaikki Thai headword IPA (17,434 munch keys, >=2-char) as a maximal-munch
+fast path, neural model as whole-span OOV fallback
+(interscript-py thai_hybrid; bench at benchmarks/thai_hybrid_bench.py).
+
+| mode (kaikki test, 1,219 sent, greedy, int8, CPU) | corpus PER | ms/utt |
+|---|---|---|
+| dict-only | 0.2217 | 0.66 |
+| **hybrid (dict + neural OOV)** | **0.1478** | **0.73** |
+| model-only (tha-g2p-small-1.0 int8) | 2.9166 | 82.11 |
+
+Gate: hybrid within 1.2x dict latency (1.10x) and within +0.3pp PER of
+model-only — CLEARED with margin (hybrid BEATS model-only by 2.77pp).
+
+Honest caveats: (1) the benchmark is kaikki-derived, so dictionary
+coverage/quality are inflated versus wild text — wild OOV runs go to the
+neural model and hybrid converges toward model-only; (2) FastThaiG2P's
+0.15 ms/utt is ~5x faster than our pure-python munch (optimizable, and
+not the bottleneck: TTS decode dwarfs G2P); (3) their PER (26.9) is on
+their own synthetic set — never quote across sets. The lexicon artifact
+(tha-lexicon-kaikki.json) ships as a model-release asset with CC BY-SA
+3.0 attribution to Wiktionary/Kaikki — it is deliberately NOT committed
+to this BSD-3 repo.
