@@ -3,7 +3,7 @@ name: neural-parity
 # Cross-runtime parity on the neural golden corpus (golden-v2+).
 # Quantized contract: per-row agreement >= 99.5%, corpus >= 99.9%.
 # Python is the reference (golden generator); ruby and ts run the same
-# sets. The ts plane leg lands with the ts plane runtime port.
+# sets.
 
 on:
   workflow_dispatch:
@@ -66,5 +66,23 @@ jobs:
           # per-row divergence; the bound is corpus-level by design.
           assert diffs / total < 0.02, (diffs, total)
           PY
+        env:
+          MODEL: ${{ inputs.model }}
+
+  ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - run: git clone --depth 1 https://github.com/interscript/interscript-ts /tmp/ts
+      - name: run the golden set
+        working-directory: /tmp/ts
+        run: |
+          npm ci
+          mkdir -p /tmp/golden && curl -sL "https://github.com/interscript/interscript-models/releases/download/golden-v2/${MODEL}.jsonl" -o /tmp/golden/set.jsonl
+          curl -sL "https://github.com/interscript/interscript-models/releases/download/${MODEL}/${MODEL}.zip" -o /tmp/model.zip
+          INTERSCRIPT_PLANE_ZIP=/tmp/model.zip INTERSCRIPT_PLANE_GOLDEN=/tmp/golden/set.jsonl INTERSCRIPT_PARITY_SMOKE=1 npx vitest run test/ml/plane-parity.test.ts
         env:
           MODEL: ${{ inputs.model }}
