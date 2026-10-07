@@ -1,6 +1,6 @@
 # 12 — Plane family expansion (Hebrew nikud, Urdu)
 
-**Status: HEBREW ARM LAUNCHED** (2026-10-07) — nikud_planes.py TDD 7/7 (order-preserving clusters: corpus writes בְּ sheva-then-dagesh AND שָׁ dot-then-qamats - no uniform canon; render-exactness beats normalization); train_hebrew_plane.py = the run-018 recipe on the v4 combined corpus (50,303 units, 135 classes, 6,036 steps, A100 detached); gate = nakdimon greedy DER vs heb-diac-1.1's 16.44 on the exact seq2seq_der protocol; per-marker eval progress (E2 lesson applied). Urdu arm PAUSED (new corpus coming).
+**Status: HEBREW ARM DONE, END-TO-END** (2026-10-07) — verdict 12.48 DER (gate 16.44 cleared, −3.96pp; first read 32.64 was a window-stitching harness bug, disclosed + corrected from cached predictions, zero mismatches); artifact shipped: release + sha sidecar, index entry #255, curated card, HF live (27 repos), collection updated; smoke = correct nikud, byte-exact round-trip. Urdu arm PAUSED (new corpus coming).
 language-agnostic; corpora already sit in the data layer (hewiki,
 rababa-hebrew-distilled, urdu corpora).
 
