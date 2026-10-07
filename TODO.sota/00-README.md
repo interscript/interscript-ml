@@ -54,6 +54,9 @@ hf jobs run --flavor a100-large -d \
 | 14 | 14-ts-plane-port.md | P2 | — | DONE (ts#99/#100/#101, CI leg models#265) |
 | 15 | 15-api-edge.md | P2 | 14 | DONE (api#29: edge-first /v1/infer, kind in index) |
 | 16 | 16-parking-lot.md | — | — | parked (not now) |
+| 17 | 17-arabic-register-closure.md | P1 | 11 | r8a RUNNING; r8b launching |
+| 18 | 18-parity-runs.md | P1 | 10 | pending |
+| 19 | 19-lexicon-loader.md | P2 | 13 | pending |
 
 ## Schedule
 
