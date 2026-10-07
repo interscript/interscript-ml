@@ -64,3 +64,35 @@ Wave 1 (local, days): WO01, WO02, WO03, WO07 + infra #44.
 Wave 2 (HF training, launched together): WO04 (a100-large), WO06
 (a100-large), WO08 (l4x1) — run concurrently, watch via `hf jobs ls`.
 Wave 3: WO05 tables after 01+07 land; WO09 probe only.
+
+## Path-to-success graph + SOTA matrix (2026-10-07, live)
+
+```
+ARABIC ── in-domain (SadeedDiac-25)        HEBREW ── nikud (nakdimon)
+  r7 2.2864 [BEST dedicated]                 heb-plane-2.0 8.18 [BEST text-only]
+  Claude-3.7 1.39 (API LLM; hallucinates)    next: us (12.48) → 16.4 → 35.6
+    │                                          │
+    └─ r8a (self-labeled arwiki) RUNNING       └─ byt5-large/K=4 (untried)
+    └─ r8b (QCRI silver)       RUNNING       HEBREW ── g2p IPA (their board)
+    └─ gate: hold ID ≤2.2864 AND              rules chain 0.2393 CER (0-train)
+       move OOD 17.38 → ≤10                   ReNikud 0.0244 (audio-supervised)
+                                              └─ learned IPA head: BLOCKED
+ARABIC ── OOD (WikiNews-2024 multiref)          (espeak ceiling 0.4543; needs
+  r7 17.38/11.83 · plane 18.69/11.35            MILIM or audio = 2027)
+  QCRI 2.70 (in-domain-trained silver)
+    └─ register closure = r8a/r8b above      THAI ── g2p (kaikki protocol)
+                                              hybrid 0.1478 PER @0.73ms [BEST]
+ARABIC plane ── 2.7397 (large) ── r8 recipe    tiny student RUNNING (<10MB tier)
+   transfers to plane family post-r8        CLIENT SURFACE — 3-runtime parity ✓
+                                              + preserve mode ✓ + edge /v1/infer ✓
+                                              + index-v9 + 28 sha-verified models
+```
+
+| axis | ours | 2026 frontier | status |
+|---|---|---|---|
+| AR in-domain DER | 2.2864 | 1.39 (LLM API) | #1 dedicated; r8 arms closing |
+| AR OOD multiref WER | 17.38 | 2.70 (their-domain) | register gap; r8a/r8b attacking |
+| HE nikud DER | 8.18 | — (we lead) | crown held; base+K=3 |
+| HE g2p CER | 0.2393 (rules) | 0.0244 (audio) | blocked on supervision (2027) |
+| TH PER | 0.1478 | 26.9 (latency play) | crown held + hybrid latency tier |
+| client surface | 3 runtimes + edge | none exists | moat maintained |
