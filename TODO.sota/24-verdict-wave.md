@@ -12,3 +12,11 @@ unchanged: dominance on BOTH surfaces or documented negative.
 
 Also pending: run-026 negative recorded (base stays shipped);
 thai tiny3 verdict → WO12 contract or closure.
+
+**The register-specialist option (owner decision, everything stageable):**
+r8a is better on OOD (16.71/10.83) while r7 holds ID — mirror of the
+two-ISC-families doctrine (bibliographic vs phonological: ship both,
+never conflate). ara-diac-news-1.0 (r8a export) as a news-domain
+specialist alongside ara-diac-2.0; clients pick by domain. Dose knobs
+(R8_PSEUDO_CAP/R8_LR, train#115) make the gentle arm launchable the
+moment r8b/r8c confirm the dose-response direction.
