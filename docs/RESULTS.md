@@ -1247,3 +1247,26 @@ variant (r8d) can hold ID while keeping the OOD gain.
 **8.48** vs base's 8.31 (same protocol). 1.2B params on 50K units
 saturates; base stays shipped at 8.18. Capacity is not the Hebrew
 constraint at this data scale — data is.
+
+## WO17 verdict wave 2 — the dose-response curve mapped; r8d launched at the knee (2026-10-08)
+
+r8b (QCRI silver, 33% dose) completes the curve. All arms r7-init,
+1 epoch, WINDOW=600, dual-surface gate:
+
+| arm | silver dose | SadeedDiac-25 DER (ID) | WikiNews-2024 multiref WER/DER (OOD) |
+|---|---|---|---|
+| r7 baseline | 0 | **2.2864** | 17.38 / 11.83 |
+| r8a (arwiki self) | 2.7% | 2.9087 | 16.71 / 10.83 |
+| **r8b (QCRI)** | 33% | 4.3911 | **11.03 / 9.24** |
+
+Readings: (1) news-register silver moves OOD monotonically and STEEPLY —
+r8b takes **6.35 WER / 2.6 DER** off the OOD number, the largest
+single-lever move of the campaign; (2) the ID cost is also monotone —
+the frontier is Pareto, not a winner; (3) r8b doubles as a strong
+NEWS-DOMAIN SPECIALIST (11.03 OOD, approaching QCRI's in-domain 2.70
+where our 17.38 was measured).
+
+Actions: **r8d launched** at the presumed knee (arwiki, 5K highest-keep
+windows, lr 2e-5 — dose knobs train#115) targeting OOD ~13-15 with ID
+≤2.5. Register-specialist ship option staged (WO24): ara-diac-news-1.0
+alongside ara-diac-2.0, two-families doctrine. r8c (both) pending.
