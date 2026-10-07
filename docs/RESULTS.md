@@ -1195,3 +1195,24 @@ Dicta/Nakdimon-class G2P on CER; the remaining gap to Phonikud/ReNikud
 is exactly stress + learned spoken-norm phonology — the audio-supervised
 direction (WO09/2027). Bench: benchmarks/heb_g2p_bench.py; gold vendored
 with sha256 and attribution.
+
+## run-022 heb-plane-base — 8.18 DER at the artifact level: gate CLEARED, Hebrew -4.30pp (2026-10-07)
+
+WO04 (TODO.sota/04): run-021 recipe scaled to byt5-base, 4 epochs, K=3,
+trained on HF Jobs (a100-large, 1h03m wall). In-job nakdimon verdict
+8.31 (bf16, exact run-021 protocol). Exported int8 (dynamic QInt8,
+415.9 MB) and measured at the artifact level under the runtime protocol
+(py PlaneModel, CPU, skeleton windows, original-separator stitching,
+seq2seq_der; benchmarks/heb_plane_eval.py):
+
+| artifact (nakdimon test, 1,864 lines / 223,872 positions) | DER | size |
+|---|---|---|
+| heb-diac-plane-1.0 (byt5-small, K=2) | 12.48 | 219 MB |
+| **heb-diac-plane-2.0 (byt5-base, K=3, int8)** | **8.18** | 416 MB |
+
+Harness note: the first artifact-eval run read 55 DER — the harness was
+feeding diacritized text to the runtime (marks treated as base
+characters); fixed by stripping via nikud_planes before windowing. The
+trainer's in-job eval was always correct. Staged zip:
+heb-diac-plane-2.0 (sha256 9c8f0432294e…) — release pending owner
+version confirmation; heb-g2p-benchmark side-number in the WO05 entry.
