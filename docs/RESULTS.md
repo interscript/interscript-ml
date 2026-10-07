@@ -1111,3 +1111,36 @@ reconstruction mismatches. Same lesson as run-019's E2: every verdict
 number earns a mechanism check before it enters the ledger. nikud
 cluster order is preserved as written (the corpus has no uniform canon:
 בְּ is sheva-then-dagesh; שָׁ is dot-then-qamats).
+
+## WO01 WikiNews-2024 multiref reconciliation — harness verified against EvalDiac.java; the QCRI gap is register, not vocabulary (2026-10-07)
+
+Fidelity (WO01, TODO.sota): our multiref scorer is a line-by-line port of
+QCRI's `Evaluation/EvalDiac.java`
+(Abubakr17/advancing-arabic-diacritization). Normalization tables
+(removeDefaultDiac), cluster codes, empty-ref acceptance, shadda-only
+acceptance, and ANY-alternate word matching all match. Two deltas found
+and closed/recorded: (1) the cross-letter FATHATAN swap was missing from
+the port — added in interscript-train#107; (2) we keep our own
+letter-accounting for failed multi-ref words (once, max-scoring
+alternate) instead of Java's once-per-attempted-alternate — WER is
+identical either way, DER differs only in the third decimal for
+multi-ref-heavy sets. Input provenance: our bench copy is byte-identical
+to the official release
+(`sha256 f750fa11ad7c8b775dff7a5054e24b36bf6587881ffa02c2919cf7321be87587`).
+
+| model (protocol: WikiNews-2024 multiref, greedy, zero-skip) | WER | DER |
+|---|---|---|
+| r7 / ara-diac-2.0 (dedicated teacher) | **17.38** | 11.83 |
+| ara-diac-plane-1.0 (int8, on-device) — NEW measurement | 18.69 | **11.35** |
+| QCRI BiLSTM (EMNLP 2025, self-reported, in-domain training) | 2.70 | — |
+
+Reconciliation verdict: the 2.70-vs-17.38 gap is NOT vocabulary
+coverage — WikiNews-2024 token OOV against our training vocabulary
+(tashkeela-full + arwiki, 982,798 types) is only **1.61%**. The model
+has seen these word forms; it fails to select the news-register READING
+(contextual sense, named-entity conventions, gold-set diacritization
+style). This refines the paper's "classical hadith vs news text" domain
+framing: the gap is register/reading-selection, deeper than OOV, and
+closes only with in-register gold supervision — which is why the
+teacher-labeled news mix in r7 moved in-domain DER but not this number.
+Never quote QCRI's 2.70 against our numbers without this paragraph.
