@@ -1231,3 +1231,19 @@ an explicit per-dispatch override (`corpus_bound` workflow input →
 `SECRYST_E2E_CORPUS_BOUND`); defaults unchanged; follow-up = align the
 gem ORT build (interscript-ruby#803 documents the knob). Shipped DER
 numbers (8.18) are py-runtime measurements and unaffected.
+
+## WO17/20 verdict wave — self-silver moves OOD but pays ID; byt5-large saturates (2026-10-08)
+
+**r8a (gold 400K + r7-arwiki silver 11,330)**: dual-surface gate FAILED
+on dominance — SadeedDiac-25 Total DER **2.9087** (r7: 2.2864) while
+WikiNews-2024 multiref improved to **16.71/10.83** (r7: 17.38/11.83).
+The register direction is CONFIRMED (news silver moves OOD even at a
+2.7% mixture dose), but the trade is not free: silver pulled the model
+off the gold distribution. r8b (QCRI silver, 33% dose) and r8c (both)
+are pending — the dose/lr response curve decides whether a gentle
+variant (r8d) can hold ID while keeping the OOD gain.
+
+**run-026 (byt5-large, 3ep, K=4): NEGATIVE** — in-job nakdimon DER
+**8.48** vs base's 8.31 (same protocol). 1.2B params on 50K units
+saturates; base stays shipped at 8.18. Capacity is not the Hebrew
+constraint at this data scale — data is.
