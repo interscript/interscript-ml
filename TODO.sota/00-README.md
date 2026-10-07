@@ -56,7 +56,11 @@ hf jobs run --flavor a100-large -d \
 | 16 | 16-parking-lot.md | — | — | parked (not now) |
 | 17 | 17-arabic-register-closure.md | P1 | 11 | r8a RUNNING; r8b launching |
 | 18 | 18-parity-runs.md | P1 | 10 | pending |
-| 19 | 19-lexicon-loader.md | P2 | 13 | pending |
+| 19 | 19-lexicon-loader.md | P2 | 13 | DONE (py#33) |
+| 20 | 20-hebrew-large-arm.md | P1 | 04 | RUNNING (run-026, byt5-large/K=4) |
+| 21 | 21-arabic-plane-transfer.md | P2 | 17 | pending verdict |
+| 22 | 22-runtime-releases.md | P1 | 14 | PREPARED — owner-gated versions |
+| 23 | 23-ort-alignment.md | P1 | 18 | golden regen on ORT 1.29 RUNNING; re-dispatch after |
 
 ## Schedule
 
