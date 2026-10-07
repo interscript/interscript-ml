@@ -60,7 +60,7 @@ hf jobs run --flavor a100-large -d \
 | 20 | 20-hebrew-large-arm.md | P1 | 04 | RUNNING (run-026, byt5-large/K=4) |
 | 21 | 21-arabic-plane-transfer.md | P2 | 17 | pending verdict |
 | 22 | 22-runtime-releases.md | P1 | 14 | PREPARED — owner-gated versions |
-| 23 | 23-ort-alignment.md | P1 | 18 | golden regen on ORT 1.29 RUNNING; re-dispatch after |
+| 23 | 23-ort-alignment.md | P1 | 18 | CLOSED — characterization complete; 3-leg parity GREEN at documented bound |
 
 ## Schedule
 
