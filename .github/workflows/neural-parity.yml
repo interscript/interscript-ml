@@ -12,6 +12,10 @@ on:
         description: "model id (plane family)"
         required: true
         default: ara-diac-plane-1.0
+      corpus_bound:
+        description: "ruby corpus bound override (K=3 base artifacts skew; see RESULTS.md WO18)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -35,6 +39,7 @@ jobs:
           SECRYST_E2E_ZIP=/tmp/model.zip SECRYST_GOLDEN=/tmp/golden/set.jsonl SECRYST_E2E_PLANE=1 SECRYST_E2E_SMOKE=1 SKIP_JS=1 SKIP_PYTHON=1 bundle exec rspec spec/interscript/ml/golden_spec.rb
         env:
           MODEL: ${{ inputs.model }}
+          SECRYST_E2E_CORPUS_BOUND: ${{ inputs.corpus_bound }}
 
   python:
     runs-on: ubuntu-latest
