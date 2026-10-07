@@ -1,6 +1,6 @@
 # 12 — Plane family expansion (Hebrew nikud, Urdu)
 
-**Status: SPECS READY, NOT STARTED** — Urdu arm PAUSED (new corpus arriving per owner 2026-10-06).
+**Status: HEBREW ARM LAUNCHED** (2026-10-07) — nikud_planes.py TDD 7/7 (order-preserving clusters: corpus writes בְּ sheva-then-dagesh AND שָׁ dot-then-qamats - no uniform canon; render-exactness beats normalization); train_hebrew_plane.py = the run-018 recipe on the v4 combined corpus (50,303 units, 135 classes, 6,036 steps, A100 detached); gate = nakdimon greedy DER vs heb-diac-1.1's 16.44 on the exact seq2seq_der protocol; per-marker eval progress (E2 lesson applied). Urdu arm PAUSED (new corpus coming).
 language-agnostic; corpora already sit in the data layer (hewiki,
 rababa-hebrew-distilled, urdu corpora).
 
