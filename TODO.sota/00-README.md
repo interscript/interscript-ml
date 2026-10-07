@@ -38,15 +38,15 @@ hf jobs run --flavor a100-large -d \
 
 | WO | File | Priority | Depends | Status |
 |----|------|----------|---------|--------|
-| 01 | 01-wikinews-multiref-reconciliation.md | P1 | — | pending |
-| 02 | 02-user-diacritics-preservation.md | P1 | — | pending |
-| 03 | 03-thai-hybrid-latency.md | P1 | — | pending |
-| 04 | 04-hebrew-plane-scaleup.md | P2 | #44 | pending |
-| 05 | 05-external-benchmarks.md | P2 | 01, 07 | pending |
-| 06 | 06-arabic-r8-noisy-student.md | P2 | #44 | pending |
-| 07 | 07-nikud-ipa-rule-layer.md | P3 | — | pending |
-| 08 | 08-thai-small-tier.md | P3 | #44 | pending |
-| 09 | 09-hebrew-audio-pseudolabel-probe.md | P3 (parked probe) | — | pending |
+| 01 | 01-wikinews-multiref-reconciliation.md | P1 | — | DONE (RESULTS #257) |
+| 02 | 02-user-diacritics-preservation.md | P1 | — | DONE (py#28, ruby#801) |
+| 03 | 03-thai-hybrid-latency.md | P1 | — | DONE (py#31, RESULTS #258) |
+| 04 | 04-hebrew-plane-scaleup.md | P2 | #44 | gate CLEARED (8.31 in-job); artifact eval + owner-gated release remain |
+| 05 | 05-external-benchmarks.md | P2 | 01, 07 | DONE (RESULTS #259; MILIM awaiting release) |
+| 06 | 06-arabic-r8-noisy-student.md | P2 | #44 | jobs LAUNCHED (label + train, HF queue) |
+| 07 | 07-nikud-ipa-rule-layer.md | P3 | — | DONE (py#29, py#30) |
+| 08 | 08-thai-small-tier.md | P3 | #44 | job LAUNCHED (run-025, l4x4) |
+| 09 | 09-hebrew-audio-pseudolabel-probe.md | P3 (parked probe) | — | DONE as parked probe (script only) |
 
 ## Schedule
 
