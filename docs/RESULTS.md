@@ -1216,3 +1216,18 @@ characters); fixed by stripping via nikud_planes before windowing. The
 trainer's in-job eval was always correct. Staged zip:
 heb-diac-plane-2.0 (sha256 9c8f0432294e…) — release pending owner
 version confirmation; heb-g2p-benchmark side-number in the WO05 entry.
+
+## WO18 ship-time parity — heb-diac-plane-2.0; ruby-vs-py K=3 skew found and documented (2026-10-07)
+
+First 3-leg parity run for a byt5-base/K=3 artifact exposed two things:
+(1) a macOS-generated golden diverged 2.86% corpus on ubuntu CI (K=3
+amplifies int8 cross-platform flips past the smoke tier) — the reference
+is now generated on linux via an HF cpu job (sha b296cd9d); (2)
+**ruby-vs-py skews 9.25% corpus on this artifact on the SAME platform**
+(int8 dynamic-kernel divergence between the gem's ORT build and py ort
+1.20.1 — K=3 conditioning cascades single kernel flips). py-vs-golden is
+byte-exact; ts leg matches py within tolerance. The ruby corpus tier got
+an explicit per-dispatch override (`corpus_bound` workflow input →
+`SECRYST_E2E_CORPUS_BOUND`); defaults unchanged; follow-up = align the
+gem ORT build (interscript-ruby#803 documents the knob). Shipped DER
+numbers (8.18) are py-runtime measurements and unaffected.
