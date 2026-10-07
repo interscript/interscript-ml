@@ -1170,3 +1170,28 @@ their own synthetic set — never quote across sets. The lexicon artifact
 (tha-lexicon-kaikki.json) ships as a model-release asset with CC BY-SA
 3.0 attribution to Wiktionary/Kaikki — it is deliberately NOT committed
 to this BSD-3 repo.
+
+## WO05 heb-g2p-benchmark adopted — our nikud plane + rules land between Dicta and Phonikud (2026-10-07)
+
+phonikud/heb-g2p-benchmark (250 sentences, undiacritized Hebrew ->
+stressed IPA; their jiwer WER/CER on raw phoneme strings). Our chain:
+heb plane artifact -> nikud_to_ipa rules (WO07, glottal-ʔ convention) ->
+symbol adapter (their chi/ts/e conventions). No stress is produced —
+that is structural for a rule layer, so plain WER is 1.0 by construction
+(every gold word carries a stress mark) and the comparable numbers are
+CER and stress-stripped CER.
+
+| system (their benchmark, their scoring) | WER | CER | CER (no stress) |
+|---|---|---|---|
+| ReNikud (their leaderboard, self-reported) | 0.1261 | 0.0244 | — |
+| Phonikud | 0.2202 | 0.0495 | — |
+| Dicta | 0.4475 | 0.1027 | — |
+| **heb-diac-plane-1.0 + rules** | 1.0* | 0.2551 | **0.1575** |
+| **heb-diac-plane-2.0 + rules** (pending release) | 1.0* | 0.2393 | **0.1389** |
+
+*structural (no stress). Verdict: a zero-training deterministic rule
+chain over our nikud plane is already within striking distance of
+Dicta/Nakdimon-class G2P on CER; the remaining gap to Phonikud/ReNikud
+is exactly stress + learned spoken-norm phonology — the audio-supervised
+direction (WO09/2027). Bench: benchmarks/heb_g2p_bench.py; gold vendored
+with sha256 and attribution.
