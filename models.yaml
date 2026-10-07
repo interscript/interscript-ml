@@ -421,3 +421,15 @@ models:
     metrics:
       - {name: der_total_greedy, value: 12.48, source: interscript/interscript-models docs/RESULTS.md#run-021-heb-plane--1248-nakdimon-der-the-plane-family-generalizes-seq2seq-student-beaten-at-396pp-2026-10-07}
     license: BSD-3-Clause
+  heb-diac-plane-2.0:
+    task: diacritization
+    scripts: [Hebr, Hebr]
+    kind: plane
+    precision: int8
+    filename: heb-diac-plane-2.0.zip
+    url: https://github.com/interscript/interscript-models/releases/download/heb-diac-plane-2.0/heb-diac-plane-2.0.zip
+    sha256: 9c8f0432294ebae6abc847ddb79572c1ab979f4851f03d44a9bb6495ba767a9e
+    size: 415901226
+    metrics:
+      - {name: der_total_greedy, value: 8.18, source: interscript/interscript-models docs/RESULTS.md#run-022-heb-plane-base--818-der-at-the-artifact-level-gate-cleared-hebrew--430pp-2026-10-07}
+    license: BSD-3-Clause
