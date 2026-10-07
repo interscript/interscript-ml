@@ -47,6 +47,13 @@ hf jobs run --flavor a100-large -d \
 | 07 | 07-nikud-ipa-rule-layer.md | P3 | — | DONE (py#29, py#30) |
 | 08 | 08-thai-small-tier.md | P3 | #44 | job LAUNCHED (run-025, l4x4) |
 | 09 | 09-hebrew-audio-pseudolabel-probe.md | P3 (parked probe) | — | DONE as parked probe (script only) |
+| 10 | 10-heb-plane-2-release.md | P1 | 04 | pending |
+| 11 | 11-arabic-r8-chain.md | P1 | — | jobs RUNNING (a100) |
+| 12 | 12-thai-tiny-contract.md | P2 | — | job RUNNING (a100) |
+| 13 | 13-thai-lexicon-release.md | P2 | 03 | pending |
+| 14 | 14-ts-plane-port.md | P2 | — | pending |
+| 15 | 15-api-edge.md | P2 | 14 | pending |
+| 16 | 16-parking-lot.md | — | — | parked (not now) |
 
 ## Schedule
 
