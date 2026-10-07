@@ -409,3 +409,15 @@ models:
       - {name: der_morph_greedy, value: 1.6717, source: interscript/interscript-models docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
       - {name: wer_total_greedy, value: 8.6083, source: interscript/interscript-models docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
     license: BSD-3-Clause
+  heb-diac-plane-1.0:
+    task: diacritization
+    scripts: [Hebr, Hebr]
+    kind: plane
+    precision: int8
+    filename: heb-diac-plane-1.0.zip
+    url: https://github.com/interscript/interscript-models/releases/download/heb-diac-plane-1.0/heb-diac-plane-1.0.zip
+    sha256: dd9ae811c60c38f28ead57bdefa022b281867401ee13e38563b990eaf7f81f95
+    size: 219322007
+    metrics:
+      - {name: der_total_greedy, value: 12.48, source: interscript/interscript-models docs/RESULTS.md#run-021-heb-plane--1248-nakdimon-der-the-plane-family-generalizes-seq2seq-student-beaten-at-396pp-2026-10-07}
+    license: BSD-3-Clause
