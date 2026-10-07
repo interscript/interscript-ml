@@ -57,10 +57,11 @@ hf jobs run --flavor a100-large -d \
 | 17 | 17-arabic-register-closure.md | P1 | 11 | r8a RUNNING; r8b launching |
 | 18 | 18-parity-runs.md | P1 | 10 | pending |
 | 19 | 19-lexicon-loader.md | P2 | 13 | DONE (py#33) |
-| 20 | 20-hebrew-large-arm.md | P1 | 04 | RUNNING (run-026, byt5-large/K=4) |
-| 21 | 21-arabic-plane-transfer.md | P2 | 17 | pending verdict |
+| 20 | 20-hebrew-large-arm.md | P1 | 04 | NEGATIVE — 8.48 vs base 8.18; base stays shipped |
+| 21 | 21-arabic-plane-transfer.md | P2 | 17 | pending r8b/r8c verdicts |
 | 22 | 22-runtime-releases.md | P1 | 14 | PREPARED — owner-gated versions |
 | 23 | 23-ort-alignment.md | P1 | 18 | CLOSED — characterization complete; 3-leg parity GREEN at documented bound |
+| 24 | 24-verdict-wave.md | P1 | 17 | r8a + run-026 verdicts in; r8b/r8c/thai3 pending |
 
 ## Schedule
 
