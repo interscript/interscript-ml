@@ -49,7 +49,7 @@ hf jobs run --flavor a100-large -d \
 | 09 | 09-hebrew-audio-pseudolabel-probe.md | P3 (parked probe) | — | DONE as parked probe (script only) |
 | 10 | 10-heb-plane-2-release.md | P1 | 04 | DONE (release, index-v9, 3 pin bumps, card, golden, HF mirror #28) |
 | 11 | 11-arabic-r8-chain.md | P1 | — | jobs RUNNING (a100) |
-| 12 | 12-thai-tiny-contract.md | P2 | — | job RUNNING (a100) |
+| 12 | 12-thai-tiny-contract.md | P2 | — | NEGATIVE (caveated) — PER 2038%; sub-10MB closed |
 | 13 | 13-thai-lexicon-release.md | P2 | 03 | DONE (tha-lexicon-kaikki-1.0 + sha, CC BY-SA) |
 | 14 | 14-ts-plane-port.md | P2 | — | DONE (ts#99/#100/#101, CI leg models#265) |
 | 15 | 15-api-edge.md | P2 | 14 | DONE (api#29: edge-first /v1/infer, kind in index) |

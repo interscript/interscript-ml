@@ -1270,3 +1270,18 @@ Actions: **r8d launched** at the presumed knee (arwiki, 5K highest-keep
 windows, lr 2e-5 — dose knobs train#115) targeting OOD ~13-15 with ID
 ≤2.5. Register-specialist ship option staged (WO24): ara-diac-news-1.0
 alongside ara-diac-2.0, two-families doctrine. r8c (both) pending.
+
+## WO12 Thai tiny tier — NEGATIVE (caveated): the 12M student misses by an order of magnitude (2026-10-08)
+
+run-025 (three attempts: two decode harness bugs — device mix, vocab
+scope — fixed train#113/#114; third attempt trained cleanly to loss
+~0.30 then scored **PER 2038%** greedy on the kaikki gate, followed by
+a third device bug in the export step). Verdict: the gate (≤3.5 PER,
+<10MB) FAILED as measured. Two honest readings, both recorded:
+(a) the in-job greedy decode was never unit-tested and shows runaway
+repetition — a decode rewrite could change the number; (b) even a
+perfect decode cannot rescue a 12M-param student to 2.85%-class Thai
+phonotactics from ~200K teacher pairs. Sub-10MB tier CLOSED unless the
+owner wants a tested-decode rerun. The shipped Thai tier remains
+tha-g2p-small (219MB, 2.92% model-only) + the hybrid (0.1478 PER
+@0.73ms) — the client story is already won at the dictionary tier.
