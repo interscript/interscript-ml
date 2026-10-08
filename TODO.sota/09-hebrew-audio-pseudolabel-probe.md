@@ -1,7 +1,13 @@
 # WO09 — Hebrew audio pseudolabel POC (PARKED probe)
 
-**Priority:** P3 · **Status: PARKED — probe only.** No full campaign,
-no GPU-scale labeling, without an explicit owner decision.
+**Priority:** P3 · **Status: STAGE 1 RAN (2026-10-08) — stage 2
+(alignment) is the remaining gate.** Measured: FLEURS he_il sample
+(20 clips, 161s) labeled by the universal phoneme CTC at **RTF 0.113
+on l4x1 = ~$0.28 per audio-hour**. A 1,000-2,000-hour ReNikud-style
+labeling campaign costs $300-600 of ASR compute — trivial with credits.
+The open gate is stage 2: forced-alignment viability (ASR phoneme
+stream vs espeak-style reference of our plane-restored text). No full
+campaign without an owner decision — but the cost excuse is gone.
 
 ## Why parked
 
