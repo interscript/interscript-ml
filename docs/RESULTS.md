@@ -1266,10 +1266,22 @@ the frontier is Pareto, not a winner; (3) r8b doubles as a strong
 NEWS-DOMAIN SPECIALIST (11.03 OOD, approaching QCRI's in-domain 2.70
 where our 17.38 was measured).
 
-Actions: **r8d launched** at the presumed knee (arwiki, 5K highest-keep
-windows, lr 2e-5 — dose knobs train#115) targeting OOD ~13-15 with ID
-≤2.5. Register-specialist ship option staged (WO24): ara-diac-news-1.0
-alongside ara-diac-2.0, two-families doctrine. r8c (both) pending.
+**r8c (both, +arwiki blend): ID 4.2158 / OOD 11.73/9.40** — tracks
+r8b (the 200K QCRI units dominate the 11K arwiki windows; both surfaces
+within ~0.2 of r8b). The blend adds nothing material.
+
+| arm | silver | ID DER | OOD WER/DER |
+|---|---|---|---|
+| r7 | none | 2.2864 | 17.38 / 11.83 |
+| r8a | 2.7% arwiki | 2.9087 | 16.71 / 10.83 |
+| r8b | 33% QCRI | 4.3911 | **11.03 / 9.24** |
+| r8c | 33% QCRI + arwiki | 4.2158 | 11.73 / 9.40 |
+| r8d | 1.2% arwiki, lr 2e-5 | RUNNING | RUNNING |
+
+Actions: **r8d at the knee** (arwiki, 5K windows, lr 2e-5 — dose knobs
+train#115) targeting OOD ~13-15 with ID ≤2.5. Register-specialist ship
+option staged (WO24): ara-diac-news-1.0 (r8b) alongside ara-diac-2.0,
+two-families doctrine.
 
 ## WO12 Thai tiny tier — NEGATIVE (caveated): the 12M student misses by an order of magnitude (2026-10-08)
 
