@@ -63,6 +63,8 @@ hf jobs run --flavor a100-large -d \
 | 23 | 23-ort-alignment.md | P1 | 18 | CLOSED — characterization complete; 3-leg parity GREEN at documented bound |
 | 24 | 24-verdict-wave.md | P1 | 17 | r8a/b/c + run-026 + thai CLOSED; r8d (knee) RUNNING |
 | 25 | 25-ar-news-specialist.md | P1 | 17 | RUNNING (run-029, register-pure full scale) |
+| 27 | 27-ar-large-id-arm.md | P1 | — | RUNNING (run-031, byt5-large dedicated, r5 corpus) |
+| 28 | 28-oracle-complementarity.md | P2 | — | CLOSED — ceiling 96.78 real; naive voting catastrophic |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | stage 1 RUNNING (labeling); stage 2 staged |
 
 ## Schedule
