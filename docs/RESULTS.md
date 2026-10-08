@@ -1345,3 +1345,27 @@ specialist doctrine now holds in BOTH model families and BOTH spaces:
 register silver buys OOD and costs ID, monotonically, everywhere
 measured. Stageable candidate: ara-diac-plane-news-1.0 (4.40 ID still
 beats the old small-tier rung 4.57; OOD −3.14) — owner decision.
+
+## SOTA verdict wave 4 — OOD crown 10.13; capacity closed on Arabic too; audio alignment GO (2026-10-09)
+
+**run-029 (news specialist, register-pure, 900K QCRI silver units,
+2ep)**: WikiNews-2024 multiref **10.13 / 8.98** (r8b: 11.03/9.24; r7
+baseline: 17.38/11.83 — a **7.25-WER move in 48h**), SadeedDiac-25
+Total DER 5.5008 (specialist doctrine: ID reported as-is). Export
+staged as ara-diac-news-1.0 (IMF v1, int8).
+
+**run-031 (byt5-large dedicated, r5 corpus)**: Sadeed **2.5765** /
+morph 1.5279 vs r7's 2.2864/1.5317 — PARITY, not a win. Capacity is
+now closed on BOTH languages: data/curriculum is the binding
+constraint everywhere measured (Hebrew large: 8.48; Arabic large:
+2.58).
+
+**WO09 stage 2: GO.** Median phoneme PER **0.395** vs the 0.45 gate
+(after fixing two probe bugs: FLEURS matching needs the
+extension-included filename column; scoring must compare per-PHONE
+tokens, not per-word). ASR phoneme supervision aligns with our
+plane+rules reference chain — the ReNikud-style campaign is
+unblocked end-to-end: $0.28/audio-hour labeling + viable alignment.
+
+**WO26 stage 2 RUNNING** (run-030: gold v4 50K + 40K hewiki
+plane-2.0-labeled windows, byt5-base, 3ep; gate < 8.18).
