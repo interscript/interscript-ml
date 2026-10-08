@@ -1297,3 +1297,24 @@ phonotactics from ~200K teacher pairs. Sub-10MB tier CLOSED unless the
 owner wants a tested-decode rerun. The shipped Thai tier remains
 tha-g2p-small (219MB, 2.92% model-only) + the hybrid (0.1478 PER
 @0.73ms) — the client story is already won at the dictionary tier.
+
+## WO17 verdict wave 3 — the knee FAILED: generalist blending is dead, specialists confirmed (2026-10-08)
+
+r8d (arwiki 1.2% dose, lr 2e-5 — the gentle-knee hypothesis): ID
+**3.1913** (still regressed vs 2.2864) AND OOD **17.35/11.23** (vs
+17.38/11.83 — nothing moved). With the full five-point curve:
+
+| dose | ID DER | OOD WER/DER |
+|---|---|---|
+| 0 (r7) | 2.2864 | 17.38 / 11.83 |
+| 1.2% (r8d, lr 2e-5) | 3.1913 | 17.35 / 11.23 |
+| 2.7% (r8a) | 2.9087 | 16.71 / 10.83 |
+| 33% (r8b, QCRI) | 4.3911 | **11.03 / 9.24** |
+| 33%+blend (r8c) | 4.2158 | 11.73 / 9.40 |
+
+The response is STEP-LIKE, not smooth: sub-3% doses cost ID without
+buying OOD; only the full-dose in-register training moves OOD
+materially. **Generalist register blending is closed** — the doctrine
+is register SPECIALISTS: ara-diac-2.0 (ID crown) + ara-diac-news-1.0
+candidate (run-029, register-pure full-scale, RUNNING) + plane
+transfer (run-028, RUNNING). Hebrew noisy student (WO26) also running.
