@@ -1334,3 +1334,14 @@ different conventions is incoherent under DER. Harvesting the ceiling
 needs a learned convention-aware router — staged as a candidate WO.
 Generalist mixing is now closed in BOTH training space (WO17) and
 output space (WO28); the specialist doctrine is total.
+
+## WO21 verdict — plane transfer moves OOD −3.14 WER, ID cost confirms the doctrine family-wide (2026-10-08)
+
+run-028 (run-018 recipe + QCRI silver 60K units ≈ 10%): SadeedDiac-25
+Total DER **4.3983** (plane-large 2.7397 / plane-small 3.5905) while
+WikiNews-2024 multiref improved to **15.55 / 10.46** (plane-large
+baseline: 18.69 / 11.35). Dominance gate FAILED on ID — and the
+specialist doctrine now holds in BOTH model families and BOTH spaces:
+register silver buys OOD and costs ID, monotonically, everywhere
+measured. Stageable candidate: ara-diac-plane-news-1.0 (4.40 ID still
+beats the old small-tier rung 4.57; OOD −3.14) — owner decision.
