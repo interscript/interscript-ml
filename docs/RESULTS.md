@@ -1318,3 +1318,19 @@ materially. **Generalist register blending is closed** — the doctrine
 is register SPECIALISTS: ara-diac-2.0 (ID crown) + ara-diac-news-1.0
 candidate (run-029, register-pure full-scale, RUNNING) + plane
 transfer (run-028, RUNNING). Hebrew noisy student (WO26) also running.
+
+## WO27/28 — the large dedicated arm launched; cross-system oracle measured, naive voting closed (2026-10-08)
+
+**run-031 (byt5-large dedicated, r7 lineage corpus, no silver)** — the
+heb-large negative does not transfer: Arabic's 400K+ unit corpus is a
+different regime. Gate: ID < 2.2864.
+
+**WO28**: complementarity across our three families measured on word-
+exact (52,906 words): r7 93.22 / r8b 93.36 / plane-large 91.81 solo;
+**oracle any-of-3 = 96.78%**. The ceiling is real — but naive 2-of-3
+word voting is CATASTROPHIC (DER 28.77; 74.6% under-diacritized): the
+families' conventions conflict at sentence level, so mixing words from
+different conventions is incoherent under DER. Harvesting the ceiling
+needs a learned convention-aware router — staged as a candidate WO.
+Generalist mixing is now closed in BOTH training space (WO17) and
+output space (WO28); the specialist doctrine is total.
