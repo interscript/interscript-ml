@@ -1419,3 +1419,20 @@ Fixes en route (train#128-#131): haraqat split_planes mark-only crash
 (QCRI silver has pure-combining-mark windows — latent library bug, now
 tested); byt5-large OOM → PLANE_CHECKPOINT gradient checkpointing;
 LSTM OOM → BIL_BS; padded-label loss smearing → ignore_index=-100.
+
+## WO32 verdict 1 — the literal BiLSTM: architecture-class hypothesis REFUTED (2026-10-10)
+
+run-034 (char-embedding → 3×BiLSTM-512 → per-position haraqat head,
+from scratch, news-pure 900K silver; fp32 after the bf16 NaN collapse):
+WikiNews-2024 multiref **14.30 / 10.10**, SadeedDiac-25 **5.27**.
+
+Reading: reproducing their architecture CLASS on their corpus does NOT
+reproduce their 2.70 — our BiLSTM is 5× their number and loses to our
+own seq2seq (10.03/8.95). Their edge is not "BiLSTM" but the
+components we did not replicate: the WORD-identity channel (Fadel's
+design: word embeddings + char-CNN — lexical memorization is the
+strongest diacritization feature), labels self-consistent with their
+evaluation conventions (the corpus IS their model's output), and
+tuning maturity. Implication: lexical knowledge is the battleground —
+and byt5 byte pretraining (run-033, RUNNING) is our version of that
+channel. The char-only BiLSTM closes as an anchor, not a contender.
