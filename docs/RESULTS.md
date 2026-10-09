@@ -1436,3 +1436,24 @@ evaluation conventions (the corpus IS their model's output), and
 tuning maturity. Implication: lexical knowledge is the battleground —
 and byt5 byte pretraining (run-033, RUNNING) is our version of that
 channel. The char-only BiLSTM closes as an anchor, not a contender.
+
+## WO26 rerun + WO33 launch — Hebrew noisy student re-confirmed negative; the word channel decomposed (2026-10-10)
+
+run-030-heb-noisy (HF rerun of the noisy student: 50K gold + 40K
+hewiki pseudo, K=3, 16,350 steps): **DER 8.72** vs crown 8.18 — gate
+failed, WO26 negative re-confirmed on the new substrate. Hebrew text
+levers remain exhausted (capacity 8.48, noisy 8.72, convergence 10.03);
+the remaining path is audio (WO09/31).
+
+WO33 — lexical-channel decomposition (local, free): pure
+most-frequent-reading lookup over the same corpus scores **25.15 WER /
+13.18 DER** with **18.10% OOV** (482,609-type table). So: lexical
+memorization ≈ 75% of words; the rest is context disambiguation among
+each word's few observed readings — exactly the word-identity channel
+(WO32's battleground). run-035 (RUNNING): variant-disambiguation
+tagger — word-emb 128 + char-CNN (k=2..5) → BiLSTM 2×512 → head over
+{variant 0..5, OOV}, 62M params, fp32, same corpus as run-033/034.
+Gates: <14.30 = word channel real; <10.13 = new news-successor
+candidate; else the residue is convention alignment, closed under the
+register-specialist doctrine. Complement probe (oracle-min over
+run-029/035) staged post-verdict.
