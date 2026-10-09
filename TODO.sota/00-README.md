@@ -65,6 +65,7 @@ hf jobs run --flavor a100-large -d \
 | 25 | 25-ar-news-specialist.md | P1 | 17 | VERDICT: OOD 10.13/8.98 (crown), ID 5.50; export staged |
 | 27 | 27-ar-large-id-arm.md | P1 | — | NEGATIVE — 2.5765 parity with r7; capacity closed on AR too |
 | 28 | 28-oracle-complementarity.md | P2 | — | CLOSED — ceiling 96.78 real; naive voting catastrophic |
+| 30 | 30-heb-learned-ipa-v0.md | P1 | 09 | RUNNING (run-032, FLEURS audio-supervised student) |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | stage 1 RUNNING (labeling); stage 2 staged |
 
 ## Schedule
