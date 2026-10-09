@@ -409,6 +409,20 @@ models:
       - {name: der_morph_greedy, value: 1.6717, source: interscript/interscript-models docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
       - {name: wer_total_greedy, value: 8.6083, source: interscript/interscript-models docs/RESULTS.md#run-019-epoch-2--27397-second-epoch-closes-a-third-of-the-gap-sota-gate-still-open-2026-10-05}
     license: BSD-3-Clause
+  ara-diac-news-1.0:
+    task: diacritization
+    scripts: [Arab, Arab]
+    kind: imf-v1
+    precision: int8
+    filename: ara-diac-news-1.0.zip
+    url: https://github.com/interscript/interscript-models/releases/download/ara-diac-news-1.0/ara-diac-news-1.0.zip
+    sha256: e5a52b1530dfa6d6c7ef8970443206ce33af865d0337a58d145945adab33484e
+    size: 399018923
+    metrics:
+      - {name: wer_wikinews2024_multiref, value: 10.1262, source: interscript/interscript-models docs/RESULTS.md#sota-verdict-wave-4--ood-crown-1013-capacity-closed-on-arabic-too-audio-alignment-go-2026-10-09}
+      - {name: der_wikinews2024_multiref, value: 8.9818, source: interscript/interscript-models docs/RESULTS.md#sota-verdict-wave-4--ood-crown-1013-capacity-closed-on-arabic-too-audio-alignment-go-2026-10-09}
+      - {name: der_total_greedy, value: 5.5008, source: interscript/interscript-models docs/RESULTS.md#sota-verdict-wave-4--ood-crown-1013-capacity-closed-on-arabic-too-audio-alignment-go-2026-10-09}
+    license: BSD-3-Clause
   heb-diac-plane-1.0:
     task: diacritization
     scripts: [Hebr, Hebr]
