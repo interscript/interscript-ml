@@ -1369,3 +1369,14 @@ unblocked end-to-end: $0.28/audio-hour labeling + viable alignment.
 
 **WO26 stage 2 RUNNING** (run-030: gold v4 50K + 40K hewiki
 plane-2.0-labeled windows, byt5-base, 3ep; gate < 8.18).
+
+## WO26 verdict — Hebrew noisy student NEGATIVE: 8.72 vs crown 8.18 (2026-10-09)
+
+run-030 (gold v4 50K + 40K hewiki plane-2.0-labeled windows, byt5-base,
+3ep, K=3): in-job nakdimon DER **8.72** — worse than the shipped
+heb-diac-plane-2.0 (8.18). The self-labeled wiki text reinforces the
+teacher's own errors rather than adding signal. Hebrew state after
+three closed levers: crown **8.18** (data scale ✗ at 50K→90K, capacity
+✗ byt5-large 8.48, noisy-student ✗ 8.72). The remaining Hebrew lever
+is the AUDIO campaign — WO30 v0 student RUNNING now on the GO-grade
+supervision.
