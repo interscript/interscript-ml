@@ -1380,3 +1380,20 @@ three closed levers: crown **8.18** (data scale ✗ at 50K→90K, capacity
 ✗ byt5-large 8.48, noisy-student ✗ 8.72). The remaining Hebrew lever
 is the AUDIO campaign — WO30 v0 student RUNNING now on the GO-grade
 supervision.
+
+## WO30 verdict — Hebrew learned-IPA v0 FAILED: CER 1.18; the weak link is the ASR teacher (2026-10-09)
+
+run-032 v0 (FLEURS 4,359 audio-labeled pairs → byt5-small): training
+converged on its labels (loss 0.11) but scores **CER 1.18** on the
+phonikud board (gate <0.2393). Diagnosis, recorded before any scale
+spend: (1) format divergence — the student faithfully reproduces the
+ASR's space-separated phone style vs the board's compact stressed
+strings; (2) the deeper cause — the universal phoneme CTC
+(wav2vec2-espeak-cv-ft) is a weak Hebrew teacher (stage-2 PER 0.395
+was alignment-viability, not label quality; its FLEURS outputs showed
+non-Hebrew phonemizations). ReNikud's pipeline builds a Hebrew-capable
+phoneme recognizer FIRST. The $500 ivrit.ai scale decision is therefore
+NOT triggered — scaling a weak teacher wastes it. The audio path
+remains open but requires: fine-tune the phoneme CTC on Hebrew audio
+(FLEURS he ~10h is exactly that training set), then relabel, then
+v1. Spec'd as WO31; needs owner green-light for the next compute block.
