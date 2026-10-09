@@ -67,6 +67,7 @@ hf jobs run --flavor a100-large -d \
 | 28 | 28-oracle-complementarity.md | P2 | — | CLOSED — ceiling 96.78 real; naive voting catastrophic |
 | 30 | 30-heb-learned-ipa-v0.md | P1 | 09 | NEGATIVE — CER 1.18; ASR teacher is the bottleneck |
 | 31 | 31-heb-phoneme-asr-v1.md | P1 | 30 | SPEC'D — tune the phoneme CTC on Hebrew first (owner block) |
+| 32 | 32-matched-architecture-arms.md | P1 | 17 | RUNNING — run-033 plane-large + run-034 BiLSTM on their corpus |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
 
 ## Schedule
