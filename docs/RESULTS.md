@@ -1397,3 +1397,25 @@ NOT triggered — scaling a weak teacher wastes it. The audio path
 remains open but requires: fine-tune the phoneme CTC on Hebrew audio
 (FLEURS he ~10h is exactly that training set), then relabel, then
 v1. Spec'd as WO31; needs owner green-light for the next compute block.
+
+## The "same corpus must win" program — convergence CLOSED, both matched arms in flight (2026-10-09)
+
+**Contamination audit: CLEAN** — 0/356 WikiNews-2024 test sentences
+share even one 8-gram with the QCRI 5M-word corpus; their 2.70 is
+honest generalization, ours is too. **run-029c (+2 epochs, seq2seq
+specialist): 10.03/8.95** (from 10.13) — the seq2seq line has
+CONVERGED; doubling training bought 0.10 WER. The remaining 7.3-point
+gap is therefore ARCHITECTURE (tagging vs generation) + teacher quality,
+and two arms now attack it directly on their exact recipe:
+
+- **run-033** (byt5-large PLANE = our tagging family + full 900K-unit
+  corpus, news-pure, 3ep, K=3, gradient checkpointing) — their class
+  with a far stronger backbone.
+- **run-034** (literal BiLSTM tagger, Fadel/QCRI-style: char-emb →
+  3×BiLSTM-512 → per-position haraqat head, from scratch, same corpus)
+  — their architecture, rebuilt and run at our data scale.
+
+Fixes en route (train#128-#131): haraqat split_planes mark-only crash
+(QCRI silver has pure-combining-mark windows — latent library bug, now
+tested); byt5-large OOM → PLANE_CHECKPOINT gradient checkpointing;
+LSTM OOM → BIL_BS; padded-label loss smearing → ignore_index=-100.
