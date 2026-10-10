@@ -1683,3 +1683,13 @@ mismatch — their CERs were also inflated). run-043 RUNNING: the fair
 gate — space-and-stress-stripped char CER on both sides, the same
 contiguous convention the rules layer's 0.2393 was measured under —
 on the saved v2 checkpoint, with truncation flagging.
+
+run-043 normalized gate: **CER 0.5463** — honest miss (rules 0.2393),
+but the error anatomy is clean: repetition loops (byt5-small on 3.2K
+noisy utterances) + vowel drift, labels carrying the teacher's 0.319
+PER. WO31 iteration 3 LAUNCHED (run-044): pseudo-label quality gate
+(audio-decode must agree with espeak(pointed text) within 0.35 nCER —
+the WO06 filtering pattern; caught+fixed a phonemize-mode bug in the
+reference path pre-launch) + no-repeat generation + normalized CER in
+the in-job verdict. Prediction: filtering trades data volume for
+label precision; the loop failures should collapse.
