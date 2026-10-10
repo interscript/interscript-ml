@@ -1512,3 +1512,16 @@ DOMINATES on both surfaces (10.13/8.98; ID 5.50). The plane family's
 large route closes; the contested axis is the word channel class
 (run-036-r2 hybrid + run-037 fastText). run-029 preds-regen launched
 for the oracle probe.
+
+## run-036 verdict — word channel VALIDATED (+0.77 WER), density hypothesis sharpens (2026-10-10)
+
+run-036-r2 (char-emb ⊕ per-char word-emb → 3×BiLSTM → plane head,
+36.2M params, 20,460 steps): WikiNews multiref **13.53 / 9.92**,
+Sadeed DER 5.90. Gate 1 PASS (<14.30): the word channel is real at
+char level — 0.77 WER over the char-only anchor (14.30). Gate 2
+FAIL (>10.13): scratch 128-d embeddings over 156K types carry too
+little lexical density. Hierarchy now: specialist 10.13 > plane-large
+10.78 > hybrid 13.53 > char-only 14.30 > word-only 18.07. Data note:
+silver pool = 202,680 units — the 900K cap never binds; corpus scale
+is exhausted at what we hold. run-037 (fastText cc.ar.300, billion-word
+lexical density) LAUNCHED — the decisive density arm.
