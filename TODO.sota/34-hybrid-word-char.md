@@ -31,12 +31,10 @@ Gates:
   silver units. Doctrine stands.
 
 Staged follow-ups (armed post-verdict):
-1. Variant-constrained decode — IMPLEMENTED + uploaded
-   (variant_constrained_decode.py): loads run-036's best, scores every
-   observed variant's plane-combo sequence under per-position
-   log-softmax vs the free-greedy candidate, emits argmax; OOV and
-   non-Arabic tokens keep free decode. Runs on slot-free after
-   run-036-r2 lands.
+1. Variant-constrained decode — DONE, closed (2026-10-10): ID-only
+   tweak (Sadeed 5.90→5.75), multiref bit-identical to free decode
+   (13.5268/9.9211). Not worth integrating; the OOD residual is not
+   lexical-variant selection.
 2. Oracle-min complement probe — DONE, CLOSED NEGATIVE (2026-10-10):
    regen of run-029 reproduced 10.032/8.9521 exactly; oracle over
    {specialist, hybrid} = 9.33/8.77 — 0.71 WER over best solo,
