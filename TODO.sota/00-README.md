@@ -95,8 +95,8 @@ ARABIC ── WikiNews-2024 multiref (OOD news, WER/DER, first-alt protocol)
     (py#35 / ts#108 / ruby#805)
 
 ARABIC ── SadeedDiac-25 (ID): r7 2.2864 [BEST dedicated]; specialist
-  5.50 old-protocol (rescore under first-alt pending; 12.6% of rows
-  emitted alternates)
+  5.48 first-alt rescore DONE — ID surface was never inflated (the
+  alternate artifact was OOD-only: −5.9 WER there vs −0.02 DER here)
 
 HEBREW ── nikud DER: 8.18 crown (2× runner-up); text levers closed
   → WO31 AUDIO PROGRAM GREEN-LIT + RUNNING (2026-10-10):
