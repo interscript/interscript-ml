@@ -1658,3 +1658,10 @@ with pointed-espeak targets → stage 2 relabel + student re-run.
 Prediction if the convention reading is right: stage-1 PER will move
 only modestly (targets get denser), stage-2 CER collapses toward the
 gate.
+
+run-041 LAUNCHED (stage 1b): all 4,335 FLEURS transcripts pointed by
+our own crown nikud model (100% coverage, spot-checked correct),
+espeak now sees pointed text → vowel-full + stress targets matching
+the benchmark's convention. Stage-2 rerun (run-042) fires on gate
+pass, reusing the proven relabel+student script against the new
+teacher.
