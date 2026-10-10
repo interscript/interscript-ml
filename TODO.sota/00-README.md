@@ -70,7 +70,7 @@ hf jobs run --flavor a100-large -d \
 | 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM 14.30 refuted; run-033 10.78/9.16 gate-MISS — specialist dominates; successor = word-channel class |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
 | 33 | 33-lexicon-disambiguator.md | P1 | 17/32 | NEGATIVE — 18.07/11.44; word-only can't diacritize OOV |
-| 34 | 34-hybrid-word-char.md | P1 | 32/33 | run-036 RUNNING 48%; run-037 fastText arm STAGED; oracle probe BUILT |
+| 34 | 34-hybrid-word-char.md | P1 | 32/33 | run-036 13.53/9.92 — channel VALIDATED (+0.77); run-037 fastText RUNNING; vcd+probe queued |
 
 ## Schedule
 
