@@ -1639,3 +1639,22 @@ teacher bottleneck from WO30 v0 (CER 1.18) is broken. Stage 2 LAUNCHED
 labels) → byt5-small v1 student → gate CER < 0.2393 on the phonikud
 heb-g2p benchmark (rules layer). ReNikud 0.0244 is the frontier
 beyond; ivrit.ai scale stays parked until this gate reads out.
+
+## WO31 stage-2 verdict — CER 0.9142, gate FAILED; root cause is a CONVENTION, not the teacher (2026-10-10)
+
+run-039 (tuned-teacher labels, v0 student recipe): CER **0.9142**
+(v0: 1.18; gate < 0.2393). The samples decode the failure: the student
+learned the teacher's inventory — espeak-he over UNPOINTED text emits
+consonant skeletons (`h u t s f h`), while the benchmark gold is
+espeak over POINTED (nikud) text — vowel-full with stress
+(`hˈuʔ tsˈafah bəsˈeret`). Verified locally in one command:
+unpointed → `hˈu tsfh vsrt`; pointed → `hˈuʔ tsˈafah bəsˈeret`.
+
+The gold's generator was nikud-then-espeak. Our fix uses our own
+crown asset (heb-diac-plane-2.0, DER 8.18; sha-verified release
+artifact) to point the FLEURS transcripts before espeak — no LLM
+teachers, no external dependency. run-041 (stage 1b): re-fine-tune
+with pointed-espeak targets → stage 2 relabel + student re-run.
+Prediction if the convention reading is right: stage-1 PER will move
+only modestly (targets get denser), stage-2 CER collapses toward the
+gate.
