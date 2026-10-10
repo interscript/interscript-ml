@@ -1493,3 +1493,11 @@ pre-launch: ft_init cache (skips 1.2GB re-parse), periodic step-ckpt +
 seeded-generator resume. Monitor coverage hole fixed: poll ps --all
 (terminal states) — the ps-only monitors stayed silent on
 disappearance.
+
+WO34 tooling complete (2026-10-10): variant-constrained decoder
+implemented + uploaded (scores observed variants under the hybrid's
+per-position log-softmax vs free-greedy; OOV keeps free decode);
+sweep knobs HYB_LR/HYB_HID wired into the hybrid trainer (grid queued
+behind the three primary arms). All five follow-ups are now built or
+running: run-033 (~98%), run-036-r2 (30%), run-037 staged, vcd + eval
+jobs queued on slot-free.

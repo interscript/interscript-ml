@@ -31,9 +31,12 @@ Gates:
   silver units. Doctrine stands.
 
 Staged follow-ups (armed post-verdict):
-1. Variant-constrained decode (v2): force the char model's output for
-   in-table words to the nearest table variant; keeps compositional
-   OOV handling, adds lexical precision.
+1. Variant-constrained decode — IMPLEMENTED + uploaded
+   (variant_constrained_decode.py): loads run-036's best, scores every
+   observed variant's plane-combo sequence under per-position
+   log-softmax vs the free-greedy candidate, emits argmax; OOV and
+   non-Arabic tokens keep free decode. Runs on slot-free after
+   run-036-r2 lands.
 2. Oracle-min complement probe over {run-029, run-036} WikiNews preds.
    Tooling BUILT and unit-tested (oracle_min.py in /code bundle —
    mirrors the multiref scorer exactly, verified on synthetic
@@ -43,12 +46,16 @@ Staged follow-ups (armed post-verdict):
    original trainer's helpers). If oracle >2 WER over the best single
    arm, confidence-routed blending opens (WO28 lineage; routing,
    never naive voting).
-3. run-037 (STAGED, script uploaded): run-036's architecture with the
-   scratch word channel replaced by pretrained fastText cc.ar.300
-   vectors (in-job download, coverage-reported, trainable init) — the
+3. run-037 (STAGED, script uploaded + hardened): run-036's
+   architecture with the scratch word channel replaced by pretrained
+   fastText cc.ar.300 vectors (in-job download, coverage-reported,
+   trainable init; ft_init cache + step-checkpoint resume) — the
    lexical-density hypothesis: our word channel is undertrained on
    ~3M words, not wrong; Fadel-class systems ride on billion-word
    vectors. Same gates. Launches when a GPU slot frees regardless of
    run-036's outcome (independent axis: scratch vs pretrained).
-4. If run-033 (byt5-large plane) lands <10, race it against run-036/37
+4. Tuning-maturity sweep — READY: hybrid trainer now exposes
+   HYB_LR / HYB_HID env knobs; grid {lr 1e-3/5e-4} × {hid 512/768} ×
+   {epochs 6/10} queued after the three primary arms read out.
+5. If run-033 (byt5-large plane) lands <10, race it against run-036/37
    gates; the dominant arm takes the successor slot.
