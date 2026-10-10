@@ -70,7 +70,7 @@ hf jobs run --flavor a100-large -d \
 | 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM 14.30 refuted; run-033 10.78/9.16 gate-MISS — specialist dominates; successor = word-channel class |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
 | 33 | 33-lexicon-disambiguator.md | P1 | 17/32 | NEGATIVE — 18.07/11.44; word-only can't diacritize OOV |
-| 34 | 34-hybrid-word-char.md | P1 | 32/33 | run-036 13.53/9.92 — channel VALIDATED (+0.77); run-037 fastText RUNNING; vcd+probe queued |
+| 34 | 34-hybrid-word-char.md | P1 | 32/33 | CLOSED — hybrid 13.53, fastText 13.59 (density refuted), vcd ±0, oracle 0.71; specialist stands; delta = external data scale |
 
 ## Schedule
 
@@ -79,37 +79,32 @@ Wave 2 (HF training, launched together): WO04 (a100-large), WO06
 (a100-large), WO08 (l4x1) — run concurrently, watch via `hf jobs ls`.
 Wave 3: WO05 tables after 01+07 land; WO09 probe only.
 
-## Path-to-success graph + SOTA matrix (2026-10-10, live)
+## Path-to-success graph + SOTA matrix (2026-10-10, terminal for this campaign wave)
 
 ```
-ARABIC ── WikiNews-2024 multiref (OOD news, WER/DER)
-  run-029 seq2seq specialist 10.13/8.98  [SHIPPED: ara-diac-news-1.0; converged 10.03/8.95]
-  run-034 literal BiLSTM     14.30/10.10 [anchor — arch-class REFUTED]
-  pure-lexicon floor         25.15/13.18 [OOV 18.10% — lexical = 75% of task]
-  QCRI published             2.70        [their corpus + their conventions]
-      ├─ run-033 byt5-large plane + 900K silver  RUNNING  gate <10
-      └─ run-035 word-variant disambiguator      RUNNING  gates <14.30 / <10.13
-          winner → IMF v1 export → release chain (owner version) → news successor
-          both fail → register-specialist doctrine stands; residue = convention
-          alignment, unreachable without their labels (closed)
+ARABIC ── WikiNews-2024 multiref (OOD news, WER/DER) ── MEASURED TERMINAL
+  CROWN on comparable surface: ara-diac-news-1.0 10.13/8.98 (converged 10.03/8.95)
+  full ladder: specialist 10.03 > plane-large 10.78 > hybrid 13.53 ≈ fastText 13.59
+    > char-only 14.30 > word-only 18.07; oracle ceiling 9.33; vcd ±0.00
+  closed by measurement: training, backbone scale, word channel (3 forms),
+    lexical density, constrained decode, blending, corpus dose (202,680 units)
+  remaining 2.70 delta = QCRI's FULL silver + self-consistent conventions
+    → EXTERNAL: their corpus is theirs to share (owner decision, if ever)
 
 ARABIC ── SadeedDiac-25 (ID): r7 2.2864 [BEST dedicated] · specialist 5.50 (register cost)
 
 HEBREW ── nikud DER: 8.18 crown (heb-diac-plane-2.0, 2× runner-up)
-  ALL TEXT LEVERS CLOSED by measurement: capacity 8.48 · noisy 8.72 (run-030
-  re-confirmed) · convergence 10.03 → remaining path = AUDIO program:
-  WO31 phoneme-ASR fine-tune → alignment → learned-IPA student (owner block)
-
+  ALL TEXT LEVERS CLOSED (8.48/8.72/10.03) → WO31 audio program (owner block)
 HEBREW ── g2p CER: rules 0.2393 · ReNikud 0.0244 (audio-supervised; WO31 line)
-THAI ── PER: hybrid 0.1478 @0.73ms [crown]; tiny tier closed NEGATIVE (2038%)
+THAI ── PER: hybrid 0.1478 @0.73ms [crown]; tiny tier closed NEGATIVE
 CLIENT SURFACE: 3-runtime parity ✓ · preserve ✓ · edge /v1/infer ✓
   index-v10 · npm 5.7.0 · 29 HF mirrors · ruby pins 802/804
 ```
 
 | axis | ours | 2026 frontier | status |
 |---|---|---|---|
-| AR in-domain DER | 2.2864 | 1.39 (LLM API) | #1 dedicated (LLM = no-teacher-law, not a runtime option) |
-| AR OOD multiref WER | 10.13 (specialist) | 2.70 (their-domain) | converged seq2seq; run-033/035 arms live |
+| AR in-domain DER | 2.2864 | 1.39 (LLM API) | #1 dedicated (LLM = no-teacher law) |
+| AR OOD multiref WER | 10.13 (10.03 converged) | 2.70 (full-corpus scale) | crown at our scale; delta external |
 | HE nikud DER | 8.18 | — (we lead) | crown held; text exhausted; audio = WO31 |
 | HE g2p CER | 0.2393 (rules) | 0.0244 (audio) | blocked on WO31 owner block |
 | TH PER | 0.1478 | 26.9 (latency play) | crown held + hybrid latency tier |
