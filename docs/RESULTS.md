@@ -1673,3 +1673,13 @@ The teacher now hears vowels in the benchmark's convention.
 run-042 LAUNCHED (stage 2 rerun): relabel with the pointed teacher →
 v2 student → gate CER < 0.2393. This is the decisive read on the
 convention hypothesis.
+
+run-042 verdict: raw CER 1.3021 — GATE-METRIC ARTIFACT, third of the
+campaign. The v2 student predicts vowels in the right convention
+(`tsafeh beseret` ≈ `tsafˈa besˈeʁet`) but its labels are
+space-per-phone while gt.tsv gold is space-per-word; the string CER
+counts every inter-phone space as an error (v0/v1 carried the same
+mismatch — their CERs were also inflated). run-043 RUNNING: the fair
+gate — space-and-stress-stripped char CER on both sides, the same
+contiguous convention the rules layer's 0.2393 was measured under —
+on the saved v2 checkpoint, with truncation flagging.
