@@ -1536,3 +1536,12 @@ threshold was >2). Their errors overlap; the hybrid's word channel
 adds nothing the specialist lacks on this benchmark. Confidence-routed
 blending closes (WO28 lineage). vcd launched on run-036's ckpt
 (last WO34 follow-up in flight).
+
+## vcd verdict — constraint is an ID-only tweak, OOD untouched (2026-10-10)
+
+run-036+vcd: Sadeed DER 5.90→5.75 (−0.16), multiref **13.5268/9.9211 —
+bit-identical to free decode**. On every in-table word the free-greedy
+candidate already wins the variant scoring; the hybrid's OOD residual
+is not lexical-variant selection (consistent with the 0.71 oracle
+gap). vcd closes as not-worth-integrating; WO34's live surface is
+run-037 alone.
