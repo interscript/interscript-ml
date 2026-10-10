@@ -1525,3 +1525,14 @@ little lexical density. Hierarchy now: specialist 10.13 > plane-large
 silver pool = 202,680 units — the 900K cap never binds; corpus scale
 is exhausted at what we hold. run-037 (fastText cc.ar.300, billion-word
 lexical density) LAUNCHED — the decisive density arm.
+
+## Oracle probe — routed blend closes NEGATIVE; run-037 is the last live arm (2026-10-10)
+
+run-029 preds regenerated under the exact protocol: 10.032/8.9521 —
+matches the converged number bit-for-bit at reporting precision.
+Oracle-min over {run-029 specialist, run-036 hybrid}: **9.33 WER /
+8.77 DER** — only **0.71 WER** over the specialist solo (decision
+threshold was >2). Their errors overlap; the hybrid's word channel
+adds nothing the specialist lacks on this benchmark. Confidence-routed
+blending closes (WO28 lineage). vcd launched on run-036's ckpt
+(last WO34 follow-up in flight).
