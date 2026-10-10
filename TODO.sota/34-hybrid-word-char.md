@@ -37,15 +37,10 @@ Staged follow-ups (armed post-verdict):
    log-softmax vs the free-greedy candidate, emits argmax; OOV and
    non-Arabic tokens keep free decode. Runs on slot-free after
    run-036-r2 lands.
-2. Oracle-min complement probe over {run-029, run-036} WikiNews preds.
-   Tooling BUILT and unit-tested (oracle_min.py in /code bundle —
-   mirrors the multiref scorer exactly, verified on synthetic
-   disjoint-strengths cases). run-036 saves wikinews_preds.txt;
-   run-029's preds regenerate via eval_r8_wikinews_preds.py (exact
-   protocol: 600-byte windows, greedy, project_haraqat; imports the
-   original trainer's helpers). If oracle >2 WER over the best single
-   arm, confidence-routed blending opens (WO28 lineage; routing,
-   never naive voting).
+2. Oracle-min complement probe — DONE, CLOSED NEGATIVE (2026-10-10):
+   regen of run-029 reproduced 10.032/8.9521 exactly; oracle over
+   {specialist, hybrid} = 9.33/8.77 — 0.71 WER over best solo,
+   below the >2 threshold. Errors overlap; routing opens nothing.
 3. run-037 (STAGED, script uploaded + hardened): run-036's
    architecture with the scratch word channel replaced by pretrained
    fastText cc.ar.300 vectors (in-job download, coverage-reported,
