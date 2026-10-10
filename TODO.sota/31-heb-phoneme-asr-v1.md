@@ -22,8 +22,9 @@ green-light for the block.
   targets (do_phonemize disabled — targets are pre-phonemized; the
   en-us default would silently mis-label), in-memory corpus, per-phone
   dev PER gate < 0.395, step-ckpts every 2000, --timeout 4h.
-- run-039-heb-ipa-v1 STAGED (stage 2, script uploaded): relabel FLEURS
-  with the TUNED ASR (audio-derived labels — the whole point), v0
-  student recipe with the byte-correct collate, gate CER < 0.2393 on
-  phonikud heb-g2p-benchmark (gt.tsv from run-032). Launches when
-  run-038's gate passes.
+- run-038 stage-1 VERDICT (r4, 47m): dev PER 0.2306 < 0.395 — GATE
+  PASS (teacher bottleneck broken; 42% over universal).
+- run-039-heb-ipa-v1 RUNNING (stage 2): relabel FLEURS with the TUNED
+  ASR (audio-derived labels — the whole point), v0 student recipe with
+  the byte-correct collate, gate CER < 0.2393 on phonikud
+  heb-g2p-benchmark (gt.tsv from run-032).
