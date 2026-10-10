@@ -1629,3 +1629,13 @@ word → unk 0.9996. Fix: phonemize through the tokenizer itself
 (init_backend("he")), whose separator conventions ARE the vocab's —
 verified locally first (unk 0.0000 on a Hebrew sentence). r4 running.
 The guard did its job: no garbage-trained checkpoint shipped.
+
+## WO31 stage-1 verdict — GATE PASS: tuned ASR hears Hebrew at PER 0.2306 (2026-10-10)
+
+run-038-r4 (30 epochs, 12,150 steps, 47m on a100): dev **PER 0.2306**
+vs the universal model's 0.395 — a 42% teacher improvement. The
+teacher bottleneck from WO30 v0 (CER 1.18) is broken. Stage 2 LAUNCHED
+(run-039): relabel FLEURS with the tuned teacher (audio-derived
+labels) → byt5-small v1 student → gate CER < 0.2393 on the phonikud
+heb-g2p benchmark (rules layer). ReNikud 0.0244 is the frontier
+beyond; ivrit.ai scale stays parked until this gate reads out.
