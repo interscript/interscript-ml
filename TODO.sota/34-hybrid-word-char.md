@@ -34,9 +34,21 @@ Staged follow-ups (armed post-verdict):
 1. Variant-constrained decode (v2): force the char model's output for
    in-table words to the nearest table variant; keeps compositional
    OOV handling, adds lexical precision.
-2. Oracle-min complement probe over {run-029, run-036} WikiNews preds
-   (run-036 saves wikinews_preds.txt): if the ceiling is >2 WER over
-   the best single arm, confidence-routed blending opens (WO28
-   lineage; routing, never naive voting).
-3. If run-033 (byt5-large plane) lands <10, race it against run-036's
+2. Oracle-min complement probe over {run-029, run-036} WikiNews preds.
+   Tooling BUILT and unit-tested (oracle_min.py in /code bundle —
+   mirrors the multiref scorer exactly, verified on synthetic
+   disjoint-strengths cases). run-036 saves wikinews_preds.txt;
+   run-029's preds regenerate via eval_r8_wikinews_preds.py (exact
+   protocol: 600-byte windows, greedy, project_haraqat; imports the
+   original trainer's helpers). If oracle >2 WER over the best single
+   arm, confidence-routed blending opens (WO28 lineage; routing,
+   never naive voting).
+3. run-037 (STAGED, script uploaded): run-036's architecture with the
+   scratch word channel replaced by pretrained fastText cc.ar.300
+   vectors (in-job download, coverage-reported, trainable init) — the
+   lexical-density hypothesis: our word channel is undertrained on
+   ~3M words, not wrong; Fadel-class systems ride on billion-word
+   vectors. Same gates. Launches when a GPU slot frees regardless of
+   run-036's outcome (independent axis: scratch vs pretrained).
+4. If run-033 (byt5-large plane) lands <10, race it against run-036/37
    gates; the dominant arm takes the successor slot.

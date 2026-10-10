@@ -1478,3 +1478,9 @@ run-036 (RUNNING): char-emb ⊕ per-char bare-word embedding → 3×BiLSTM
 → plane head; same corpus, fp32. Gates <14.30 (word channel validated)
 / <10.13 (news-successor candidate). Variant-constrained decode and
 the oracle-min complement probe staged post-verdict.
+
+Tooling built while arms grind (2026-10-10): oracle_min.py (unit-tested
+complement probe mirroring the multiref scorer); eval_r8_wikinews_preds
+(exact-protocol regen of run-029 WikiNews preds); run-037 trainer
+(hybrid + pretrained fastText cc.ar.300 word channel — the
+lexical-density hypothesis; staged, launches on slot-free).

@@ -70,7 +70,7 @@ hf jobs run --flavor a100-large -d \
 | 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM DONE (14.30/10.10 — arch-class refuted); run-033 plane RUNNING |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
 | 33 | 33-lexicon-disambiguator.md | P1 | 17/32 | NEGATIVE — 18.07/11.44; word-only can't diacritize OOV |
-| 34 | 34-hybrid-word-char.md | P1 | 32/33 | RUNNING — char+word hybrid; style hypothesis closed (density 74-81%) |
+| 34 | 34-hybrid-word-char.md | P1 | 32/33 | run-036 RUNNING 48%; run-037 fastText arm STAGED; oracle probe BUILT |
 
 ## Schedule
 
