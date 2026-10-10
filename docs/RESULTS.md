@@ -1545,3 +1545,26 @@ candidate already wins the variant scoring; the hybrid's OOD residual
 is not lexical-variant selection (consistent with the 0.71 oracle
 gap). vcd closes as not-worth-integrating; WO34's live surface is
 run-037 alone.
+
+## run-037 verdict + WO34 CLOSES — the OOD front reaches its measured terminal state (2026-10-10)
+
+run-037 (hybrid + fastText cc.ar.300, 93.9% coverage, 63.8M params):
+multiref **13.59 / 9.89** — statistically identical to the scratch
+channel (13.53/9.92), ID worse (6.50 vs 5.90). **Lexical density is
+REFUTED as the bottleneck.** The tuning sweep is closed as
+not-worth-compute: the hybrid class sits 3.5 WER behind the specialist
+— no optimizer setting closes that.
+
+WO34 final ledger — every lever measured, none moves OOD past the
+specialist: converged training (10.03) · plane-large (10.78, dominated)
+· char-only (14.30) · word-only (18.07) · joint hybrid (13.53) ·
+billion-word vectors (13.59) · constrained decode (±0.00 OOD) · routed
+blend (0.71 oracle ceiling). Corpus scale exhausted at 202,680 units.
+
+TERMINAL READING: the shipped specialist (ara-diac-news-1.0, 10.13
+shipped / 10.03 converged) is the crown on the comparable surface at
+our data scale. The 2.70 delta lives in QCRI's FULL silver release +
+their self-consistent label conventions — an external dependency
+(their complete corpus is theirs to share), not a lever we hold.
+Even the literal reconstruction of their architecture lands at 14.3
+at our scale: the gap is data, not code.
