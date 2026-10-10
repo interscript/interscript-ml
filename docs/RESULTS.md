@@ -1568,3 +1568,36 @@ their self-consistent label conventions — an external dependency
 (their complete corpus is theirs to share), not a lever we hold.
 Even the literal reconstruction of their architecture lands at 14.3
 at our scale: the gap is data, not code.
+
+## WO35 — THE ALTERNATE-FORMAT SCORING ARTIFACT: OOD corrects 10.03 → 4.10/1.56 (2026-10-10)
+
+Error-typography probe of the specialist's 1,065 wrong words found 74%
+were LENGTH mismatches — not reading errors. Root cause: the model,
+trained on QCRI multi-reference silver, emits '/'-separated alternate
+sets per token (7.44% of tokens; e.g. وِكَالَةُ/وِكَالَةُ); the multiref
+scorer treated each such token as one word, breaking letter alignment
+— every alternate-emitting word scored wrong even when the primary
+choice was correct.
+
+Same preds, same benchmark, first-alternate decode (deterministic,
+shippable):
+
+| protocol | WER | DER |
+|---|---|---|
+| prior scorer | 10.032 | 8.9521 |
+| **first-alternate** | **4.0976** | **1.5606** |
+| symmetric any-vs-any | 3.1839 | — |
+
+run-036 hybrid re-scores 13.53 → 8.85/2.84 — the specialist remains
+dominant. The 2.70 frontier is now a 1.4-point WER gap (and our DER
+1.56 likely leads on letter-level). WO32-34 verdict waves were scored
+on the broken surface; rankings hold (dominance unchanged) but every
+absolute number above shifts under the corrected protocol.
+
+Runtime contract FIXED in all three runtimes (TDD, parity):
+interscript-py#35, interscript-ts#108, interscript-ruby#805 —
+`first_alternates` strips to the primary choice in seq2seq translate;
+plane family unaffected. Follow-ups: Sadeed rescore under first-alt
+(12.6% of ID rows emit alternates; DER 5.50 is inflated), models.yaml
+metric correction + card text, and the re-opened 1.4-point program
+(sweep/stack arms now worth compute again).
