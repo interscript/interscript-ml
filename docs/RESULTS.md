@@ -1665,3 +1665,11 @@ espeak now sees pointed text → vowel-full + stress targets matching
 the benchmark's convention. Stage-2 rerun (run-042) fires on gate
 pass, reusing the proven relabel+student script against the new
 teacher.
+
+run-041 stage-1b GATE PASS: dev PER 0.319 (< 0.395) on the vowel-full
+inventory (denser target space + nikud noise account for the rise
+from the consonantal 0.2306 — different inventories, not comparable).
+The teacher now hears vowels in the benchmark's convention.
+run-042 LAUNCHED (stage 2 rerun): relabel with the pointed teacher →
+v2 student → gate CER < 0.2393. This is the decisive read on the
+convention hypothesis.
