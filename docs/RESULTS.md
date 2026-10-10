@@ -1484,3 +1484,12 @@ complement probe mirroring the multiref scorer); eval_r8_wikinews_preds
 (exact-protocol regen of run-029 WikiNews preds); run-037 trainer
 (hybrid + pretrained fastText cc.ar.300 word channel — the
 lexical-density hypothesis; staged, launches on slot-free).
+
+Launch incident (2026-10-10): run-036 v1 died at the 30-minute DEFAULT
+job timeout (mid-training, no intra-run ckpt — lost). Lesson added to
+the launch checklist: ALWAYS pass explicit --timeout (4h standard for
+a100 arms). Relaunched as run-036-hybrid-r2 with 4h. run-037 hardened
+pre-launch: ft_init cache (skips 1.2GB re-parse), periodic step-ckpt +
+seeded-generator resume. Monitor coverage hole fixed: poll ps --all
+(terminal states) — the ps-only monitors stayed silent on
+disappearance.
