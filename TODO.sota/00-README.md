@@ -66,7 +66,7 @@ hf jobs run --flavor a100-large -d \
 | 27 | 27-ar-large-id-arm.md | P1 | — | NEGATIVE — 2.5765 parity with r7; capacity closed on AR too |
 | 28 | 28-oracle-complementarity.md | P2 | — | CLOSED — ceiling 96.78 real; naive voting catastrophic |
 | 30 | 30-heb-learned-ipa-v0.md | P1 | 09 | NEGATIVE — CER 1.18; ASR teacher is the bottleneck |
-| 31 | 31-heb-phoneme-asr-v1.md | P1 | 30 | SPEC'D — tune the phoneme CTC on Hebrew first (owner block) |
+| 31 | 31-heb-phoneme-asr-v1.md | P1 | 30 | RUNNING (green-lit) — run-038 ASR fine-tune in flight; run-039 v1 staged |
 | 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM 14.30 refuted; run-033 10.78/9.16 gate-MISS — specialist dominates; successor = word-channel class |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
 | 33 | 33-lexicon-disambiguator.md | P1 | 17/32 | NEGATIVE — 18.07/11.44; word-only can't diacritize OOV |

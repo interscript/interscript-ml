@@ -1601,3 +1601,15 @@ plane family unaffected. Follow-ups: Sadeed rescore under first-alt
 (12.6% of ID rows emit alternates; DER 5.50 is inflated), models.yaml
 metric correction + card text, and the re-opened 1.4-point program
 (sweep/stack arms now worth compute again).
+
+## WO31 GREEN-LIT — the Hebrew audio program launches (2026-10-10)
+
+Owner green-light received. run-038-heb-asr-ft RUNNING (stage 1):
+espeak-ng transcript targets (do_phonemize disabled — targets arrive
+pre-phonemized; the tokenizer's en-us default would have silently
+mislabeled every utterance), per-phone dev PER gate < 0.395,
+step-checkpoints, 4h timeout. run-039-heb-ipa-v1 STAGED: audio-derived
+relabel with the tuned teacher + v0 student recipe (byte-correct
+collate), gate CER < 0.2393 vs the rules layer on the phonikud
+benchmark. This is the only open path to the HE g2p frontier
+(ReNikud 0.0244).

@@ -15,3 +15,15 @@ ReNikud recipe's first stage):
 
 Cost: one fine-tune (~2-4 GPU-hours) + relabel + v1 train. Owner
 green-light for the block.
+
+## Execution (green-light received 2026-10-10)
+
+- run-038-heb-asr-ft RUNNING (stage 1): fine-tune as spec'd; espeak-ng
+  targets (do_phonemize disabled — targets are pre-phonemized; the
+  en-us default would silently mis-label), in-memory corpus, per-phone
+  dev PER gate < 0.395, step-ckpts every 2000, --timeout 4h.
+- run-039-heb-ipa-v1 STAGED (stage 2, script uploaded): relabel FLEURS
+  with the TUNED ASR (audio-derived labels — the whole point), v0
+  student recipe with the byte-correct collate, gate CER < 0.2393 on
+  phonikud heb-g2p-benchmark (gt.tsv from run-032). Launches when
+  run-038's gate passes.
