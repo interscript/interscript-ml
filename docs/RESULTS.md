@@ -1457,3 +1457,24 @@ Gates: <14.30 = word channel real; <10.13 = new news-successor
 candidate; else the residue is convention alignment, closed under the
 register-specialist doctrine. Complement probe (oracle-min over
 run-029/035) staged post-verdict.
+
+## WO33 verdict + WO34 launch — word-only fails on OOV; the synthesis arm is the joint design (2026-10-10)
+
+run-035 (word-level variant disambiguator): **18.07 / 11.44** multiref,
+Sadeed Total DER 18.75 — both gates failed. The failure mode is clean:
+18.1% of benchmark word types are OOV to the corpus table and are
+emitted bare, collapsing ID DER; the word channel in isolation cannot
+compose unseen words. Combined with run-034 (char-only, 14.30/10.10),
+the decomposition now says each half alone loses to the shipped
+specialist (10.13/8.98) — Fadel's joint design (word identity AS A
+FEATURE of a char-level tagger) is the actual recipe.
+
+Convention-style probe (local): marked-letter density 0.8127 /
+0.7625 / 0.7432 across WikiNews-2024 refs, wikinews2014 gold, and
+news silver — the style-mismatch hypothesis is closed; there are no
+cheap diacritic-drop points.
+
+run-036 (RUNNING): char-emb ⊕ per-char bare-word embedding → 3×BiLSTM
+→ plane head; same corpus, fp32. Gates <14.30 (word channel validated)
+/ <10.13 (news-successor candidate). Variant-constrained decode and
+the oracle-min complement probe staged post-verdict.
