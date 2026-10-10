@@ -66,9 +66,12 @@ hf jobs run --flavor a100-large -d \
 | 27 | 27-ar-large-id-arm.md | P1 | — | NEGATIVE — 2.5765 parity with r7; capacity closed on AR too |
 | 28 | 28-oracle-complementarity.md | P2 | — | CLOSED — ceiling 96.78 real; naive voting catastrophic |
 | 30 | 30-heb-learned-ipa-v0.md | P1 | 09 | NEGATIVE — CER 1.18; ASR teacher is the bottleneck |
-| 31 | 31-heb-phoneme-asr-v1.md | P1 | 30 | SPEC'D — tune the phoneme CTC on Hebrew first (owner block) |
-| 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM DONE (14.30/10.10 — arch-class refuted); run-033 plane RUNNING |
+| 31 | 31-heb-phoneme-asr-v1.md | P1 | 30 | stage 1 GATE PASS (PER 0.2306); stage 2 RUNNING (CER gate <0.2393) |
+| 32 | 32-matched-architecture-arms.md | P1 | 17 | BiLSTM 14.30 refuted; run-033 10.78/9.16 gate-MISS — specialist dominates; successor = word-channel class |
 | 26 | 26-heb-noisy-student.md | P1 | 04 | NEGATIVE — 8.72 vs 8.18; all three text levers closed |
+| 33 | 33-lexicon-disambiguator.md | P1 | 17/32 | NEGATIVE — 18.07/11.44; word-only can't diacritize OOV |
+| 34 | 34-hybrid-word-char.md | P1 | 32/33 | CLOSED — hybrid 13.53, fastText 13.59, vcd ±0, oracle 0.71 (all old-protocol; see 35) |
+| 35 | 35-alternate-protocol.md | P1 | 34 | SCORING ARTIFACT FIXED — OOD 4.10/1.56 (was 10.03/8.95); runtime fixed py#35/ts#108/ruby#805; 1.4-pt program open |
 
 ## Schedule
 
@@ -77,34 +80,39 @@ Wave 2 (HF training, launched together): WO04 (a100-large), WO06
 (a100-large), WO08 (l4x1) — run concurrently, watch via `hf jobs ls`.
 Wave 3: WO05 tables after 01+07 land; WO09 probe only.
 
-## Path-to-success graph + SOTA matrix (2026-10-07, live)
+## Path-to-success graph + SOTA matrix (2026-10-10, post-WO35)
 
 ```
-ARABIC ── in-domain (SadeedDiac-25)        HEBREW ── nikud (nakdimon)
-  r7 2.2864 [BEST dedicated]                 heb-plane-2.0 8.18 [BEST text-only]
-  Claude-3.7 1.39 (API LLM; hallucinates)    next: us (12.48) → 16.4 → 35.6
-    │                                          │
-    └─ r8a (self-labeled arwiki) RUNNING       └─ byt5-large/K=4 (untried)
-    └─ r8b (QCRI silver)       RUNNING       HEBREW ── g2p IPA (their board)
-    └─ gate: hold ID ≤2.2864 AND              rules chain 0.2393 CER (0-train)
-       move OOD 17.38 → ≤10                   ReNikud 0.0244 (audio-supervised)
-                                              └─ learned IPA head: BLOCKED
-ARABIC ── OOD (WikiNews-2024 multiref)          (espeak ceiling 0.4543; needs
-  r7 17.38/11.83 · plane 18.69/11.35            MILIM or audio = 2027)
-  QCRI 2.70 (in-domain-trained silver)
-    └─ register closure = r8a/r8b above      THAI ── g2p (kaikki protocol)
-                                              hybrid 0.1478 PER @0.73ms [BEST]
-ARABIC plane ── 2.7397 (large) ── r8 recipe    tiny student RUNNING (<10MB tier)
-   transfers to plane family post-r8        CLIENT SURFACE — 3-runtime parity ✓
-                                              + preserve mode ✓ + edge /v1/infer ✓
-                                              + index-v9 + 28 sha-verified models
+ARABIC ── WikiNews-2024 multiref (OOD news, WER/DER, first-alt protocol)
+  ara-diac-news-1.0  4.10 WER / 1.56 DER  [CROWN-tier; DER likely leads]
+  frontier 2.70 WER → gap = 1.4 points, program RE-OPENED (WO35):
+    hybrid-2 stack + sweep (knobs wired); Sadeed rescore pending
+  pre-WO35 numbers (broken scorer, for the record): specialist 10.03
+    > plane-large 10.78 > hybrid 13.53 ≈ fastText 13.59 > char 14.30
+    > word-only 18.07; rankings hold, absolutes shifted
+  convention alignment SOLVED in-run: the model already emits their
+    alternate format; runtimes now return the primary choice
+    (py#35 / ts#108 / ruby#805)
+
+ARABIC ── SadeedDiac-25 (ID): r7 2.2864 [BEST dedicated]; specialist
+  5.48 first-alt rescore DONE — ID surface was never inflated (the
+  alternate artifact was OOD-only: −5.9 WER there vs −0.02 DER here)
+
+HEBREW ── nikud DER: 8.18 crown (2× runner-up); text levers closed
+  → WO31 AUDIO PROGRAM GREEN-LIT + RUNNING (2026-10-10):
+    run-038 ASR fine-tune (dev PER gate < 0.395) → run-039 v1 student
+    (gate CER < 0.2393 rules layer) → only then ivrit.ai scale ($500)
+HEBREW ── g2p CER: rules 0.2393 · ReNikud 0.0244 (the WO31 target)
+THAI ── PER: hybrid 0.1478 @0.73ms [crown]
+CLIENT SURFACE: 3-runtime parity ✓ · preserve ✓ · edge /v1/infer ✓
+  index-v10 · npm 5.7.0 · 29 HF mirrors
 ```
 
 | axis | ours | 2026 frontier | status |
 |---|---|---|---|
-| AR in-domain DER | 2.2864 | 1.39 (LLM API) | #1 dedicated; r8 arms closing |
-| AR OOD multiref WER | 17.38 | 2.70 (their-domain) | register gap; r8a/r8b attacking |
-| HE nikud DER | 8.18 | — (we lead) | crown held; base+K=3 |
-| HE g2p CER | 0.2393 (rules) | 0.0244 (audio) | blocked on supervision (2027) |
-| TH PER | 0.1478 | 26.9 (latency play) | crown held + hybrid latency tier |
+| AR in-domain DER | 2.2864 | 1.39 (LLM API) | #1 dedicated (LLM = no-teacher law) |
+| AR OOD multiref WER | **4.10** (DER **1.56**) | 2.70 | 1.4-pt program re-opened (WO35) |
+| HE nikud DER | **8.18** | — (we lead) | crown held; audio = WO31 running |
+| HE g2p CER | 0.2393 (rules) | 0.0244 (audio) | WO31 stages 1-2 in flight |
+| TH PER | **0.1478** | 26.9 (latency play) | crown held + hybrid latency tier |
 | client surface | 3 runtimes + edge | none exists | moat maintained |
