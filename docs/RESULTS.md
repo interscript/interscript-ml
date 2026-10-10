@@ -1501,3 +1501,14 @@ sweep knobs HYB_LR/HYB_HID wired into the hybrid trainer (grid queued
 behind the three primary arms). All five follow-ups are now built or
 running: run-033 (~98%), run-036-r2 (30%), run-037 staged, vcd + eval
 jobs queued on slot-free.
+
+## run-033 verdict — plane-large route closes Pareto-loser (2026-10-10)
+
+run-033 (byt5-large plane + full 900K silver, news-pure, 3ep, K=3):
+WikiNews-2024 multiref **10.78 / 9.16** (from 18.69/11.35 — large
+backbone + dose moved OOD by 7.9 WER), Sadeed windowed **DER 6.80 /
+WER 23.80**. Gate <10 missed by 0.78; the shipped seq2seq specialist
+DOMINATES on both surfaces (10.13/8.98; ID 5.50). The plane family's
+large route closes; the contested axis is the word channel class
+(run-036-r2 hybrid + run-037 fastText). run-029 preds-regen launched
+for the oracle probe.
