@@ -1613,3 +1613,9 @@ relabel with the tuned teacher + v0 student recipe (byte-correct
 collate), gate CER < 0.2393 vs the rules layer on the phonikud
 benchmark. This is the only open path to the HE g2p frontier
 (ReNikud 0.0244).
+
+Sadeed rescore under first-alt (WO35 follow-up 1, closed): Total DER
+5.5008 → **5.4814**, Morphological DER 4.4458 — the ID surface was NOT
+materially inflated (the evaluator letter-aligns tolerantly; alternate
+words skipped rather than poisoning alignment). The artifact lived
+almost entirely on the multiref surface: OOD −5.9 WER vs ID −0.02 DER.
