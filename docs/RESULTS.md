@@ -1619,3 +1619,13 @@ Sadeed rescore under first-alt (WO35 follow-up 1, closed): Total DER
 materially inflated (the evaluator letter-aligns tolerantly; alternate
 words skipped rather than poisoning alignment). The artifact lived
 almost entirely on the multiref surface: OOD −5.9 WER vs ID −0.02 DER.
+
+WO31 stage-1 debugging ledger (2026-10-10): r1 missing protobuf
+(vocab parse), r2 missing phonemizer (backend init runs even for
+pre-phonemized input), r3 aborted by the unk-rate guard — root cause
+was MY espeak --ipa segmentation assumption: espeak emits contiguous
+phone strings per word; my space-split produced one giant token per
+word → unk 0.9996. Fix: phonemize through the tokenizer itself
+(init_backend("he")), whose separator conventions ARE the vocab's —
+verified locally first (unk 0.0000 on a Hebrew sentence). r4 running.
+The guard did its job: no garbage-trained checkpoint shipped.
